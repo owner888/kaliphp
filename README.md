@@ -27,4 +27,4 @@ select()->from()->where()->execute();
 
 ## LICENSE
 
-KaliPHP is released under the [MIT license](https://github.com/owner888/kaliphp/blob/master/MIT-LICENSE.txt).
+KaliPHP is released under the [MIT license](https://github.com/owner888/kaliphp/blob/master/LICENSE).
