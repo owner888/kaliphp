@@ -10,7 +10,7 @@
  * @link       http://kaliphp.com
  */
 
-namespace kali\core;
+namespace kaliphp;
 
 /**
  * autoloader.

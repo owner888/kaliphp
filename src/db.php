@@ -10,7 +10,7 @@
  * @link       http://kaliphp.com
  */
 
-namespace kaliphp\core;
+namespace kaliphp;
 use kaliphp\config;
 use kaliphp\database\db_connection;
 use kaliphp\database\db_expression;
