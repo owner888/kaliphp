@@ -35,19 +35,26 @@ class autoloader
         self::$_autoload_root_path = $root_path;
     }
 
-    public static function load_by_namespace($class)
+    public static function autoload($class)
     {
         $class_path = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-        if (self::$_autoload_root_path) 
+        if (strpos($class, 'kaliphp\\') === 0) 
         {
-            $class_file = self::$_autoload_root_path . DIRECTORY_SEPARATOR . $class_path . '.php';
-        }
-        if (empty($class_file) || !is_file($class_file)) 
+            $class_file = __DIR__ . substr($class_path, strlen('kaliphp')) . '.php';
+        } 
+        else 
         {
-            $class_file = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . "$class_path.php";
+            if (self::$_autoload_root_path) 
+            {
+                $class_file = self::$_autoload_root_path . DIRECTORY_SEPARATOR . $class_path . '.php';
+            }
+            if (empty($class_file) || !is_file($class_file)) 
+            {
+                $class_file = __DIR__ . DIRECTORY_SEPARATOR . "$class_path.php";
+            }
         }
 
-		// include the file if needed
+        // include the file if needed
         if (is_file($class_file)) 
         {
             require_once($class_file);
@@ -66,9 +73,12 @@ class autoloader
         return false;
     }
 
-}
 
-spl_autoload_register('kali\core\autoloader::load_by_namespace', true, true);
+    public static function register()
+    {
+        spl_autoload_register(array(__CLASS__, 'autoload'), true, true);
+    }
+}
 
 /* vim: set expandtab: */
 

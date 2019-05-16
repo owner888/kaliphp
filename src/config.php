@@ -14,6 +14,14 @@ namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\cache;
 use kaliphp\db;
+use Exception;
+
+defined('DS') or define('DS', DIRECTORY_SEPARATOR);
+
+defined('SYS_ENV') or define('SYS_ENV', 'pub');
+defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
+defined('ENV_PRE') or define('ENV_PRE', SYS_ENV === 'pre');
+defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
 
 /**
  * 配置文件类
@@ -23,8 +31,6 @@ class config
     private static $_instance = [];
     private $_name;
     private $_cfg_caches = [];
-    private $_appcfg_caches = [];
-    private $_dbcfg_caches = [];
     private $_alias = [];
 
     /**
@@ -56,78 +62,34 @@ class config
 
     /**
      * 加载系统配置文件
-     * @param string $module
-     * @throws \Exception
+     * @throws Exception
      */
-    private function load_config($module)
+    private function load_config()
     {
-        if (!isset($this->cfg_caches[$module])) 
+        if (!isset($this->cfg_caches[$this->_name])) 
         {
-            $path = kali::$base_root . DS . 'config' . DS . $module . '.php';
-
-            $n_module = $module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
-            $n_path = kali::$base_root . DS . 'config' . DS . $n_module . '.php';
-            if ( is_readable($path) || is_readable($n_path) ) 
+            $env_name = $this->_name. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
+            $path = __DIR__ . DS . 'config' . DS . $this->_name . '.php';
+            $n_path = __DIR__ . DS . 'config' . DS . $env_name . '.php';
+            // 合并app/config和数据库里面的数据
+            if (kali::$base_root) 
             {
-                $config = is_readable($path) ? require($path) : [];
-                $config = is_readable($n_path) ? array_merge($config, require($n_path)) : $config;
-                $this->_cfg_caches[$module] = $config;
-            } 
-            else 
-            {
-                throw new \Exception($path, 1002);
+                //$n_path = kali::$base_root . DS . 'config' . DS . $env_name . '.php';
             }
-        }
-
-        return $this->_cfg_caches[$module];
-    }
-
-    /**
-     * 加载应用配置文件
-     * 先加载对应的配置，比如database.php，看看有没有相应环境的配置，比如database_dev.php，有就覆盖
-     * @param string $module
-     * @return mixed
-     * @throws TXException
-     */
-    private function load_app_config($module)
-    {
-        if (!isset($this->_appcfg_caches[$module])) 
-        {
-            $path = kali::$app_root . DS . 'config' . DS . $module . '.php';
-
-            $n_module = $module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
-            $n_path = kali::$app_root . DS . 'config' . DS . $n_module . '.php';
 
             if ( is_readable($path) || is_readable($n_path) ) 
             {
                 $config = is_readable($path) ? require($path) : [];
                 $config = is_readable($n_path) ? array_merge($config, require($n_path)) : $config;
-                $this->_appcfg_caches[$module] = $config;
+                $this->_cfg_caches[$this->_name] = $config;
             } 
             else 
             {
-                throw new \Exception($path, 1002);
+                throw new Exception($path, 1002);
             }
         }
 
-        return $this->_appcfg_caches[$module];
-    }
-
-    /**
-     * 加载应用配置文件
-     * 先加载对应的配置，比如database.php，看看有没有相应环境的配置，比如database_dev.php，有就覆盖
-     * @param string $module
-     * @return mixed
-     * @throws TXException
-     */
-    private function load_db_config($module)
-    {
-        if (!isset($this->_dbcfg_caches[$module])) 
-        {
-            $this->_dbcfg_caches[$module] = $this->cache($module);
-        }
-
-        return $this->_dbcfg_caches[$module];
+        return $this->_cfg_caches[$this->_name];
     }
 
     /**
@@ -170,15 +132,17 @@ class config
     /**
      * get core config
      * @param $key
-     * @param string $module
      * @param bool $alias
      * @return mixed|null
      */
-    public function get($key, $module='config', $alias=true)
+    public function get($key = null, $alias=true)
     {
-        $method = 'load_'.$this->_name;
-        //$config = $this->_name === "config" ? $this->load_config($module) : $this->load_app_config($module);
-        $config = $this->$method($module);
+        $config = $this->load_config();
+
+        if ($config && $key == null) 
+        {
+            return $config;
+        }
 
         if (isset($config[$key])) 
         {

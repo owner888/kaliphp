@@ -14,6 +14,25 @@ namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
 
+//event 默认事件
+defined('beforeAction') or define('beforeAction', 1);
+defined('afterAction') or define('afterAction', 2);
+defined('onException') or define('onException', 3);
+defined('onError') or define('onError', 4);
+defined('onRequest') or define('onRequest', 5);
+defined('onFilter') or define('onFilter', 6);
+defined('onSql') or define('onSql', 'onSql');
+
+/**
+ * 事件类 
+ *
+ * 要触发这里面的方法，要先执行 event::start();
+ * 
+ * @version 2.7.0
+ * @copyright 1997-2019 The PHP Group
+ * @author seatle <seatle@foxmail.com> 
+ * @created time :2019-05-16
+ */
 class event
 {
     public static $config = [];
@@ -32,7 +51,7 @@ class event
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('log');
+        self::$config = config::instance('log')->get();
     }
 
     /**
@@ -137,6 +156,7 @@ class event
     public static function start()
     {
         event::on(onException, ['kaliphp\event', 'on_exception']);
+        event::on(onFilter, ['kaliphp\event', 'on_filter']);
         event::on(onRequest, ['kaliphp\event', 'on_request']);
         event::on(onSql, ['kaliphp\event', 'on_sql']);
     }

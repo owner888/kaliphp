@@ -184,6 +184,7 @@ class kali
         defined('onException') or define('onException', 3);
         defined('onError') or define('onError', 4);
         defined('onRequest') or define('onRequest', 5);
+        defined('onFilter') or define('onFilter', 6);
         defined('onSql') or define('onSql', 'onSql');
     }
 
@@ -199,6 +200,7 @@ class kali
         set_error_handler(['kaliphp\errorhandler', 'error_handler'], E_ALL);
         set_exception_handler(['kaliphp\errorhandler', 'exception_handler']);
 
+        event::start();
         if ( PHP_SAPI != 'cli' ) 
         {
             // 客户端IP
@@ -222,8 +224,6 @@ class kali
         // 启动计时器。。。嘀嗒嘀嗒。。。
         cls_benchmark::mark('total_execution_time_start');
         cls_benchmark::mark('loading_time:_base_classes_start');
-
-        event::start();
     }
 
     /**

@@ -52,7 +52,7 @@ class cache
      */
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('cache');
+        self::$config = config::instance('cache')->get();
         if( ! self::$config['enable'] ) 
         {
             return;

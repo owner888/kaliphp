@@ -15,6 +15,8 @@ use kaliphp\kali;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_profiler;
 
+defined('DS') or define('DS', DIRECTORY_SEPARATOR);
+
 /**
  * 模板引擎实现类
  *
@@ -26,6 +28,11 @@ class tpl
     public static $config = [];
 
     private static $_instance = null;
+
+    public static $template_dir = null;
+    public static $compile_dir = null;
+    public static $cache_dir = null;
+    public static $plugin_dir = null;
 
     // 自定义模版标签填充数据用
     public static $blocksdata = array();
@@ -41,26 +48,44 @@ class tpl
     {
         if (self::$_instance === null)
         {
-            require_once kali::$base_root.'/core/lib/smarty/Smarty.class.php';
-            self::$_instance = new \Smarty();
-            self::$_instance->setTemplateDir(kali::$view_root);
-            self::$_instance->setCompileDir(util::path_exists( kali::$cache_root.DS.'template_'.kali::$app_name.DS.'compile' ));
-            self::$_instance->setCacheDir(util::path_exists( kali::$cache_root.DS.'template_'.kali::$app_name.DS.'compile' ));
-            self::$_instance->addPluginsDir(kali::$base_root.'/core/lib/smarty_plugins');
+            self::$config = config::instance('config')->get('template');
+            $backtrace = debug_backtrace();
+            $file = end($backtrace);
+            $root_path = dirname($file['file']);
 
-            self::$_instance->setLeftDelimiter('<{');
-            self::$_instance->setRightDelimiter('}>');
-            self::$_instance->setCompileCheck(true);
+            if (!self::$template_dir) 
+            {
+                self::$template_dir = $root_path.DS.'template';
+            }
+
+            if (!self::$compile_dir) 
+            {
+                self::$compile_dir = $root_path.DS.'data'.DS.'template'.DS.'compile';
+            }
+            if (!self::$cache_dir) 
+            {
+                self::$cache_dir = $root_path.DS.'data'.DS.'template'.DS.'cache';
+            }
+
+            self::$_instance = new \Smarty();
+            self::$_instance->setTemplateDir(self::$template_dir);
+            self::$_instance->setCompileDir(util::path_exists( self::$compile_dir ));
+            self::$_instance->setCacheDir(util::path_exists( self::$cache_dir ));
+            self::$_instance->addPluginsDir(__dir__.DS.'lib'.DS.'smarty_plugins');
+
+            self::$_instance->setLeftDelimiter(self::$config['left_delimiter']);
+            self::$_instance->setRightDelimiter(self::$config['right_delimiter']);
+            self::$_instance->setCompileCheck(self::$config['compile_check']);
             //self::$_instance->force_compile = true;
             //self::$_instance->debugging = true;
             //self::$_instance->caching = true;
             //self::$_instance->cache_lifetime = 120;
-            //self::$_instance->load_filter('output', 'gzip');
+            foreach (self::$config['filters'] as $k=>$v) 
+            {
+                //self::$_instance->load_filter($k, $v);
+            }
             self::config();
         }
-
-        // html都有title，这里直接赋值好了
-        self::assign('title', kali::$app_title);
 
         return self::$_instance;
     }
@@ -76,6 +101,7 @@ class tpl
         self::$_instance->assign($tpl_var, $value);
     }
     
+    // 这个方法应该去掉，否则不在kali框架下面会有问题
     public static function output ()
     {
         $elapsed = cls_benchmark::elapsed_time('total_execution_time_start', 'total_execution_time_end');
@@ -98,7 +124,8 @@ class tpl
         }
 
         //开启程序分析
-        if (cls_profiler::instance()->enable_profiler === true)
+        //if (cls_profiler::instance()->enable_profiler === true)
+        if (true) 
         {
             $profiler = cls_profiler::instance()->run();
             self::$output = preg_replace('|</body>.*?</html>|is', '', self::$output, -1, $count).$profiler;

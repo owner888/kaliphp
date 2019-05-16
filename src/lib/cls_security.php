@@ -80,12 +80,9 @@ class cls_security
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('security');
+        self::$config = config::instance('config')->get('security');
         self::$cookie_config = config::instance('config')->get('cookie');
-        //print_r(self::$cookie_config);
-        //print_r(req::$config);
-        //print_r(self::$config);
-        //exit;
+
         // Is CSRF protection enabled?
         if (req::$config['csrf_token_on'])
         {

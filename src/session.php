@@ -36,7 +36,7 @@ class session
 
     public static function _init()
     {
-        $cache_config = config::instance('app_config')->get('cache');
+        $cache_config = config::instance('cache')->get();
         self::$config = $cache_config['session'];
         self::$session_type = self::$config['type'];
         self::$session_expire = empty(self::$config['expire']) 

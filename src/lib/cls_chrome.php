@@ -14,6 +14,7 @@ namespace kaliphp\lib;
 
 /**
  * Server Side Chrome PHP debugger class
+ * Install: https://chrome.google.com/webstore/detail/chrome-logger/noaneddfkdjfnfdakjjmocngnfkfehhd
  *
  * @package ChromePhp
  * @author Craig Campbell <iamcraigcampbell@gmail.com>

@@ -213,13 +213,14 @@ class req
     {   
         if( !isset(self::$forms[$formname]) || self::$forms[$formname] === '' )
         {
-            return $defaultvalue;
+            $value = $defaultvalue;
         } 
         else 
         {
-            cls_filter::filter(self::$forms[$formname], $filter_type, self::$throw_error);
-            return self::$forms[$formname];
+            $value = self::$forms[$formname];
         }
+
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**
@@ -229,13 +230,14 @@ class req
     {   
         if( !isset(self::$gets[$formname]) || self::$gets[$formname] === '' )
         {
-            return $defaultvalue;
+            $value = $defaultvalue;
         } 
         else 
         {
-            cls_filter::filter(self::$gets[$formname], $filter_type, self::$throw_error);
-            return self::$gets[$formname];
+            $value = self::$gets[$formname];
         }
+
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**
@@ -245,13 +247,14 @@ class req
     {   
         if( !isset(self::$posts[$formname]) || self::$posts[$formname] === '' )
         {
-            return $defaultvalue;
-        }
+            $value = $defaultvalue;
+        } 
         else 
         {
-            cls_filter::filter(self::$posts[$formname], $filter_type, self::$throw_error);
-            return self::$posts[$formname];
+            $value = self::$posts[$formname];
         }
+
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**
@@ -259,15 +262,16 @@ class req
      */
     public static function cookie( $key = '', $defaultvalue = null, $filter_type = '' )
     {
-        if( !isset(self::$cookies[$key]) || self::$cookies[$key] === '' )
+        if( !isset(self::$cookies[$formname]) || self::$cookies[$formname] === '' )
         {
-            return $defaultvalue;
-        }
+            $value = $defaultvalue;
+        } 
         else 
         {
-            cls_filter::filter(self::$cookies[$key], $filter_type, self::$throw_error);
-            return self::$cookies[$key];
+            $value = self::$cookies[$formname];
         }
+
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**

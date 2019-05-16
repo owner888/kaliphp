@@ -15,6 +15,7 @@ use kaliphp\req;
 use kaliphp\lang;
 use kaliphp\config;
 use kaliphp\util;
+use Exception;
 
 /**
  * 文件上传码类
@@ -43,7 +44,7 @@ class cls_upload
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('upload', 'upload');
+        self::$config = config::instance('upload')->get();
     }
 
     /**
@@ -67,13 +68,13 @@ class cls_upload
             // 目录不存在则生成
             if ( !util::path_exists($upload_dir) ) 
             {
-                throw new \Exception(lang::get('upload_not_exist'));
+                throw new Exception(lang::get('upload_not_exist'));
             }
 
             $allowed_types = explode('|', self::$config['allowed_types']);
             if ( !req::check_subfix($formname, $allowed_types) )
             {
-                throw new \Exception(lang::get('upload_invalid_filetype'));
+                throw new Exception(lang::get('upload_invalid_filetype'));
             }    
 
             $filesize = req::get_file_info($formname, 'size');    
@@ -86,7 +87,7 @@ class cls_upload
                 $max_size = self::$config['max_size'] * 1024;
                 if ( $filesize > $max_size ) 
                 {
-                    throw new \Exception(lang::get('upload_invalid_filesize'));
+                    throw new Exception(lang::get('upload_invalid_filesize'));
                 }
             }
 
@@ -123,7 +124,7 @@ class cls_upload
         {
             if( req::$files[$formname]['error'] == UPLOAD_ERR_INI_SIZE || req::$files[$formname]['error'] == UPLOAD_ERR_FORM_SIZE )
             {
-                throw new \Exception(lang::get('upload_invalid_filesize'));
+                throw new Exception(lang::get('upload_invalid_filesize'));
             }
         }
     }
@@ -149,7 +150,7 @@ class cls_upload
             // 目录不存在则生成
             if ( !util::path_exists($upload_dir) ) 
             {
-                throw new \Exception(lang::get('upload_not_exist'));
+                throw new Exception(lang::get('upload_not_exist'));
             }
 
             // 检查文件类型
@@ -158,7 +159,7 @@ class cls_upload
             $allowed_types = explode('|', self::$config['allowed_types']);
             if ( !in_array($file_ext, $allowed_types) )
             {
-                throw new \Exception(lang::get('upload_invalid_filetype'));
+                throw new Exception(lang::get('upload_invalid_filetype'));
             }    
 
             // 把 data:image/jpeg;base64, 去掉
@@ -170,7 +171,7 @@ class cls_upload
                 $max_size = self::$config['max_size'] * 1024;
                 if ( strlen($filedata) > $max_size ) 
                 {
-                    throw new \Exception(lang::get('upload_invalid_filesize'));
+                    throw new Exception(lang::get('upload_invalid_filesize'));
                 }
             }
 
@@ -224,12 +225,12 @@ class cls_upload
         // 目录不存在则生成
         if ( !util::path_exists($target_dir) ) 
         {
-            throw new \Exception(lang::get('upload_not_exist'));
+            throw new Exception(lang::get('upload_not_exist'));
         }
 
         if ( !util::path_exists($upload_dir) ) 
         {
-            throw new \Exception(lang::get('upload_not_exist'));
+            throw new Exception(lang::get('upload_not_exist'));
         }
 
         // 检查文件类型
@@ -237,7 +238,7 @@ class cls_upload
         $allowed_types = explode('|', self::$config['allowed_types']);
         if ( !in_array($file_ext, $allowed_types) )
         {
-            throw new \Exception(lang::get('upload_invalid_filetype'));
+            throw new Exception(lang::get('upload_invalid_filetype'));
         }    
 
         $realname = req::get_file_info($formname, 'name');
@@ -249,7 +250,7 @@ class cls_upload
         {
             if (!is_dir($target_dir) || !$cleanup_dir = opendir($target_dir)) 
             {
-                throw new \Exception('Failed to open temp directory.');
+                throw new Exception('Failed to open temp directory.');
             }
 
             while (($file = readdir($cleanup_dir)) !== false) 
@@ -275,7 +276,7 @@ class cls_upload
         // Open temp file
         if (!$out = @fopen("{$partpath}_{$chunk}.parttmp", "wb")) 
         {
-            throw new \Exception('Failed to open output stream.');
+            throw new Exception('Failed to open output stream.');
         }
 
         // 普通form表单上传
@@ -283,13 +284,13 @@ class cls_upload
         {
             if ( !req::is_upload_file($formname) ) 
             {
-                throw new \Exception('Failed to move uploaded file.');
+                throw new Exception('Failed to move uploaded file.');
             }
 
             // Read binary input stream and append it to temp file
             if (!$in = @fopen(req::get_tmp_name($formname), "rb")) 
             {
-                throw new \Exception('Failed to open input stream.');
+                throw new Exception('Failed to open input stream.');
             }
         }
         // 字节流上传
@@ -297,7 +298,7 @@ class cls_upload
         {
             if (!$in = @fopen("php://input", "rb")) 
             {
-                throw new \Exception('Failed to open input stream.');
+                throw new Exception('Failed to open input stream.');
             }
         }
 
@@ -333,14 +334,14 @@ class cls_upload
             //解决多进程flock之后，写文件 0字节问题
             if (!$outlock = @fopen($realpath.'_lock', "wb"))
             {
-                throw new \Exception('Failed to open output stream.');
+                throw new Exception('Failed to open output stream.');
             }
 
             if ( flock($outlock, LOCK_EX | LOCK_NB))
             {
                 if (!$out = @fopen($realpath, "wb"))
                 {
-                    throw new \Exception('Failed to open output stream.');
+                    throw new Exception('Failed to open output stream.');
                 }
                 for( $index = 0; $index < $chunks; $index++ ) 
                 {
@@ -383,7 +384,7 @@ class cls_upload
                 $dir_num = util::str2number($filename, self::$config['dir_num']);
                 if ( !util::path_exists($upload_dir.'/'.$dir_num) ) 
                 {
-                    throw new \Exception(lang::get('upload_not_exist'));
+                    throw new Exception(lang::get('upload_not_exist'));
                 }
                 $filename = $dir_num.'/'.$filename;
             }
@@ -396,7 +397,7 @@ class cls_upload
                 $max_size = self::$config['file_max_size'] * 1024;
                 if ( filesize("{$upload_dir}/{$filename}") > $max_size ) 
                 {
-                    throw new \Exception(lang::get('upload_invalid_filesize'));
+                    throw new Exception(lang::get('upload_invalid_filesize'));
                 }
             }
 
@@ -456,7 +457,7 @@ class cls_upload
             $dir_num = util::str2number($filename, self::$config['dir_num']);
             if ( !util::path_exists($upload_dir.'/'.$dir_num) ) 
             {
-                throw new \Exception(lang::get('upload_not_exist'));
+                throw new Exception(lang::get('upload_not_exist'));
             }
             $filename = $dir_num.'/'.$filename;
         }

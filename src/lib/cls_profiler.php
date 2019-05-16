@@ -171,7 +171,7 @@ class cls_profiler {
 	 */
 	protected function _compile_queries()
 	{
-        $db_config = config::instance('app_config')->get('config', 'database');
+        $db_config = config::instance('database')->get();
         // 如果没有启动数据库
         if ( count(db::$queries) == 0 )
         {

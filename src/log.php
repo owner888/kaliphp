@@ -14,6 +14,8 @@ namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
 
+defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
+
 /**
  * 默认日志类
  *
@@ -42,6 +44,7 @@ class log
     //日志记录内存变量
     private static $logs = [];
 
+
     //终端输出变量
     public static $console_out = [];
 
@@ -49,10 +52,14 @@ class log
     private static $max_log = 128;
 
     private static $_date_fmt = 'Y-m-d H:i:s';
+    private static $_log_dir  = '';
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('log');
+        self::$config = config::instance('log')->get();
+        $backtrace = debug_backtrace();
+        $file = end($backtrace);
+        self::$_log_dir = dirname($file['file']);
 
         if ( !empty(self::$config['log_date_format'])) 
         {
@@ -61,7 +68,6 @@ class log
 
         // 程序退出时保存日志
         register_shutdown_function(function () {
-            //echo __method__."\n";
             self::save();
         });
     }
@@ -215,6 +221,7 @@ class log
      */               
     public static function save()
     {
+        // 是否输出到浏览器
         if (SYS_CONSOLE) 
         {
             foreach (self::$console_out as $level=>$msgs) 
@@ -225,9 +232,10 @@ class log
                 }
             }
         }
+        // 保存到日志文件
         foreach(self::$logs as $log_name => $log_datas )
         {
-            $log_file = kali::$log_root.DS.$log_name.'.log';
+            $log_file = self::$_log_dir.DS.'data'.DS.'log'.DS.$log_name.'.log';
             $msgs = '';
             foreach($log_datas as $msg) 
             {

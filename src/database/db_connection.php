@@ -172,7 +172,7 @@ class db_connection
      */
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('config', 'database');
+        self::$config = config::instance('database')->get();
 
         // 链接主库
         list($host, $port) = explode(":", self::$config['host']['master']);

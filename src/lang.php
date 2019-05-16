@@ -36,7 +36,7 @@ class lang
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('language');
+        self::$config = config::instance('config')->get('language');
 
         if ( !empty(self::$config['always_load'])) 
         {
@@ -70,7 +70,8 @@ class lang
         $langfile .= '.ini';
 
         // Load the base file, so any others found can override it
-        $basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
+        //$basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
+        $basepath = __dir__.'/lang/'.$idiom.'/'.$langfile;
         if (empty($idiom) OR ! preg_match('/^[a-z_-]+$/i', $idiom) || !file_exists($basepath) )
         {
             $idiom = empty(self::$config['default']) ? 'en' : self::$config['default'];
@@ -79,7 +80,8 @@ class lang
             if ( !file_exists($basepath) && !empty(self::$config['fallback']) )
             {
                 $idiom = self::$config['fallback'];
-                $basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
+                //$basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
+                $basepath = __dir__.'/lang/'.$idiom.'/'.$langfile;
             }
         }
         

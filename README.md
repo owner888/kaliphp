@@ -16,11 +16,33 @@ composer require owner888/kaliphp
 ```php
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
-use kaliphp;
 use kaliphp\db;
 
+// query
+db::query($sql)->execute($is_master = false);
+
 // select
-db::select()->from()->where()->execute();
+db::select(['id', 'name'])->from('user')->execute();
+
+// insert
+// INSERT INTO `user`(`name`,`email`,`password`)
+// VALUES ("John Random", "john@example.com", "s0_s3cr3t")
+list($insert_id, $rows_affected) = db::insert('user')->set(array(
+    'name'      => 'John Random',
+    'email'     => 'john@example.com',
+    'password'  => 's0_s3cr3t',
+))->execute();
+
+// update
+// UPDATE `user` SET `name` = "John Random" WHERE `id` = "2";
+$rows_affected = db::update('user')
+    ->value("name", "John Random")
+    ->where('id', '=', '2')
+    ->execute();
+
+// delete
+// DELETE FROM `user` WHERE `email` LIKE "%@example.com"
+$rows_affected = db::delete('users')->where('email', 'like', '%@example.com')->execute(); // (int) 7
 ```
 
 ## Other links with kaliphp
