@@ -49,22 +49,19 @@ class tpl
         if (self::$_instance === null)
         {
             self::$config = config::instance('config')->get('template');
-            $backtrace = debug_backtrace();
-            $file = end($backtrace);
-            $root_path = dirname($file['file']);
 
             if (!self::$template_dir) 
             {
-                self::$template_dir = $root_path.DS.'template';
+                self::$template_dir = APPPATH.DS.'template';
             }
 
             if (!self::$compile_dir) 
             {
-                self::$compile_dir = $root_path.DS.'data'.DS.'template'.DS.'compile';
+                self::$compile_dir = APPPATH.DS.'data'.DS.'template'.DS.'compile';
             }
             if (!self::$cache_dir) 
             {
-                self::$cache_dir = $root_path.DS.'data'.DS.'template'.DS.'cache';
+                self::$cache_dir = APPPATH.DS.'data'.DS.'template'.DS.'cache';
             }
 
             self::$_instance = new \Smarty();
@@ -124,8 +121,7 @@ class tpl
         }
 
         //开启程序分析
-        //if (cls_profiler::instance()->enable_profiler === true)
-        if (true) 
+        if (cls_profiler::instance()->enable_profiler === true)
         {
             $profiler = cls_profiler::instance()->run();
             self::$output = preg_replace('|</body>.*?</html>|is', '', self::$output, -1, $count).$profiler;

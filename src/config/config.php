@@ -18,6 +18,23 @@ return [
         'global_xss_filtering' => true,
     ],
 
+    // 安全相关配置
+    'security' => [
+        // 指定某些IP允许开启调试，数组格式为 ['ip1', 'ip2'...]
+        'safe_client_ip' => [
+            '127.0.0.1',
+            '101.1.18.36'
+        ],
+        // IP白名单
+        'ip_whitelist' => [],
+        // IP黑名单
+        'ip_blacklist' => [],
+        // 国家白名单
+        'country_whitelist' => [],
+        // 国家黑名单
+        'country_blacklist' => [],
+    ],
+
     // COOKIE设置
     'cookie' => [
         'prefix'   => 'kali_',                  // cookie前缀

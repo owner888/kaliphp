@@ -15,6 +15,7 @@ use kaliphp\kali;
 use kaliphp\lib\cls_security;
 use kaliphp\lib\cls_filter;
 use kaliphp\lib\cls_cli;
+use kaliphp\lib\cls_ip2location;
 
 /**
  * 处理外部请求变量的类
@@ -262,13 +263,13 @@ class req
      */
     public static function cookie( $key = '', $defaultvalue = null, $filter_type = '' )
     {
-        if( !isset(self::$cookies[$formname]) || self::$cookies[$formname] === '' )
+        if( !isset(self::$cookies[$key]) || self::$cookies[$key] === '' )
         {
             $value = $defaultvalue;
         } 
         else 
         {
-            $value = self::$cookies[$formname];
+            $value = self::$cookies[$key];
         }
 
         return cls_filter::filter($value, $filter_type, self::$throw_error);
@@ -364,8 +365,8 @@ class req
                 return "-";
             }
             $ip = self::ip();
-            $db = new pub_ip2location(kali::$base_root.'/../../IP-COUNTRY-ISP.BIN', pub_ip2location::FILE_IO);
-            $records = $db->lookup($ip, array(pub_ip2location::COUNTRY_CODE));
+            $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
+            $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
             return strtoupper($records['countryCode']);
         }
     }

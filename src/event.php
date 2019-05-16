@@ -13,6 +13,7 @@
 namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
+use kaliphp\lib\cls_security;
 
 //event 默认事件
 defined('beforeAction') or define('beforeAction', 1);

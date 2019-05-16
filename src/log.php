@@ -57,9 +57,7 @@ class log
     public static function _init()
     {
         self::$config = config::instance('log')->get();
-        $backtrace = debug_backtrace();
-        $file = end($backtrace);
-        self::$_log_dir = dirname($file['file']);
+        self::$_log_dir = APPPATH.DS.'data'.DS.'log';
 
         if ( !empty(self::$config['log_date_format'])) 
         {
@@ -235,7 +233,7 @@ class log
         // 保存到日志文件
         foreach(self::$logs as $log_name => $log_datas )
         {
-            $log_file = self::$_log_dir.DS.'data'.DS.'log'.DS.$log_name.'.log';
+            $log_file = self::$_log_dir.DS.$log_name.'.log';
             $msgs = '';
             foreach($log_datas as $msg) 
             {

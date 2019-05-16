@@ -32,7 +32,7 @@ class cls_redis
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('cache');
+        self::$config = config::instance('config')->get('cache');
     }
 
     /**

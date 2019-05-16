@@ -61,7 +61,7 @@ class errorhandler
 
     public static function _init()
     {
-        self::$config = config::instance('app_config')->get('security');
+        self::$config = config::instance('config')->get('security');
 
         if ( in_array(req::ip(), self::$config['safe_client_ip'])) 
         {
@@ -368,7 +368,7 @@ class errorhandler
      */
     public static function fmt_code($code, $message)
     {
-        $msgtpl = config::instance('config')->get($code, 'exception');
+        $msgtpl = config::instance('exception')->get($code);
         if ( empty($msgtpl)) 
         {
             return $message;

@@ -139,7 +139,7 @@ class config
     {
         $config = $this->load_config();
 
-        if ($config && $key == null) 
+        if ($config && $key === null) 
         {
             return $config;
         }
