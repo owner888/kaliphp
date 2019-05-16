@@ -20,7 +20,7 @@ use kaliphp;
 use kaliphp\db;
 
 // select
-select()->from()->where()->execute();
+db::select()->from()->where()->execute();
 ```
 
 ## Other links with kaliphp
