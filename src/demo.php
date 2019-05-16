@@ -1,8 +1,8 @@
 <?php
 
-namespace kali;
+namespace kaliphp;
 
-class Test
+class demo
 {
     public function __construct()
     {
