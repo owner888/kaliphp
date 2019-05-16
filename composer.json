@@ -1,0 +1,21 @@
+{
+    "name"  : "owner888/kaliphp",
+    "description" : "The KaliPHP framework",
+    "type" : "framework",
+    "keywords": ["framework","KaliPHP"],
+    "homepage": "http://www.kaliphp.com",
+    "license" : "MIT",
+    "authors" : [
+        {
+            "name" : "seatle",
+            "email" : "seatle888@gmail.com"
+        }
+    ],
+    "require": {
+        "php" : ">=5.4"
+    },
+    "autoload": {
+        "psr-4": {"kaliphp\\": "./src"}
+    },
+    "minimum-stability" : "dev"
+}
