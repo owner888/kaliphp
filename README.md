@@ -23,7 +23,7 @@ select()->from()->where()->execute();
 
 
 ## Donate
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=">捐款吧哥？</a>
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id="><img src="http://donate.workerman.net/img/donate.png"></a>
 
 ## LICENSE
 
