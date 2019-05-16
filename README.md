@@ -15,6 +15,10 @@ composer require owner888/kaliphp
 ### DB 
 ```php
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
+use kaliphp;
+use kaliphp\db;
+
 // select
 select()->from()->where()->execute();
 ```
