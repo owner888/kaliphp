@@ -82,6 +82,7 @@ class errorhandler
      */
     public static function shutdown_handler()
     {
+  
         // exception_handler 是直接调用的 error_handler
         // 如果 error_handler 函数还抛出异常，这里就会到这里来
 		$last_error = error_get_last();
@@ -89,8 +90,11 @@ class errorhandler
         // Set a mark point for benchmarking
         cls_benchmark::mark('loading_time:_base_classes_end');
 
-        // 输出HTML
-        tpl::output();
+        if (req::method() !== 'CLI')
+        {
+            // 输出HTML
+            tpl::output();
+        }  
 
         // 如果有错误信息，显示
         self::show_error();
