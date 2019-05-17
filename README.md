@@ -16,6 +16,8 @@ composer require owner888/kaliphp
 ```php
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
+// 每个类加载后都会执行 _init() 这个初始化方法
+autoloader::register();
 use kaliphp\db;
 
 // query
