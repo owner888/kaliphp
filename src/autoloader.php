@@ -44,7 +44,7 @@ class autoloader
         } 
         else 
         {
-            if (strpos($class, 'Smarty') !== 0 && self::$_autoload_root_path) 
+            if (self::$_autoload_root_path) 
             {
                 $class_file = self::$_autoload_root_path . DIRECTORY_SEPARATOR . $class_path . '.php';
             }
@@ -52,7 +52,6 @@ class autoloader
             {
                 $class_file = __DIR__ . DIRECTORY_SEPARATOR . "$class_path.php";
             }
-            //echo $class_file."\n";
         }
 
         // include the file if needed

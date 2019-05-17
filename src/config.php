@@ -72,7 +72,7 @@ class config
             $path = __DIR__ . DS . 'config' . DS . $this->_name . '.php';
             $n_path = __DIR__ . DS . 'config' . DS . $env_name . '.php';
             // 合并app/config和数据库里面的数据
-            if (kali::$base_root) 
+            if (defined("APPPATH")) 
             {
                 //$n_path = kali::$base_root . DS . 'config' . DS . $env_name . '.php';
             }

@@ -260,37 +260,37 @@ class kali
                         ? $_SESSION[cls_auth::$auth_hand.'_uid'] 
                         : 0;
                     self::$auth = cls_auth::instance( $uid );
-                    //self::$auth->check_purview($ct, $ac, 1);
-                    //self::$auth->user = self::$auth->get_user();
-                    //// 用户可自定义session过期时间
-                    //kali::$session_expire = self::$auth->user['session_expire'];    
+                    self::$auth->check_purview($ct, $ac, 1);
+                    self::$auth->user = self::$auth->get_user();
+                    // 用户可自定义session过期时间
+                    kali::$session_expire = self::$auth->user['session_expire'];    
 
-                    //$safe_actions = ['logout', 'login', 'authentication'];
-                    //if ( !in_array($ac, $safe_actions) ) 
-                    //{
-                        //if( self::$auth->user['lastip'] != IP ) //换了IP,强制重新登陆
-                        //{
-                            //self::$auth->logout();
-                        //}
-                        //else if(  //登陆IP不在白名单，禁止操作
-                            //!empty(self::$auth->user['safe_ips']) && 
-                            //!in_array(IP, explode(',', str_replace('，', ',', self::$auth->user['safe_ips']))) 
-                        //) 
-                        //{
-                            //$msg = "IP不在白名单内,无法操作";
-                            //if ( kali::$is_ajax ) 
-                            //{
-                                //util::return_json(array(
-                                    //'code' => -10100,
-                                    //'msg'  => $msg
-                                //));
-                            //}
-                            //else 
-                            //{
-                                //cls_msgbox::show('用户权限限制', $msg, '');
-                            //}
-                        //}
-                    //}
+                    $safe_actions = ['logout', 'login', 'authentication'];
+                    if ( !in_array($ac, $safe_actions) ) 
+                    {
+                        if( self::$auth->user['lastip'] != IP ) //换了IP,强制重新登陆
+                        {
+                            self::$auth->logout();
+                        }
+                        else if(  //登陆IP不在白名单，禁止操作
+                            !empty(self::$auth->user['safe_ips']) && 
+                            !in_array(IP, explode(',', str_replace('，', ',', self::$auth->user['safe_ips']))) 
+                        ) 
+                        {
+                            $msg = "IP不在白名单内,无法操作";
+                            if ( kali::$is_ajax ) 
+                            {
+                                util::return_json(array(
+                                    'code' => -10100,
+                                    'msg'  => $msg
+                                ));
+                            }
+                            else 
+                            {
+                                cls_msgbox::show('用户权限限制', $msg, '');
+                            }
+                        }
+                    }
                 }
             }
         }
