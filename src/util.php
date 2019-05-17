@@ -1281,6 +1281,48 @@ class util
             ));
         }
     }
+
+    /**
+     * 合并数组，多维不会覆盖
+     * array_merge_multiple(array1, array2 ....)
+     * @return array
+     */
+    public static function array_merge_multiple()
+    {
+        $arrays = func_get_args();
+        $merged = [];
+        while ($arrays) 
+        {
+            $array = array_shift($arrays);
+            if (!is_array($array)) 
+            {
+                trigger_error(__FUNCTION__ .' encountered a non array argument', E_USER_WARNING);
+                return;
+            }
+
+            if ( !$array ) continue;
+            foreach ($array as $key => $value)
+            {
+                if (is_string($key))
+                {
+                    if (is_array($value) && array_key_exists($key, $merged) && is_array($merged[$key]))
+                    {
+                        $merged[$key] = call_user_func([__CLASS__, __FUNCTION__], $merged[$key], $value);
+                    }
+                    else
+                    {
+                        $merged[$key] = $value;
+                    }
+                }
+                else
+                {
+                    $merged[$key] = $value;
+                }
+            }
+        }
+
+        return $merged;
+    }
 }
 
 /* vim: set expandtab: */

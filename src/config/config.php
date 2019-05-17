@@ -1,5 +1,47 @@
 <?php
 return [
+    // 访问安全配置
+    'security' => [
+        // 指定某些IP允许开启调试，数组格式为 ['ip1', 'ip2'...]
+        'safe_client_ip' => [
+            '127.0.0.1'
+        ],
+        // IP白名单
+        'ip_whitelist' => [],
+        // IP黑名单
+        'ip_blacklist' => [],
+        // 国家白名单
+        'country_whitelist' => [],
+        // 国家黑名单
+        'country_blacklist' => [],
+    ],
+
+    // 访问权限设置
+    'purview' => [
+        // 验证类型: session、cookie
+        'auttype'    => 'session',
+        // 未登录跳转地址
+        'login_url'  => '?ct=index&ac=login',
+        // 手工指定登录后跳转到的地址
+        'return_url' => '?ct=index&ac=index',
+        // 公开的控制器，不需登录就能访问
+        'public'     => [
+            'index' => [
+                'document', 'login', 'logout', 'validate_image', 'reset_pwd'
+            ]
+        ],
+        // 保护的控制器，会员登录后都能访问
+        'protected'  => [
+            'index' => [
+                'index', 'adminmsg'
+            ],
+            'admin' => [
+                'editpwd', 'mypurview'
+            ]
+        ],
+        // 隐私的控制器，会员登录后拥有权限的可以访问
+        'private'    => [],
+    ],
 
     //请求配置
     'request' => [
@@ -18,27 +60,10 @@ return [
         'global_xss_filtering' => true,
     ],
 
-    // 安全相关配置
-    'security' => [
-        // 指定某些IP允许开启调试，数组格式为 ['ip1', 'ip2'...]
-        'safe_client_ip' => [
-            '127.0.0.1',
-            '101.1.18.36'
-        ],
-        // IP白名单
-        'ip_whitelist' => [],
-        // IP黑名单
-        'ip_blacklist' => [],
-        // 国家白名单
-        'country_whitelist' => [],
-        // 国家黑名单
-        'country_blacklist' => [],
-    ],
-
     // COOKIE设置
     'cookie' => [
         'prefix'   => 'kali_',                  // cookie前缀
-        'pwd'      => 'VKghmkBjpipoX',          // cookie加密码，密码前缀
+        'pwd'      => 'kali_pwd',               // cookie加密码，密码前缀
         'expire'   => 7200,                     // cookie超时时间
         'path'     => '/',                      // cookie路径
         'domain'   => null,                     // 正式环境中如果要考虑二级域名问题的应该用 .xxx.com
@@ -91,8 +116,8 @@ return [
 
     // 默认时区，上海时区，东八区
     'timezone_set' => 'Asia/Shanghai',
-    // 默认需要转化的时区，东七区是柬埔寨时间 
-    'to_timezone' => 'ETC/GMT-7',
+    // 默认需要转化的时区 
+    'to_timezone' => 'Asia/Shanghai',
 
     //异常配置
     'exception' => [
@@ -107,4 +132,10 @@ return [
         ]
     ],
 
+    // 框架版本标识
+    'common'  => [
+        'frame_name' => 'KaliPHP',
+        'frame_ui'   => '2',
+        'frame_ver'  => '2.6',
+    ]
 ];

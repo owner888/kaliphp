@@ -1,6 +1,5 @@
 <?php
-
-use kali\core\req;
+use kaliphp\req;
 
 /**
  * 获取不确定的 request 元素（不存在时返回空，以防止出现变量未定义的警告）

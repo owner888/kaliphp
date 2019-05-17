@@ -1,5 +1,5 @@
 <?php
-use kali\core\lang;
+use kaliphp\lang;
 
 /**
  * 获取语言包

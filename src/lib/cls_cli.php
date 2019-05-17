@@ -17,11 +17,6 @@ use Exception;
  * cls_cli class
  *
  * Interact with the command line by accepting input options, parameters and output text
- *
- * @package		phpcall
- * @category	core
- * @author		seatle
- * @link		http://docs.fuelphp.com/classes/cli.html
  */
 class cls_cli
 {

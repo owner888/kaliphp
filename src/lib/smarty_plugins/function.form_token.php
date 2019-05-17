@@ -1,7 +1,6 @@
 <?php
-
-use kali\core\config;
-use kali\core\lib\cls_security;
+use kaliphp\config;
+use kaliphp\lib\cls_security;
 
 /**
  * 获取不确定的 request 元素（不存在时返回空，以防止出现变量未定义的警告）

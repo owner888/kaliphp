@@ -14,6 +14,7 @@ namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\cache;
 use kaliphp\db;
+use kaliphp\util;
 use Exception;
 
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);
@@ -66,24 +67,26 @@ class config
      */
     private function load_config()
     {
-        if (!isset($this->cfg_caches[$this->_name])) 
+        if (!isset($this->_cfg_caches[$this->_name])) 
         {
             $env_name = $this->_name. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
-            $path = __DIR__ . DS . 'config' . DS . $this->_name . '.php';
-            $n_path = __DIR__ . DS . 'config' . DS . $env_name . '.php';
-            // 合并app/config和数据库里面的数据
-            if (defined("APPPATH")) 
+            $this->_cfg_caches[$this->_name] = [];
+
+            //如果有config$env_name优先使用，否则加载哪里config
+            //config优先顺序 数据库->系统config->app config
+            foreach([__DIR__ . DS . 'config' . DS, APPPATH. DS . 'config' . DS] as $path)
             {
-                //$n_path = kali::$base_root . DS . 'config' . DS . $env_name . '.php';
+                if( file_exists($file = $path.$env_name.'.php') || file_exists($file = $path.$this->_name.'.php') )
+                {
+                    $config = require $file; 
+                    $this->_cfg_caches[$this->_name] = util::array_merge_multiple(
+                        (array) $this->_cfg_caches[$this->_name], 
+                        (array) $config
+                    );
+                }
             }
 
-            if ( is_readable($path) || is_readable($n_path) ) 
-            {
-                $config = is_readable($path) ? require($path) : [];
-                $config = is_readable($n_path) ? array_merge($config, require($n_path)) : $config;
-                $this->_cfg_caches[$this->_name] = $config;
-            } 
-            else 
+            if( empty($this->_cfg_caches[$this->_name]) )
             {
                 throw new Exception($path, 1002);
             }
@@ -116,7 +119,7 @@ class config
             }
 
             util::shutdown_function(
-                ['kali\core\cache', 'set'],
+                ['kaliphp\cache', 'set'],
                 [$cache_key, $configs, 0]
             );
         }
