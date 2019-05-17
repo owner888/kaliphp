@@ -20,7 +20,7 @@ use kaliphp\config;
 use kaliphp\cache;
 use kaliphp\session;
 use kaliphp\lib\cls_msgbox;
-use app\model\mod_session;
+use model\mod_session;
 
 /**
  * 管理员权限控制类
