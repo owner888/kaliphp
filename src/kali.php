@@ -357,6 +357,7 @@ class kali
                 'crond_runtime'  => 'crond_runtime_'.$cache_key,
             ];
 
+            $cache_time = 86400;
             $runtime_start = microtime(true);
             if( function_exists('pcntl_fork') )//支持多进程优先使用，防止某个crond中断导致其他的无法执行
             {
@@ -376,8 +377,8 @@ class kali
                     $lasttime = ceil($runtime_start);
                     $runtime = number_format(microtime(true) - $runtime_start, 3);
 
-                    cache::set($keys['crond_lasttime'], $lasttime);
-                    cache::set($keys['crond_runtime'], $runtime);
+                    cache::set($keys['crond_lasttime'], $lasttime, $cache_time);
+                    cache::set($keys['crond_runtime'], $runtime, $cache_time);
                     // 这里用0表示子进程正常退出
                     exit(0);
                 }
@@ -388,8 +389,8 @@ class kali
                 $lasttime = ceil($runtime_start);
                 $runtime = number_format(microtime(true) - $runtime_start, 3);
 
-                cache::set($keys['crond_lasttime'], $lasttime);
-                cache::set($keys['crond_runtime'], $runtime);
+                cache::set($keys['crond_lasttime'], $lasttime, $cache_time);
+                cache::set($keys['crond_runtime'], $runtime, $cache_time);
             }
 
             echo "\n\n";
