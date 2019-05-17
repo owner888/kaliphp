@@ -8,6 +8,8 @@ PHP 5.4 or Higher
 
 ```
 composer require owner888/kaliphp
+# need template
+composer require smarty/smarty
 ```
 
 ## Basic Usage
@@ -16,7 +18,7 @@ composer require owner888/kaliphp
 ```php
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
-// 每个类加载后都会执行 _init() 这个初始化方法
+// The _init() method will execute when the class is loaded.
 autoloader::register();
 use kaliphp\db;
 
