@@ -31,7 +31,7 @@ class cls_menu
 
     public static function _init()
     {
-        $menu_file = kali::$app_config['purview_config']['menu_file'];
+        $menu_file = kali::$app_config['menu_file'];
         self::$menu_file = APPPATH.DS.'config'.DS.$menu_file;
         self::$menu_data = util::get_file(self::$menu_file);
         if ( empty(self::$menu_data)) 

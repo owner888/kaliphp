@@ -85,8 +85,8 @@ class lang
             {
                 if( 
                     !empty($idiom) && //空的idom忽略
-                    !isset($loaded_files[$filepath]) && //已经加载过的不需要加载
-                    file_exists($filepath = $path. DS .$idiom . DS .$langfile )
+                    file_exists($filepath = $path. DS .$idiom . DS .$langfile ) &&
+                    !isset($loaded_files[$filepath]) //已经加载过的不需要加载
                 )
                 {
                     $lang = parse_ini_file($filepath);

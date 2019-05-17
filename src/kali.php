@@ -22,8 +22,8 @@ use kaliphp\cache;
 use kaliphp\event;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
-use kaliphp\lib\cls_auth;
 use kaliphp\lib\cls_msgbox;
+use model\mod_auth;
 
 // 严格开发模式
 error_reporting( E_ALL );
@@ -75,7 +75,7 @@ class kali
     /**
      * 权限类的实例
      *
-     * @var $auth cls_auth
+     * @var $auth mod_auth
      */
     public static $auth = null;
 
@@ -138,6 +138,8 @@ class kali
             exit(self::fmt_code(1007, [self::$cache_root]));
         }
 
+        // 设置一下路径，否则下面的control和model会找不到类
+        autoloader::set_root_path(APPPATH);
         self::init();
     }
 
@@ -230,70 +232,18 @@ class kali
     public static function run()
     {
         // 获取当前控制器及action
-        self::_get_action();
+        $ct = self::$ct = preg_replace("/[^0-9a-z_]/i", '', req::item('ct', 'index') );
+        $ac = self::$ac = preg_replace("/[^0-9a-z_]/i", '', req::item('ac', 'index') );
 
         // 触发请求事件
         event::trigger(onRequest);
-
-        $ct = self::$ct;
-        $ac = self::$ac;
-
-        // 初始化权限类
-        if( isset(self::$app_config['purview_config']) )
+        // 检查权限 
+        if( isset(self::$app_config['check_purview_handle']) && is_callable(self::$app_config['check_purview_handle']) )
         {
-            $purview_config = self::$app_config['purview_config'];
-
-            // 自动检查权限 
-            if( $purview_config['auto_check'] )
-            {
-                //自定义验证 
-                if( isset($purview_config['auto_check_handle']) && is_callable($purview_config['auto_check_handle']) )
-                {
-                    call_user_func_array($purview_config['auto_check_handle'], [$ct, $ac]);
-                }
-                else //默认验证
-                {
-                    $uid = isset($_SESSION[cls_auth::$auth_hand.'_uid']) 
-                        ? $_SESSION[cls_auth::$auth_hand.'_uid'] 
-                        : 0;
-                    self::$auth = cls_auth::instance( $uid );
-                    self::$auth->check_purview($ct, $ac, 1);
-                    self::$auth->user = self::$auth->get_user();
-                    // 用户可自定义session过期时间
-                    kali::$session_expire = self::$auth->user['session_expire'];    
-
-                    $safe_actions = ['logout', 'login', 'authentication'];
-                    if ( !in_array($ac, $safe_actions) ) 
-                    {
-                        if( self::$auth->user['lastip'] != IP ) //换了IP,强制重新登陆
-                        {
-                            self::$auth->logout();
-                        }
-                        else if(  //登陆IP不在白名单，禁止操作
-                            !empty(self::$auth->user['safe_ips']) && 
-                            !in_array(IP, explode(',', str_replace('，', ',', self::$auth->user['safe_ips']))) 
-                        ) 
-                        {
-                            $msg = "IP不在白名单内,无法操作";
-                            if ( req::is_ajax() ) 
-                            {
-                                util::return_json(array(
-                                    'code' => -10100,
-                                    'msg'  => $msg
-                                ));
-                            }
-                            else 
-                            {
-                                cls_msgbox::show('用户权限限制', $msg, '');
-                            }
-                        }
-                    }
-                }
-            }
+            call_user_func_array(self::$app_config['check_purview_handle'], [$ct, $ac]); 
         }
 
         $ctl  = 'ctl_'.$ct;
-
         //禁止 _ 开头的方法
         if( $ac[0]=='_' )
         {
@@ -305,7 +255,6 @@ class kali
 
         event::trigger(beforeAction);
         cls_benchmark::mark('controller_execution_time_( '.$ct.' / '.$ac.' )_start');
-        autoloader::set_root_path(APPPATH);
         $controller = "control\\".$ctl;
         $instance = new $controller();
         $instance->$ac();
@@ -403,18 +352,6 @@ class kali
         echo "All done in $time seconds\t $memory\n";
     }
 
-    /**
-     * 获取ac和ct
-     */
-    private static function _get_action()
-    {
-        self::$ct = preg_replace("/[^0-9a-z_]/i", '', req::item('ct') );
-        self::$ac = preg_replace("/[^0-9a-z_]/i", '', req::item('ac') );
-        if( self::$ct=='' ) self::$ct = 'index';
-        if( self::$ac=='' ) self::$ac = 'index';
-    }
-
-    
     /**
      * 格式化代码为字符串
      * @param int $code
