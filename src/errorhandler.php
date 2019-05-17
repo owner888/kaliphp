@@ -122,7 +122,7 @@ class errorhandler
         $log_type = 'debug';
 
         //ajax和api接口直接输出json
-        if ( kali::$is_ajax ) 
+        if ( req::is_ajax() ) 
         {
             $log_type = 'ajax';
         }
@@ -170,7 +170,7 @@ class errorhandler
     public static function show_error()
     {
         // ajax/app接口报错
-        if ( kali::$is_ajax && self::$_debug_error_msg != '' ) 
+        if ( req::is_ajax() && self::$_debug_error_msg != '' ) 
         {
             log::debug("Error Trace:\n".self::$_debug_error_msg);
 

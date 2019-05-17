@@ -55,6 +55,7 @@ class lang
      */
     public static function load($langfile, $idiom = '')
     {
+        static $loaded_files = [];
         if (is_array($langfile))
         {
             foreach ($langfile as $value)
@@ -71,30 +72,34 @@ class lang
 
         // Load the base file, so any others found can override it
         //$basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
-        $basepath = __dir__.'/lang/'.$idiom.'/'.$langfile;
-        if (empty($idiom) OR ! preg_match('/^[a-z_-]+$/i', $idiom) || !file_exists($basepath) )
-        {
-            $idiom = empty(self::$config['default']) ? 'en' : self::$config['default'];
-            $basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
-            // 默认的语言包不存在就调用回调语言包
-            if ( !file_exists($basepath) && !empty(self::$config['fallback']) )
-            {
-                $idiom = self::$config['fallback'];
-                //$basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
-                $basepath = __dir__.'/lang/'.$idiom.'/'.$langfile;
-            }
-        }
-        
-        if (file_exists($basepath))
-        {
-            //include($basepath);
-            $lang = parse_ini_file($basepath);
+        $basepath = __dir__ . DS . 'lang' . DS; //src语言地址
+        $app_path = APPPATH . DS . 'lang' . DS; //app语言地址
 
-            self::$is_loaded[$langfile] = $idiom;
-            self::$language = array_merge(self::$language, $lang);
-            // 将数组的所有的键都转换为大写字母或小写字母
-            self::$language = array_change_key_case(self::$language);
-            return true;
+        //默认语言
+        $default_idiom = empty(self::$config['default']) ? 'en' : self::$config['default'];
+        //优先用户传的->默认idiom->配置中的fallback
+        $idioms = array_unique([$idiom, $default_idiom, util::get_value(self::$config, 'fallback')]);
+        foreach([$basepath, $app_path] as $path)
+        {
+            foreach($idioms as $idiom)
+            {
+                if( 
+                    !empty($idiom) && //空的idom忽略
+                    !isset($loaded_files[$filepath]) && //已经加载过的不需要加载
+                    file_exists($filepath = $path. DS .$idiom . DS .$langfile )
+                )
+                {
+                    $lang = parse_ini_file($filepath);
+                    self::$is_loaded[$langfile] = $idiom;
+                    //合并其他语言包
+                    self::$language = util::array_merge_multiple((array)self::$language, (array)$lang);
+                    // 将数组的所有的键都转换为大写字母或小写字母
+                    self::$language = array_change_key_case(self::$language);
+
+                    $loaded_files[$filepath] = true;
+                    break;
+                }
+            }
         }
 
         return false;

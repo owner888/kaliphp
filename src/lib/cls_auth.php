@@ -308,7 +308,7 @@ class cls_auth
             // 用户权限不足(用户权限+用户组权限)
             else if( $rs == -1 )
             {
-                if ( kali::$is_ajax ) 
+                if ( req::is_ajax() ) 
                 {
                     util::return_json(array(
                         'code' => -1,
@@ -323,7 +323,7 @@ class cls_auth
             // 未登录用户
             else if( $rs == 0 )
             {
-                if ( kali::$is_ajax ) 
+                if ( req::is_ajax() ) 
                 {
                     util::return_json(array(
                         'code' => -1,

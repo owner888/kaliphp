@@ -86,9 +86,6 @@ class kali
      */
     //public static $user = null;
 
-    // 是否ajax/app请求
-    public static $is_ajax = false;
-
     // 当前ct和ac
     public static $ct = '';
     public static $ac = '';
@@ -278,7 +275,7 @@ class kali
                         ) 
                         {
                             $msg = "IP不在白名单内,无法操作";
-                            if ( kali::$is_ajax ) 
+                            if ( req::is_ajax() ) 
                             {
                                 util::return_json(array(
                                     'code' => -10100,
@@ -320,7 +317,7 @@ class kali
     {
         $index_time_start = microtime(true);
 
-        $config = config::instance('config')->get('crond_timer', 'crond');
+        $config = config::instance('crond')->get();
 
         // 提取要执行的文件
         $exe_file = array();

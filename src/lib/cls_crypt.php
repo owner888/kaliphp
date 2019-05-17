@@ -12,6 +12,7 @@
 
 namespace kaliphp\lib;
 use kaliphp\log;
+use Exception;
 
 class cls_crypt
 {
@@ -29,7 +30,7 @@ class cls_crypt
         {
             $msg = '加密Key必须满足32位';
             log::error($msg, __method__);
-            throw new \Exception($msg);
+            throw new Exception($msg);
         }
 
         if ( $type == 'kali' && function_exists('kali_encrypt') ) 
@@ -61,7 +62,7 @@ class cls_crypt
         {
             $msg = '加密Key必须满足32位';
             log::error($msg, __method__);
-            throw new \Exception($msg);
+            throw new Exception($msg);
         }
 
         $value = self::safe_b64decode($value);

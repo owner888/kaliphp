@@ -134,7 +134,7 @@ class tpl
         echo self::$output;
 
         // 新版本没有介入xhprof
-        //if( PHP_SAPI !== 'cli' && !kali::$is_ajax ) 
+        //if( PHP_SAPI !== 'cli' && !req::is_ajax() ) 
         //{
             //debug_hanlde_xhprof();
         //}

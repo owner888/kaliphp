@@ -48,13 +48,13 @@ class cls_filter
         // 没指定过滤类型或变量为数组，不处理
         if( $type=='' && is_array($val) )
         {
-            return;
+            return $val;
         }
 
         if ( is_array($type)) 
         {
             $val = call_user_func($type, $val);
-            return;
+            return $val;
         }
 
         $type = strtolower( $type );

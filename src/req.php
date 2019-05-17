@@ -45,6 +45,9 @@ class req
     // 文件变量
     public static $files = array();
 
+    // 这个可以强制设置
+    public static $is_force_ajax = false;
+
     /**
      * Raw input stream data
      * Holds a cache of php://input contents
@@ -101,12 +104,6 @@ class req
         self::$config = config::instance('config')->get('request');
 
         $magic_quotes_gpc = ini_get('magic_quotes_gpc');
-
-        // kali::$is_ajax 是可以手动指定的
-        if ( req::is_ajax() ) 
-        {
-            kali::$is_ajax = true;
-        }
 
         // 处理get
         if( count($_GET) > 0 )
@@ -330,12 +327,12 @@ class req
         // 如果是通过IP来获取城市地址的
         if (!empty($ip)) 
         {
-            if (!file_exists(kali::$base_root.'/../../IP-COUNTRY-ISP.BIN')) 
+            if (!file_exists(APPPATH.'/../../IP-COUNTRY-ISP.BIN')) 
             {
                 return "HK";
             }
-            $db = new pub_ip2location(kali::$base_root.'/../../IP-COUNTRY-ISP.BIN', pub_ip2location::FILE_IO);
-            $records = $db->lookup($ip, array(pub_ip2location::COUNTRY_CODE));
+            $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
+            $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
             return strtoupper($records['countryCode']);
         }
 
@@ -360,7 +357,7 @@ class req
         else 
         {
             // /data/web 目录
-            if (!file_exists(kali::$base_root.'/../../IP-COUNTRY-ISP.BIN')) 
+            if (!file_exists(APPPATH.'/../../IP-COUNTRY-ISP.BIN')) 
             {
                 return "-";
             }
@@ -471,6 +468,12 @@ class req
      */
     public static function is_ajax()
     {
+        // 如果强制设置为true，一般用于接口
+        if (self::$is_force_ajax === true) 
+        {
+            return true;
+        }
+
         return (static::server('HTTP_X_REQUESTED_WITH') !== null) and strtolower(static::server('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest';
     }
 
