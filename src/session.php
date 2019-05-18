@@ -103,9 +103,9 @@ class session
     public static function write( $id, $sess_data )
     {
         // 针对不同用户不同设置不同的过期时间
-        if ( kali::$session_expire )
+        if ( !empty(kali::$auth->user['session_expire']) )
         {
-            self::$session_expire = kali::$session_expire;
+            self::$session_expire = kali::$auth->user['session_expire'];
         }
         cache::set( 'session_'.$id, $sess_data, self::$session_expire );
         // 启动session的情况下，这个方法是最后执行的，比register_shutdown_function还要后面

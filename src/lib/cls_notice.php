@@ -24,7 +24,7 @@ class cls_notice
 
     public static function _init()
     {
-        //self::$config = config::instance('app_config')->get('notice');
+        //self::$config = config::instance('config')->get('notice');
     }
 
     /**

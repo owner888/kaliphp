@@ -23,7 +23,6 @@ use kaliphp\event;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
 use kaliphp\lib\cls_msgbox;
-use model\mod_auth;
 
 // 严格开发模式
 error_reporting( E_ALL );
@@ -53,13 +52,6 @@ class kali
 {
     // app配置数组
     public static $app_config = [];
-
-    // app标题(一些自动化程序默认会把这个作为title)
-    public static $app_title  = '';
-
-    // app名称(必须为无空格英文，模板默认目录)
-    public static $app_name   = 'app';
-
     public static $base_root;
     public static $view_root;
     public static $data_root;
@@ -67,24 +59,12 @@ class kali
     public static $log_root;
     public static $extends_root;
 
-    // 是否启动session
-    public static $session_start = false;
-    // 是否设置session过期时间
-    public static $session_expire = false;
-
     /**
      * 权限类的实例
      *
-     * @var $auth mod_auth
+     * @var $auth
      */
     public static $auth = null;
-
-    /**
-     * 用户类的实例
-     *
-     * @var $auth cls_user
-     */
-    //public static $user = null;
 
     // 当前ct和ac
     public static $ct = '';
@@ -102,19 +82,6 @@ class kali
 
         // 获取配置
         self::$app_config = $config;
-
-        if( isset($config['app_title']) ) 
-        {
-            self::$app_title = $config['app_title'];
-        }
-        if( isset($config['app_name']) ) 
-        {
-            self::$app_name = $config['app_name'];
-        }
-        if( isset($config['session_start']) && $config['session_start'] ) 
-        {
-            self::$session_start = true;
-        }
 
         self::$base_root    = APPPATH;
         self::$extends_root = self::$base_root.DS."extends";
@@ -210,7 +177,7 @@ class kali
             // 触发过滤事件，可对IP，访问国家进行过滤处理
             event::trigger(onFilter);
 
-            if ( self::$session_start ) 
+            if ( self::$app_config['session_start'] ) 
             {
                 // session接管
                 session::handle();
@@ -237,10 +204,11 @@ class kali
 
         // 触发请求事件
         event::trigger(onRequest);
+
         // 检查权限 
-        if( isset(self::$app_config['check_purview_handle']) && is_callable(self::$app_config['check_purview_handle']) )
+        if( isset(self::$app_config['check_purview_handle']) )
         {
-            call_user_func_array(self::$app_config['check_purview_handle'], [$ct, $ac]); 
+            kali::$auth = call_user_func_array(self::$app_config['check_purview_handle'], [$ct, $ac]); 
         }
 
         $ctl  = 'ctl_'.$ct;

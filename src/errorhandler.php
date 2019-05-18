@@ -82,7 +82,6 @@ class errorhandler
      */
     public static function shutdown_handler()
     {
-  
         // exception_handler 是直接调用的 error_handler
         // 如果 error_handler 函数还抛出异常，这里就会到这里来
 		$last_error = error_get_last();
@@ -102,7 +101,7 @@ class errorhandler
         // 运行放进后台的操作
         util::shutdown_function(null, array(), true);
 
-        //$config = config::instance('app_config')->get('cache');
+        //$config = config::instance('cache')->get();
         //$sess_config = $config['session'];
         // 这里的执行在session::write()之前，释放会导致session无法写入
         // 所以session如果采用cache方式，这里不要释放，在 sesson::write() 里面释放
