@@ -12,6 +12,7 @@
 
 namespace kaliphp;
 use kaliphp\kali;
+use kaliphp\lib\cls_redis_lock;
 use kaliphp\lib\cls_snowflake;
 
 /**
