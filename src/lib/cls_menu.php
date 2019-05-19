@@ -14,6 +14,7 @@ namespace kaliphp\lib;
 use kaliphp\kali;
 use kaliphp\util;
 use kaliphp\lang;
+use Exception;
 
 /**
  * UI框架栏目 
@@ -22,7 +23,7 @@ use kaliphp\lang;
  */
 class cls_menu
 {
-    public static $menu_file = 'admin_menu.xml';
+    public static $menu_file = 'menu.xml';
     public static $menu_data = null;
     public static $menu_json = null;
     public static $apps = array();
@@ -31,12 +32,12 @@ class cls_menu
 
     public static function _init()
     {
-        $menu_file = kali::$app_config['menu_file'];
+        $menu_file = isset(kali::$config['menu_file']) ? kali::$config['menu_file'] : self::$menu_file;
         self::$menu_file = APPPATH.DS.'config'.DS.$menu_file;
         self::$menu_data = util::get_file(self::$menu_file);
         if ( empty(self::$menu_data)) 
         {
-            throw new \Exception(self::$menu_file.' not found');
+            throw new Exception(self::$menu_file.' not found');
         }
 
     }

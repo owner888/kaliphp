@@ -16,13 +16,9 @@ use kaliphp\config;
 use kaliphp\req;
 use kaliphp\session;
 use kaliphp\cache;
-//use kaliphp\router;
-//use kaliphp\socket;
-//use kaliphp\log;
 use kaliphp\event;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
-use kaliphp\lib\cls_msgbox;
 
 // 严格开发模式
 error_reporting( E_ALL );
@@ -37,11 +33,6 @@ ini_set('display_errors', 'On');
     //ini_set('display_errors', 'Off');
 //}
 
-# 基本加载
-//include __DIR__.'/config.php';
-//include __DIR__.'/event.php';
-//include __DIR__.'/log.php';
-
 /**
  * The core of the framework.
  *
@@ -51,13 +42,11 @@ ini_set('display_errors', 'On');
 class kali
 {
     // app配置数组
-    public static $app_config = [];
+    public static $config = [];
     public static $base_root;
-    public static $view_root;
     public static $data_root;
     public static $cache_root;
     public static $log_root;
-    public static $extends_root;
 
     /**
      * 权限类的实例
@@ -81,10 +70,9 @@ class kali
         self::define();
 
         // 获取配置
-        self::$app_config = $config;
+        self::$config = $config;
 
         self::$base_root    = APPPATH;
-        self::$extends_root = self::$base_root.DS."extends";
         self::$data_root    = self::$base_root.DS."data";
         self::$log_root     = self::$base_root.DS."data".DS."log";
         self::$cache_root   = self::$base_root.DS."data".DS."cache";
@@ -93,8 +81,6 @@ class kali
         {
             exit(self::fmt_code(1001, [self::$base_root]));
         }
-
-        self::$view_root = self::$base_root.DS."template";
 
         if ( !is_writable(self::$log_root) && !@mkdir(self::$log_root) )
         {
@@ -165,6 +151,7 @@ class kali
         set_exception_handler(['kaliphp\errorhandler', 'exception_handler']);
 
         event::start();
+
         if ( PHP_SAPI != 'cli' ) 
         {
             // 客户端IP
@@ -177,7 +164,7 @@ class kali
             // 触发过滤事件，可对IP，访问国家进行过滤处理
             event::trigger(onFilter);
 
-            if ( self::$app_config['session_start'] ) 
+            if ( self::$config['session_start'] ) 
             {
                 // session接管
                 session::handle();
@@ -206,9 +193,9 @@ class kali
         event::trigger(onRequest);
 
         // 检查权限 
-        if( isset(self::$app_config['check_purview_handle']) )
+        if( isset(self::$config['check_purview_handle']) )
         {
-            kali::$auth = call_user_func_array(self::$app_config['check_purview_handle'], [$ct, $ac]); 
+            kali::$auth = call_user_func_array(self::$config['check_purview_handle'], [$ct, $ac]); 
         }
 
         $ctl  = 'ctl_'.$ct;
