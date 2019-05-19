@@ -8,7 +8,7 @@ PHP 5.4 or Higher
 
 ```
 composer require owner888/kaliphp
-# need template
+# If a template is needed
 composer require smarty/smarty
 ```
 
