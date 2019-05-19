@@ -17,5 +17,8 @@
     "autoload": {
         "psr-4": {"kaliphp\\": "./src"}
     },
+    "files": [
+        "src/autoloader.php"
+    ],
     "minimum-stability" : "dev"
 }

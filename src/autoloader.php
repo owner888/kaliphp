@@ -80,5 +80,7 @@ class autoloader
     }
 }
 
+autoloader::register();
+
 /* vim: set expandtab: */
 
