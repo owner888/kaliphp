@@ -94,6 +94,11 @@ class cls_redis
         {
             $this->handler->auth($config["pass"]);
         }
+        if( $config['dbindex'] )
+        {
+            $this->handler->select($config['dbindex']);
+        }
+        // 不需要了，连不上Redis自己会throw
         //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
 
         // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
