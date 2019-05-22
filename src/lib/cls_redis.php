@@ -205,6 +205,33 @@ class cls_redis
         return $serialize ? $this->decode($this->handler->rpop($key)) : $this->handler->rpop($key);
     }
 
+    public function rpush( $key, $value, $serialize = null )
+    {
+        if (!$this->handler)
+        {
+            $this->connect();
+        }
+        if ($serialize === null)
+        {
+            $serialize = self::$config['serialize'];
+        }
+        $value = $serialize ? $this->encode($value) : $value;
+        return $this->handler->rpush($key, $value);
+    }
+
+    public function lpop( $key, $serialize = null )
+    {
+        if (!$this->handler)
+        {
+            $this->connect();
+        }
+        if ($serialize === null)
+        {
+            $serialize = self::$config['serialize'];
+        }
+        return $serialize ? $this->decode($this->handler->lpop($key)) : $this->handler->lpop($key);
+    }
+
     public function encode($value)
     {
         return json_encode($value, JSON_UNESCAPED_UNICODE);
