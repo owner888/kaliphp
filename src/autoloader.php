@@ -38,9 +38,15 @@ class autoloader
     public static function autoload($class)
     {
         $class_path = str_replace('\\', DIRECTORY_SEPARATOR, $class);
+        // 框架类库
         if (strpos($class, 'kaliphp\\') === 0) 
         {
             $class_file = __DIR__ . substr($class_path, strlen('kaliphp')) . '.php';
+        } 
+        // 公共类库
+        elseif (strpos($class, 'common\\') === 0) 
+        {
+            $class_file = self::$_autoload_root_path . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $class_path . '.php';
         } 
         else 
         {

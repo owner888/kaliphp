@@ -146,6 +146,8 @@ class db_connection
      */
     protected $_as_object = false;
 
+    protected $_as_sql = false;
+
     protected $_as_row = false;
 
     protected $_as_field = false;
@@ -416,6 +418,11 @@ class db_connection
         // Compile the SQL query
         $sql = $sql ? $sql : $this->compile();
 
+        if ( $this->_as_sql ) 
+        {
+            return $sql;
+        }
+
         // 用户手动指定使用主数据库 或 从数据库状态不可用
         if ( $is_master === true || $this->_enable_slave === false )
         {
@@ -459,7 +466,7 @@ class db_connection
         }
         catch (Exception $e)
         {
-            $errno = $e->getCode();
+            $errno  = $e->getCode();
             $errmsg = $e->getMessage();
             // Mysql 等待超时
             if ($errno == 2013 || $errno == 2006) 
@@ -2340,16 +2347,9 @@ class db_connection
         return $this;
     }
 
-    public function as_row()
+    public function as_sql()
     {
-        $this->_as_row = true;
-
-        return $this;
-    }
-
-    public function as_field()
-    {
-        $this->_as_field = true;
+        $this->_as_sql = true;
 
         return $this;
     }
@@ -2364,6 +2364,20 @@ class db_connection
     public function as_result($class = true)
     {
         $this->_as_result = $class;
+
+        return $this;
+    }
+
+    public function as_row()
+    {
+        $this->_as_row = true;
+
+        return $this;
+    }
+
+    public function as_field()
+    {
+        $this->_as_field = true;
 
         return $this;
     }
