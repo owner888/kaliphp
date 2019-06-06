@@ -566,6 +566,10 @@ class db_connection
         {
             $select = explode(',', $select);
         }
+        elseif (is_object($select))
+        {
+            $this->_select[] = $select;
+        }
 
         foreach ($select as $val)
         {
@@ -2439,6 +2443,7 @@ class db_connection
         $this->_set        = array();
         $this->_atts       = array();
 
+        $this->_as_sql     = false;
         $this->_as_object  = false;
         $this->_as_row     = false;
         $this->_as_field   = false;
