@@ -1170,6 +1170,11 @@ class db_connection
             $sql .= ' '.$this->_compile_order_by($this->_order_by);
         }
 
+        if ( $this->_as_row || $this->_as_field ) 
+        {
+            $this->_limit = 1;   
+        }
+
         if ($this->_limit !== NULL)
         {
             // Add limiting
@@ -1706,7 +1711,7 @@ class db_connection
             }
 
             //兼容`xxx`和values(`xxx`)
-            if( !preg_match('#values\([^\)]+\)#i', $value) )
+            if( !preg_match('#values\s*\([^\)]+\)#i', $value) )
             {
                 $value = $this->quote_value(array($value, $column));
             }
@@ -2484,7 +2489,7 @@ class db_connection
     public function end()
     {
         db::$queries[] = 'autocommit true';
-        $this->autocommit(true);
+        return $this->autocommit(true);
     }
 
     public function get_exception_trace($e) 
