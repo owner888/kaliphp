@@ -11,12 +11,19 @@
  */
 
 namespace kaliphp\lib;
+
 interface cls_auth 
 {
-	//验证类必须扩展这个函数
-	public static function auth($ct, $ac);
+    /**
+     * 验证类必须扩展这个函数
+     * 
+     * @param string $ct    要验证的控制器
+     * @param string $ac    要验证的控制器方法
+     * @return void
+     */
+    public static function auth( string $ct, string $ac );
 
-	/**
+    /**
      * 检查密码
      * 
      * @param string $password          明文
@@ -33,22 +40,22 @@ interface cls_auth
     /**
      * 检测用户登录
      *
-     * @param mixed $account    登录账号：会员名、邮箱、手机
-     * @param mixed $loginpwd   登录密码
-     * @param float $remember   记住登录
+     * @param string $account   登录账号：会员名、邮箱、手机
+     * @param string $loginpwd  登录密码
+     * @param int $remember     记住登录
      * @return array $userinfo  登录正常返回用户信息，否则抛异常
      */
-    public function check_user( $account, $loginpwd, $remember = 0 );
+    public function check_user( string $account, string $loginpwd, int $remember = 0 );
 
     /**
      * 检测权限
-     *
-     * @parem $mod
-     * @parem $action
-     * @parem backtype 返回类型， 1--是由权限控制程序直接处理
-     * @return int  对于没权限的用户会提示或跳转到 ct=index&ac=login
+     * 
+     * @param string $mod
+     * @param string $action
+     * @param int $backtype     返回类型， 1--是由权限控制程序直接处理
+     * @return mixed            对于没权限的用户会提示或跳转到 ct=index&ac=login
      */
-    public function check_purview($mod, $action, $backtype = 1);
+    public function check_purview( string $mod, string $action, int $backtype = 1 );
 
     /**
      * 注销登录
