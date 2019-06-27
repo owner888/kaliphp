@@ -164,7 +164,7 @@ class kali
             // 触发过滤事件，可对IP，访问国家进行过滤处理
             event::trigger(onFilter);
 
-            if ( self::$config['session_start'] ) 
+            if ( isset(self::$config['session_start']) && self::$config['session_start'] ) 
             {
                 // session接管
                 session::handle();
