@@ -479,6 +479,9 @@ class db_connection
                 return $this->execute($is_master, $params, $sql);
             }
 
+            // 如果发生错误，应该重置，否则会发生不可预见的问题
+            $this->reset();
+
             // 没有设置忽略错误
             if ( !isset($this->_atts['ignore']) || !$this->_atts['ignore'] ) 
             {

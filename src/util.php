@@ -813,7 +813,34 @@ class util
     public static function return_json($array)
     {
         header('Content-type: application/json');
-        exit(json_encode($array, JSON_UNESCAPED_UNICODE));
+        exit(json_encode($array, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT));
+    }
+
+    public static function json_encode( $array )
+    {
+        return json_encode($array, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+    }
+
+    // 空数组转对象
+    public static function empty_array2object( $str )
+    {
+        // Is the string an array?
+        if ( !is_array($str) )
+        {
+            return $str;
+        }
+
+        // 遇到空数组对象[{}]就挂逼了
+        if ( empty($str) ) 
+        {
+            return new \stdClass(); 
+        }
+
+        foreach ($str as $k => &$v)
+        {
+            $str[$k] = self::empty_array2object($v);
+        }
+        return $str;
     }
 
     /**
