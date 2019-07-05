@@ -17,11 +17,26 @@ use kaliphp\lib\cls_redis;
 /**
  * 在redis上实现分布式锁
  * 参考：https://mp.weixin.qq.com/s/WS3jO4AKktbra7x_QDu4VA
+ 
+    // 遇锁立刻返回
+    if (!cls_redis_lock::lock('test'))
+    {
+        show_error();
+        return;
+    }
+    do_job();
+    cls_redis_lock::unlock('test');
+
+    // 遇锁等待3秒
+    if (cls_redis_lock::lock('test', 3))
+    {
+        do_job();
+        cls_redis_lock::unlock('test');
+    }
+
  */
 class cls_redis_lock
 {
-    private static $locked_names = [];
-
     /**
      * 加锁
      * @param  [type]  $name           锁的标识名
@@ -50,8 +65,6 @@ class cls_redis_lock
             {
                 //设置key的失效时间
                 cls_redis::instance()->expire($redis_key, $expire);
-                //将锁标志放到locked_names数组里
-                self::$locked_names[$name] = $expire_at;
                 return true;
             }
 
@@ -63,7 +76,6 @@ class cls_redis_lock
             if ($ttl < 0)
             {
                 cls_redis::instance()->set($redis_key, $expire_at);
-                self::$locked_names[$name] = $expire_at;
                 return true;
             }
 
@@ -84,38 +96,18 @@ class cls_redis_lock
      * @param  bool $muti_threads 是否多进程，如果要解锁不同进程，设置为true
      * @return [type]       [description]
      */
-    public static function unlock($name, $muti_threads = false)
+    public static function unlock($name)
     {
         //先判断是否存在此锁
-        if (self::is_locking($name) || !empty($muti_threads) )
+        if ( self::is_locking($name) )
         {
             //删除锁
             if (cls_redis::instance()->delete("Lock:$name"))
             {
-                //清掉locked_names里的锁标志
-                unset(self::$locked_names[$name]);
                 return true;
             }
         }
         return false;
-    }
-
-    /**
-     * 释放当前所有获得的锁
-     * @return [type] [description]
-     */
-    public static function unlock_all()
-    {
-        //此标志是用来标志是否释放所有锁成功
-        $all_success = true;
-        foreach (self::$locked_names as $name => $expire_at)
-        {
-            if (false === self::unlock($name))
-            {
-                $all_success = false;
-            }
-        }
-        return $all_success;
     }
 
     /**
@@ -146,14 +138,8 @@ class cls_redis_lock
      */
     public static function is_locking($name)
     {
-        //先看locked_names[$name]是否存在该锁标志名
-        if (isset(self::$locked_names[$name]))
-        {
-            //从redis返回该锁的生存时间
-            return (string)self::$locked_names[$name] = (string)cls_redis::instance()->get("Lock:$name");
-        }
-
-        return false;
+        //从redis返回该锁的生存时间
+        return cls_redis::instance()->get("Lock:$name");
     }
 
 }
