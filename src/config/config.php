@@ -18,7 +18,7 @@ return [
 
     // 访问权限设置
     'purview' => [
-        // 验证类型: session、cookie
+        // 验证类型: session、token
         'auttype'    => 'session',
         // 未登录跳转地址
         'login_url'  => '?ct=index&ac=login',

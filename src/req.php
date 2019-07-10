@@ -42,6 +42,9 @@ class req
     // _POST 变量
     public static $posts = array();
 
+    // file_get_contents("input://");
+    public static $jsons = array();
+
     // 文件变量
     public static $files = array();
 
@@ -242,6 +245,23 @@ class req
      * 获得post表单值
      */
     public static function post( $formname = '', $defaultvalue = null, $filter_type = '' )
+    {   
+        if( !isset(self::$posts[$formname]) || self::$posts[$formname] === '' )
+        {
+            $value = $defaultvalue;
+        } 
+        else 
+        {
+            $value = self::$posts[$formname];
+        }
+
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+    }
+
+    /**
+     * 获得post表单值
+     */
+    public static function jsons( $formname = '', $defaultvalue = null, $filter_type = '' )
     {   
         if( !isset(self::$posts[$formname]) || self::$posts[$formname] === '' )
         {

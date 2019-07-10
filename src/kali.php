@@ -19,6 +19,9 @@ use kaliphp\cache;
 use kaliphp\event;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
+use extend\pub_define;
+
+defined('DS') or define('DS', DIRECTORY_SEPARATOR);
 
 // 严格开发模式
 error_reporting( E_ALL );
@@ -59,16 +62,14 @@ class kali
     public static $ct = '';
     public static $ac = '';
 
-	/**
-	 * Initializes the framework.  This can only be called once.
-	 *
-	 * @access	public
-	 * @return	void
-	 */
-	public static function registry(array $config = null)
-	{
-        self::define();
-
+    /**
+     * Initializes the framework.  This can only be called once.
+     *
+     * @access	public
+     * @return	void
+     */
+    public static function registry(array $config = null)
+    {
         // 获取配置
         self::$config = $config;
 
@@ -93,6 +94,8 @@ class kali
 
         // 设置一下路径，否则下面的control和model会找不到类
         autoloader::set_root_path(APPPATH);
+        pub_define::init();
+        self::define();
         self::init();
     }
 
@@ -101,7 +104,6 @@ class kali
      */
     private static function define()
     {
-        defined('DS') or define('DS', DIRECTORY_SEPARATOR);
         // mvim://open?url=file://%file&line=%line
         // subl://open?url=file://%file&line=%line
         // idea://open?file=%file&line=%line
