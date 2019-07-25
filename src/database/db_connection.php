@@ -399,7 +399,10 @@ class db_connection
 
         //兼容字段中有复杂计算不替换#PB#的情况
         $this->_sql = $this->table_prefix($this->_sql);
-        db::$queries[] = $this->_sql;
+        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
+        {
+            db::$queries[] = $this->_sql;
+        }
 
         return $this->_sql;
     }
@@ -456,7 +459,10 @@ class db_connection
 
             // Stop and aggregate the query time results
             $query_time = microtime(true) - $time_start;
-            db::$query_times[] = $query_time;
+            if ( strtoupper(PHP_SAPI) != 'CLI' ) 
+            {
+                db::$query_times[] = $query_time;
+            }
 
             // 记录慢查询
             if ( self::$config['slow_query'] && ($query_time > self::$config['slow_query']) )
@@ -2469,13 +2475,19 @@ class db_connection
 
     public function start()
     {
-        db::$queries[] = 'autocommit false';
+        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
+        {
+            db::$queries[] = 'autocommit false';
+        }
         return $this->autocommit(false);
     }
 
     public function commit()
     {
-        db::$queries[] = 'commit';
+        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
+        {
+            db::$queries[] = 'commit';
+        }
         mysqli_commit($this->_handler);
 
         return true;
@@ -2483,7 +2495,10 @@ class db_connection
 
     public function rollback()
     {
-        db::$queries[] = 'rollback';
+        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
+        {
+            db::$queries[] = 'rollback';
+        }
         mysqli_rollback($this->_handler);
         
         return true;
@@ -2491,7 +2506,10 @@ class db_connection
 
     public function end()
     {
-        db::$queries[] = 'autocommit true';
+        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
+        {
+            db::$queries[] = 'autocommit true';
+        }
         return $this->autocommit(true);
     }
 

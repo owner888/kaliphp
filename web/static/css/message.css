@@ -1,0 +1,58 @@
+/** time-line **/
+.time-line {
+    position: relative;
+    border-left:1px solid #d7d7d7;
+    padding-left:100px;
+}
+.time-line:before {
+    content:'';
+    position: absolute;
+    width:5px;
+    height:5px;
+    left:-3px;
+    border-radius: 50%;
+    background-color:#d7d7d7;
+}
+.time-line>span {
+    position: absolute;
+    top:5px;
+    left:10px;
+    font-size:12px;
+    line-height: 22px;
+    color:666;
+}
+
+.time-line .bar {
+    border-bottom:1px solid #d7d7d7;
+}
+
+.time-line .child-list {
+    padding-left:50px
+}
+
+.time-line .line-cont {
+    margin:5px 0;
+}
+.time-line .name-bar {
+    padding-top:5px;
+}
+.time-line .name-bar,
+.time-line .bar {
+    line-height: 22px;
+}
+
+.time-line .del {
+    color:#a94442;
+}
+
+.reply-box {
+    padding:15px;
+}
+
+.reply-box .nomaring {
+    margin:0;
+}
+
+.reply-box textarea {
+    resize: none;
+}

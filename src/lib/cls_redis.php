@@ -232,6 +232,19 @@ class cls_redis
         return $serialize ? $this->decode($this->handler->lpop($key)) : $this->handler->lpop($key);
     }
 
+    public function lindex( $key, $index, $serialize = null )
+    {
+        if (!$this->handler)
+        {
+            $this->connect();
+        }
+        if ($serialize === null)
+        {
+            $serialize = self::$config['serialize'];
+        }
+        return $serialize ? $this->decode($this->handler->lindex($key, $index)) : $this->handler->lindex($key, $index);
+    }
+
     public function encode($value)
     {
         return json_encode($value, JSON_UNESCAPED_UNICODE);

@@ -1,0 +1,75 @@
+li{
+    list-style: none;
+}
+.layui-layer-btn{
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+    background: #f2f2f2;
+    text-align: center;
+}
+
+.selector-con,.selector-single-con{
+    background: #f2f2f2;
+    height:450px;
+    overflow-y:auto;
+    border-radius: 8px;
+    padding-top:10px;
+    padding-bottom:10px
+}
+.selector-con ul,.selector-single-con ul{
+    padding-left:24px;
+}
+.selector-con ul li,.selector-single-con ul li{
+    line-height: 34px;
+}
+.selector-con ul li a:hover,.selector-con ul li i:hover,.selector-single-con li a:hover,.selector-single-con ul li i:hover{
+    color:#4e97d9;
+
+}
+.selector-con ul li i,.selector-single-con ul li i{
+    display: inline-block;
+    color:#888;
+    margin-right:10px;
+    font-size: 16px;
+}
+.selector-con ul li input,.selector-single-con ul li input{
+    margin-right:10px
+}
+
+.selector-right ul li{
+    line-height: 40px;
+    overflow: hidden;
+    padding:0 10px;
+
+}
+.selector-right ul{
+    padding-left:0;
+}
+.selector-right ul li span{
+    float: left;
+}
+
+.selector-right ul li i {
+    float: right;
+    font-size: 16px;
+    color:red;
+    margin-top:12px;
+}
+.selector-con ul li>ul,.selector-single-con ul li>ul{
+    display: none;
+}
+.selector-con ul li.open>ul,.selector-single-con ul li.open>ul{
+    display: block;
+}
+.has-child,.has-child2{
+    float: right;
+    color:#0a8bfb;
+    margin-right:20px;
+}
+.selector-con ul li label{
+    margin-bottom:0;
+}
+.no-child{
+    color:#d6d6d6 !important;
+}

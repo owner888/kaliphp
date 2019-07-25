@@ -67,6 +67,12 @@ class cls_filter
             case 'float':
                 $val = floatval( $val );
                 break;
+            case 'string':
+                $val = (string) $val;
+                break;
+            case 'array':
+                $val = (array) $val;
+                break;
             case 'email':
                 if( !self::_test_email($val) )
                 {
