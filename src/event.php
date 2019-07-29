@@ -219,8 +219,8 @@ class event
 
     public static function on_sql($event, string $sql = null, string $db = null)
     {
-        log::debug("{$db} - {$sql}", 'SQL query');
-        if (SYS_CONSOLE)
+        log::info("{$db} - {$sql}", 'SQL query');
+        if ( SYS_CONSOLE )
         {
             cls_chrome::info('%c SQL语法 %c '.$sql.' ','color: white; background: #34495e; padding:5px 0;', 'background: #95a5a6; padding:5px 0;');
             $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
