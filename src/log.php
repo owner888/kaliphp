@@ -27,10 +27,10 @@ defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
  */
 class log
 {
-	/**
-	 * container for the Monolog instance
-	 */
-	protected static $monolog = null;
+    /**
+     * container for the Monolog instance
+     */
+    protected static $monolog = null;
 
     // 定义默认错误级别
     public static $levels = [
@@ -79,32 +79,32 @@ class log
         return static::$monolog;
     }
 
-	/**
-	 * initialize the created the monolog instance
-	 */
-	public static function initialize()
-	{
+    /**
+     * initialize the created the monolog instance
+     */
+    public static function initialize()
+    {
         $path = config::instance('log')->get('log_path', APPPATH.DS.'data'.DS.'log'.DS);
-        
-		// and make sure it exsts
-		if ( ! is_dir($path) or ! is_writable($path))
-		{
-			config::instance('log')->set('log_threshold', NONE);
-			throw new \Exception('Unable to create the log file. The configured log path "'.$path.'" does not exist.');
-		}
 
-		// determine the name of the logfile
-		$filename = config::instance('log')->get('log_file');
-		if (empty($filename))
-		{
-			$filename = date('Y-m-d').'.log';
+        // and make sure it exsts
+        if ( ! is_dir($path) or ! is_writable($path))
+        {
+            config::instance('log')->set('log_threshold', NONE);
+            throw new \Exception('Unable to create the log file. The configured log path "'.$path.'" does not exist.');
+        }
+
+        // determine the name of the logfile
+        $filename = config::instance('log')->get('log_file');
+        if (empty($filename))
+        {
+            $filename = date('Y-m-d').'.log';
             //$filename = date('Y').DS.date('m').DS.date('d').'.log';
-		}
+        }
 
         $fullpath = dirname($filename);
 
-		// make sure the log directories exist
-		try
+        // make sure the log directories exist
+        try
         {
             // make sure the full path exists
             if ( ! is_dir($path.$fullpath))
@@ -112,16 +112,16 @@ class log
                 util::path_exists($path.$fullpath);
             }
 
-			// open the file
-			$handle = fopen($path.$filename, 'w');
-            chmod($path.$filename, 0777);
+            // open the file
+            $handle = fopen($path.$filename, 'w');
+            @chmod($path.$filename, 0777);
             fclose($handle);
-		}
-		catch (\Exception $e)
-		{
-			config::instance('log')->set('log_threshold', NONE);
-			throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
-		}
+        }
+        catch (\Exception $e)
+        {
+            config::instance('log')->set('log_threshold', NONE);
+            throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
+        }
 
         if ( config::instance('log')->get('log_type') == 'monolog' ) 
         {
@@ -251,18 +251,18 @@ class log
         return static::write(EMERGENCY, $msg, $context);
     }
 
-	/**
-	 * Write a log entry to Monolog
-	 *
-	 * @param	int|string    $level    the log level
-	 * @param	string        $msg      the log message
-	 * @param	array         $context  message context
-	 * @return	bool
-	 */
-	public static function log($level, $msg, $context = null)
-	{
+    /**
+     * Write a log entry to Monolog
+     *
+     * @param	int|string    $level    the log level
+     * @param	string        $msg      the log message
+     * @param	array         $context  message context
+     * @return	bool
+     */
+    public static function log($level, $msg, $context = null)
+    {
         static::write($level, $msg, $context);
-	}
+    }
 
     public static function memory($key="memory")
     {
@@ -379,7 +379,7 @@ class log
         foreach ($properties as $propertie){
             $value = $propertie->isPrivate() ? ":private" :
                 ($propertie->isProtected() ? ":protected" :
-                    ($propertie->isPublic() ? ":public" : ""));
+                ($propertie->isPublic() ? ":public" : ""));
             $arr[$propertie->getName()] = $value;
         }
         return [$class->getName() => $arr];
