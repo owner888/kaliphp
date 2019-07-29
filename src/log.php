@@ -27,10 +27,15 @@ defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
  */
 class log
 {
-    public static $config = [];
+	/**
+	 * container for the Monolog instance
+	 */
+	protected static $monolog = null;
 
     // 定义默认错误级别
-    public static $levels = array(
+    public static $levels = [
+        0   => 'NONE',
+        99  => 'ALL',
         100 => 'DEBUG',
         200 => 'INFO',
         250 => 'NOTICE',
@@ -39,30 +44,26 @@ class log
         500 => 'CRITICAL',
         550 => 'ALERT',
         600 => 'EMERGENCY',
-    );
+    ];
 
-    //日志记录内存变量
+    // 日志记录内存变量
     private static $logs = [];
-
-
-    //终端输出变量
-    public static $console_out = [];
 
     //最大缓存日志数
     private static $max_log = 128;
 
-    private static $_date_fmt = 'Y-m-d H:i:s';
-    private static $_log_dir  = '';
-
     public static function _init()
     {
-        self::$config = config::instance('log')->get();
-        self::$_log_dir = APPPATH.DS.'data'.DS.'log';
-
-        if ( !empty(self::$config['log_date_format'])) 
+        if ( config::instance('log')->get('log_type') == 'monolog' && class_exists('\Monolog\Logger') ) 
         {
-            self::$_date_fmt = self::$config['log_date_format'];
+            static::$monolog = new \Monolog\Logger('kaliphp');
         }
+        else 
+        {
+            config::instance('log')->set('log_type', 'file');
+        }
+
+        static::initialize();
 
         // 程序退出时保存日志
         register_shutdown_function(function () {
@@ -70,6 +71,67 @@ class log
         });
     }
 
+    /**
+     * return the monolog instance
+     */
+    public static function instance()
+    {
+        return static::$monolog;
+    }
+
+	/**
+	 * initialize the created the monolog instance
+	 */
+	public static function initialize()
+	{
+        $path = config::instance('log')->get('log_path', APPPATH.DS.'data'.DS.'log'.DS);
+        
+		// and make sure it exsts
+		if ( ! is_dir($path) or ! is_writable($path))
+		{
+			config::instance('log')->set('log_threshold', NONE);
+			throw new \Exception('Unable to create the log file. The configured log path "'.$path.'" does not exist.');
+		}
+
+		// determine the name of the logfile
+		$filename = config::instance('log')->get('log_file');
+		if (empty($filename))
+		{
+			$filename = date('Y-m-d').'.log';
+            //$filename = date('Y').DS.date('m').DS.date('d').'.log';
+		}
+
+        $fullpath = dirname($filename);
+
+		// make sure the log directories exist
+		try
+        {
+            // make sure the full path exists
+            if ( ! is_dir($path.$fullpath))
+            {
+                util::path_exists($path.$fullpath);
+            }
+
+			// open the file
+			$handle = fopen($path.$filename, 'w');
+            chmod($path.$filename, 0777);
+            fclose($handle);
+		}
+		catch (\Exception $e)
+		{
+			config::instance('log')->set('log_threshold', NONE);
+			throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
+		}
+
+        if ( config::instance('log')->get('log_type') == 'monolog' ) 
+        {
+            // create the streamhandler, and activate the handler
+            $stream = new \Monolog\Handler\StreamHandler($path.$filename, \Monolog\Logger::DEBUG);
+            $formatter = new \Monolog\Formatter\LineFormatter(config::instance('log')->get('log_output'), config::instance('log')->get('log_date_format', 'Y-m-d H:i:s'));
+            $stream->setFormatter($formatter);
+            static::$monolog->pushHandler($stream);
+        }
+    }
     /**
      * 计算内存消耗
      *
@@ -153,6 +215,55 @@ class log
         return static::write(INFO, $msg, $context);
     }
 
+    /**
+     * Logs a message with the Critical Log Level
+     *
+     * @param   string  $msg     The log message
+     * @param   string  $method  The method that logged
+     * @return  bool    If it was successfully logged
+     */
+    public static function critical($msg, $context = null)
+    {
+        return static::write(CRITICAL, $msg, $context);
+    }
+
+    /**
+     * Logs a message with the Alert Log Level
+     *
+     * @param   string  $msg     The log message
+     * @param   string  $method  The method that logged
+     * @return  bool    If it was successfully logged
+     */
+    public static function alert($msg, $context = null)
+    {
+        return static::write(ALERT, $msg, $context);
+    }
+
+    /**
+     * Logs a message with the Emergency Log Level
+     *
+     * @param   string  $msg     The log message
+     * @param   string  $method  The method that logged
+     * @return  bool    If it was successfully logged
+     */
+    public static function emergency($msg, $context = null)
+    {
+        return static::write(EMERGENCY, $msg, $context);
+    }
+
+	/**
+	 * Write a log entry to Monolog
+	 *
+	 * @param	int|string    $level    the log level
+	 * @param	string        $msg      the log message
+	 * @param	array         $context  message context
+	 * @return	bool
+	 */
+	public static function log($level, $msg, $context = null)
+	{
+        static::write($level, $msg, $context);
+	}
+
     public static function memory($key="memory")
     {
         return static::write(DEBUG, self::convert(memory_get_usage()), $key);
@@ -182,25 +293,26 @@ class log
         }
 
         // 如果是对象，先转化成数组
-        if (is_object($msg)) 
+        if ( is_object($msg) ) 
         {
             $msg = self::object_to_array($msg);
         }
 
         // 如果是数组，先转化成json
-        if (is_array($msg)) 
+        if ( is_array($msg) ) 
         {
             $msg = json_encode($msg, JSON_UNESCAPED_UNICODE);
+        }
+
+        // 如果是数组，先转化成json
+        if ( is_array($context) ) 
+        {
+            $context = json_encode($context, JSON_UNESCAPED_UNICODE);
         }
 
         $msg = empty($context) ? $msg : $context.' - '.$msg;
 
         $level = strtolower(self::$levels[$level]);
-
-        self::$console_out[$level][] = $msg;
-
-        $date = date(self::$_date_fmt);
-        $msg  = self::_format_line($level, $date, $msg);
 
         self::$logs[ $level ][] = $msg;
         if( PHP_SAPI == 'cli' || count(self::$logs[ $level ]) >= self::$max_log ) 
@@ -208,7 +320,6 @@ class log
             self::save();
             self::$logs[ $level ] = array();
         }
-
         return true;
     }
 
@@ -219,30 +330,39 @@ class log
      */               
     public static function save()
     {
-        // 是否输出到浏览器
-        if (SYS_CONSOLE) 
+        // 保存到日志文件
+        foreach( self::$logs as $level => $msgs )
         {
-            foreach (self::$console_out as $level=>$msgs) 
+            // 是否输出到浏览器
+            if ( SYS_CONSOLE ) 
             {
-                foreach ($msgs as $msg) 
+                foreach( $msgs as $msg ) 
                 {
                     cls_chrome::$level($msg);
                 }
             }
-        }
-        // 保存到日志文件
-        foreach(self::$logs as $log_name => $log_datas )
-        {
-            $log_file = self::$_log_dir.DS.$log_name.'.log';
-            $msgs = '';
-            foreach($log_datas as $msg) 
-            {
-                $msgs .= $msg."\n";
-            }
 
-            file_put_contents($log_file, $msgs, FILE_APPEND | LOCK_EX);
-            @chmod($log_file, 0777);
-            self::$logs = array();
+            if ( config::instance('log')->get('log_type') == 'monolog' ) 
+            {
+                foreach($msgs as $msg) 
+                {
+                    static::instance()->log($level, $msg);
+                }
+            }
+            else 
+            {
+                $log_file = APPPATH.DS.'data'.DS.'log'.DS.$level.'.log';
+                $log_msgs = '';
+                foreach($msgs as $msg) 
+                {
+                    $msg  = self::_format_line($level, $msg);
+                    $log_msgs .= $msg;
+                }
+
+                file_put_contents($log_file, $log_msgs, FILE_APPEND | LOCK_EX);
+                @chmod($log_file, 0777);
+                self::$logs = array();
+            }
         }
     }
 
@@ -276,9 +396,12 @@ class log
      * @param	string	$msg 	The log message
      * @return	string	Formatted log line with a new line character '\n' at the end
      */
-    private static function _format_line($level, $date, $msg)
+    private static function _format_line($level, $msg)
     {
-        $msg = $date . ' [' . $level .']' . ' --> ' . $msg;
+        $level  = strtoupper($level);
+        $date   = date(config::instance('log')->get('log_date_format', 'Y-m-d H:i:s'));
+        $output = config::instance('log')->get('log_output', "%datetime% [%level_name%] --> %message%\n");
+        $msg    = str_replace(['%datetime%', '%level_name%', '%message%'], [$date, $level, $msg], $output);
         return $msg;
     }
 
@@ -290,7 +413,19 @@ class log
      */
     protected static function need_logging($level)
     {
-        $loglabels = self::$config['log_threshold'];
+        $loglabels = config::instance('log')->get('log_threshold');
+
+        // 不记录日志
+        if ( $loglabels == NONE ) 
+        {
+            return false;
+        }
+
+        // 记录所有日志
+        if ( $loglabels == ALL ) 
+        {
+            return true;
+        }
 
         // 如果不是数组，采用比他级别高的级别
         if ( ! is_array($loglabels))
@@ -303,7 +438,7 @@ class log
             $loglabels = $a;
         }
 
-        if (is_string($level))
+        if ( is_string($level) )
         {
             if ( ! $level = array_search($level, self::$levels))
             {
@@ -312,7 +447,7 @@ class log
         }
 
         // make sure $level has the correct value
-        if ((is_int($level) and ! isset(self::$levels[$level])) or (is_string($level) and ! array_search(strtoupper($level), self::$levels)))
+        if ( (is_int($level) and ! isset(self::$levels[$level])) or (is_string($level) and ! array_search(strtoupper($level), self::$levels)) )
         {
             throw new \Exception('Invalid level "'.$level.'" passed to logger()');
         }

@@ -810,15 +810,15 @@ class util
         }
     }
 
-    public static function return_json($array)
+    public static function return_json($array, $options = JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT )
     {
         header('Content-type: application/json');
-        exit(json_encode($array, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT));
+        exit(json_encode($array, $options));
     }
 
-    public static function json_encode( $array )
+    public static function json_encode( $array, $options = JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT )
     {
-        return json_encode($array, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+        return json_encode($array, $options);
     }
 
     // 空数组转对象

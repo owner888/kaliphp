@@ -132,29 +132,41 @@ class config
         return $configs;
     }
 
+    public function set( $key, $value )
+    {
+        if ( empty($key) || empty($value) ) 
+        {
+            return false;
+        }
+
+        $this->_cfg_caches[$this->_name][$key] = $value;
+    }
+
     /**
      * get core config
      * @param $key
      * @param bool $alias
      * @return mixed|null
      */
-    public function get($key = null, $alias=true)
+    public function get( $key = null, $defaultvalue = null, $alias = true )
     {
         $config = $this->load_config();
 
-        if ($config && $key === null) 
+        if ( $config && $key === null ) 
         {
             return $config;
         }
 
-        if (isset($config[$key])) 
+        if( !isset($config[$key]) || $config[$key] === '' )
         {
-            return $alias ? $this->get_alias($config[$key]) : $config[$key];
+            $value = $defaultvalue;
         } 
         else 
         {
-            return null;
+            $value = $config[$key];
+            $value = $alias ? $this->get_alias($config[$key]) : $config[$key];
         }
+        return $value;
     }
 
     /**
