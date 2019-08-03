@@ -29,23 +29,22 @@ class cls_cli
     public static $args = array();
 
     protected static $foreground_colors = array(
-        'black'			=> '0;30',
-        'dark_gray'		=> '1;30',
-        'blue'			=> '0;34',
-        'dark_blue'		=> '1;34',
-        'light_blue'	=> '1;34',
-        'green'			=> '0;32',
-        'light_green'	=> '1;32',
-        'cyan'			=> '0;36',
-        'light_cyan'	=> '1;36',
+        'black'         => '0;30',
+        'light_black'   => '1;30',
         'red'			=> '0;31',
         'light_red'		=> '1;31',
+        'green'			=> '0;32',
+        'light_green'	=> '1;32',
+        'yellow'		=> '0;33',
+        'light_yellow'	=> '1;33',
+        'blue'			=> '0;34',
+        'light_blue'	=> '1;34',
         'purple'		=> '0;35',
         'light_purple'	=> '1;35',
-        'light_yellow'	=> '0;33',
-        'yellow'		=> '1;33',
-        'light_gray'	=> '0;37',
-        'white'			=> '1;37',
+        'cyan'			=> '0;36',
+        'light_cyan'	=> '1;36',
+        'white'			=> '0;37',
+        'light_white'	=> '1;37',
     );
 
     protected static $background_colors = array(
@@ -56,7 +55,7 @@ class cls_cli
         'blue'			=> '44',
         'magenta'		=> '45',
         'cyan'			=> '46',
-        'light_gray'	=> '47',
+        'white'	        => '47',
     );
 
     protected static $STDOUT;
@@ -302,61 +301,44 @@ class cls_cli
      * @param string		$background	the foreground color
      * @throws Exception
      */
-    public static function error($text = '', $foreground = 'red', $background = null)
+    public static function error($text = '', $foreground = 'light_red', $background = null)
     {
-        if (is_array($text))
-        {
-            $text = implode(PHP_EOL, $text);
-        }
-
-        if ($foreground OR $background)
-        {
-            $text = static::color($text, $foreground, $background);
-        }
-
-        fwrite(static::$STDERR, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function warning($text)
+    public static function warning($text = '', $foreground = 'light_yellow', $background = null)
     {
-        $text = static::color($text, 'light_yellow', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function info($text)
+    public static function info($text = '', $foreground = 'light_white', $background = null)
     {
-        $text = static::color($text, 'light_gray', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function notice($text)
+    public static function notice($text = '', $foreground = 'light_cyan', $background = null)
     {
-        $text = static::color($text, 'cyan', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function debug($text)
+    public static function debug($text = '', $foreground = 'light_green', $background = null)
     {
-        $text = static::color($text, 'green', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function critical($text)
+    public static function critical($text = '', $foreground = 'light_red', $background = null)
     {
-        $text = static::color($text, 'light_red', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function alert($text)
+    public static function alert($text = '', $foreground = 'light_purple', $background = null)
     {
-        $text = static::color($text, 'purple', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
-    public static function emergency($text)
+    public static function emergency($text = '', $foreground = 'light_blue', $background = null)
     {
-        $text = static::color($text, 'light_purple', null);
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        self::write($text, $foreground, $background);
     }
 
     /**
