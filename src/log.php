@@ -13,6 +13,7 @@
 namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
+use kaliphp\lib\cls_cli;
 
 defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
 
@@ -69,6 +70,16 @@ class log
         register_shutdown_function(function () {
             self::save();
         });
+    }
+
+    /**
+     * 是否运行在控制台
+     * 
+     * @return void
+     */
+    public static function is_terminal()
+    {
+        return defined("STDERR") && function_exists('posix_isatty') && posix_isatty(STDERR);
     }
 
     /**
@@ -180,6 +191,18 @@ class log
     }
 
     /**
+     * Logs a message with the Info Log Level
+     *
+     * @param   string  $msg     The log message
+     * @param   string  $method  The method that logged
+     * @return  bool    If it was successfully logged
+     */
+    public static function info($msg, $context = null)
+    {
+        return static::write(INFO, $msg, $context);
+    }
+
+    /**
      * Logs a message with the Debug Log Level
      *
      * @param   string  $msg     The log message
@@ -201,18 +224,6 @@ class log
     public static function debug($msg, $context = null)
     {
         return static::write(DEBUG, $msg, $context);
-    }
-
-    /**
-     * Logs a message with the Info Log Level
-     *
-     * @param   string  $msg     The log message
-     * @param   string  $method  The method that logged
-     * @return  bool    If it was successfully logged
-     */
-    public static function info($msg, $context = null)
-    {
-        return static::write(INFO, $msg, $context);
     }
 
     /**
@@ -339,6 +350,14 @@ class log
                 foreach( $msgs as $msg ) 
                 {
                     cls_chrome::$level($msg);
+                }
+            }
+
+            if ( self::is_terminal() ) 
+            {
+                foreach( $msgs as $msg ) 
+                {
+                    cls_cli::$level($msg);
                 }
             }
 
