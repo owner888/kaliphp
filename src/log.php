@@ -79,7 +79,7 @@ class log
      */
     public static function is_terminal()
     {
-        return defined("STDERR") && function_exists('posix_isatty') && posix_isatty(STDERR);
+        return defined("STDERR") && is_resource(STDERR) && function_exists('posix_isatty') && posix_isatty(STDERR);
     }
 
     /**
