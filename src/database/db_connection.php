@@ -35,6 +35,11 @@ class db_connection
     private $_name = null;
 
     /**
+     * @var string instance of db name
+     */
+    private $_db_name = null;
+
+    /**
      * @var array db config
      */
     private $_config = [];
@@ -166,6 +171,12 @@ class db_connection
 
     public static $config = [];
 
+    //当前实例名称，方便多库使用的时候自定义实例名称
+    private static $_instance_name = [];
+
+    //默认数据库名称
+    private static $_default_name = 'default';
+
     public static $rps = array('/*', '--', 'union', 'sleep', 'benchmark', 'load_file', 'outfile');
     public static $rpt = array('/×', '——', 'ｕｎｉｏｎ', 'ｓｌｅｅｐ', 'ｂｅｎｃｈｍａｒｋ', 'ｌｏａｄ_ｆｉｌｅ', 'ｏｕｔｆｉｌｅ');
 
@@ -174,25 +185,142 @@ class db_connection
      */
     public static function _init()
     {
-        self::$config = config::instance('database')->get();
+        return static::init_db();
+    }
 
-        // 链接主库
-        list($host, $port) = explode(":", self::$config['host']['master']);
-        $config = [
-            'host' => $host,
-            'port' => $port,
-            'user' => self::$config['user'],
-            'pass' => self::$config['pass'],
-            'name' => self::$config['name'],
-        ];
-        self::instance('default_w', $config);
-        //var_dump(self::instance());    
-        //exit;
+    /**
+     * 初始化数据库
+     * @param string $name 实例名称
+     * @param string $name 数据库配置文件名
+     * @param bool $default_instance 是否设为默认数据库
+     */
+    public static function init_db($name = null, $config_file = null, $default_instance = false)
+    {
+        $name  = empty($name) ? self::$_default_name : $name;
+        $config_file = empty($config_file) ? 'database' : $config_file;
+        self::$config[$name] = config::instance('app_config')->get('config', $config_file);
+        if( isset(self::$config[$name]['host']['master']) )
+        {
+            $instance_name = self::get_instance_name($name);
+            //第一个为默认数据库
+            if( !self::$_instance_name || $default_instance )
+            {
+                self::$_instance_name = $instance_name;
+            }
 
-        // 链接从库
-        list($host, $port) = explode(":", self::$config['host']['slave'][mt_rand(0, count(self::$config['host']['slave']) - 1)]);
-        $config = array_merge($config, array('host'=>$host, 'port'=>$port));
-        self::instance('default_r', $config);
+            //如果没有初始化
+            if( !isset(self::$_instance[$instance_name['master']]) )
+            {
+                // 链接主库
+                list($host, $port) = explode(":", self::$config[$name]['host']['master']);
+                $config = [
+                    'host' => $host,
+                    'port' => $port,
+                    'user' => self::$config[$name]['user'],
+                    'pass' => self::$config[$name]['pass'],
+                    'name' => self::$config[$name]['name'],
+                    'charset' => self::$config[$name]['charset'],
+                ];
+
+                self::instance($instance_name['master'], $config);
+                static::$_instance[$instance_name['master']]->_db_name = $name;
+                //var_dump(self::instance());    
+                //exit;
+
+                // 如果配置了从库 链接从库
+                if( !empty(self::$config[$name]['host']['slave']) )
+                {
+                    $slaves = self::$config[$name]['host']['slave'][mt_rand(0, count(self::$config[$name]['host']['slave']) - 1)];
+                    list($host, $port) = explode(":", $slaves);
+                    $config = array_merge($config, array('host' => $host, 'port' => $port));
+                    self::instance($instance_name['slave'], $config);
+                }
+                //否则从库使用主库的链接
+                else
+                {
+                    static::$_instance[$instance_name['slave']] = static::$_instance[$instance_name['master']];
+                }
+
+                static::$_instance[$instance_name['slave']]->_db_name = $name;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 获取当前对象的数据库句柄
+     * @return object
+     */
+    private function _handler()
+    {
+        if( !is_object($this->_handler) )
+        {
+            if (
+                !$this->_config || !isset($this->_config['host']) || !isset($this->_config['user']) || 
+                !isset($this->_config['pass']) || !isset($this->_config['name']) || !isset($this->_config['port'])
+            )
+            {
+                throw new Exception('unKnown', 3001);
+            }
+
+            if (isset($this->_config['keep-alive']) && $this->_config['keep-alive'])
+            {
+                $this->_config['host'] = 'p:'.$this->_config['host'];
+            }
+
+            // 让mysqli extension在用 try catch 可以抓到 query 的异常
+            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+            try
+            {
+                $this->_handler = mysqli_connect(
+                    $this->_config['host'], 
+                    $this->_config['user'], 
+                    $this->_config['pass'], 
+                    $this->_config['name'], 
+                    $this->_config['port']
+                );
+            }
+            catch (Exception $e)
+            {
+                throw new Exception($this->_config['host'].':'.$this->_config['port'], 3001);
+            }
+
+            // 设置等待超时时间，重现 MySQL server has gone away，方便调试
+            //mysqli_query($this->_handler, "SET WAIT_TIMEOUT = 1");
+
+            // 让int、float 返回正确的类型，而不是返回string
+            $this->_handler->options(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, 1);
+
+            mysqli_query($this->_handler, "SET NAMES ".$this->_config['charset']);
+        }
+
+        //标记最近的一次sql所使用的实例名称
+        self::$config[$this->_db_name]['current_instance'] = $this->_name;
+        return $this->_handler;
+    }
+
+    /**
+     * 全局切换数据库
+     * @param string $name 实例名称
+     */
+    public static function switch_db($name = null)
+    {
+        $result = false;
+        $instance_name = self::get_instance_name($name);
+        foreach($instance_name as $k => $v)
+        {
+            if( isset(self::$_instance[$v]) )
+            {
+                self::$_instance_name[$k] = $v;
+                $result = true;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -203,29 +331,32 @@ class db_connection
      */
     public static function instance($name = null, array $config = null)
     {
-		if ($name === null)
-		{
-			// Use the default instance name
-			$name = 'default_w';
-		}
+        if ($name === null)
+        {
+            // Use the default instance name
+            $name = !empty(self::$_instance_name['master']) ? 
+                self::$_instance_name['master'] : self::get_instance_name(self::$_default_name, 'master');
+        }
 
-        if ( ! isset(static::$_instance[$name])) 
+        if ( ! isset(static::$_instance[$name]))
         {
             static::$_instance[$name] = new static($name, $config);
         }
+
         return static::$_instance[$name];
     }
 
     public function close()
     {
-        @mysqli_close($this->_handler);
-        unset(static::$_instance[$this->_name]);
+        @mysqli_close($this->_handler());
+        unset(static::$_instance[$this->_name]->_handler);
     }
 
     public function reconnect()
     {
         self::close();
         self::instance($this->_name, $this->_config);
+        $this->_handler();
     }
 
     public function __construct($name, $config)
@@ -234,35 +365,7 @@ class db_connection
         $this->_name = $name;
         $this->_config = $config;
 
-        if (!$config || !isset($config['host']) || !isset($config['user']) || !isset($config['pass']) || !isset($config['name']) || !isset($config['port']))
-        {
-            throw new Exception('unKnown', 3001);
-        }
-        if (isset(self::$config['keep-alive']) && self::$config['keep-alive'])
-        {
-            $config['host'] = 'p:'.$config['host'];
-        }
-
-        // 让mysqli extension在用 try catch 可以抓到 query 的异常
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
-        try
-        {
-            $this->_handler = mysqli_connect($config['host'], $config['user'], $config['pass'], $config['name'], $config['port']);
-        }
-        catch (Exception $e)
-        {
-            throw new Exception($config['host'].':'.$config['port'], 3001);
-        }
-
-        // 设置等待超时时间，重现 MySQL server has gone away，方便调试
-        //mysqli_query($this->_handler, "SET WAIT_TIMEOUT = 1");
-
-        // 让int、float 返回正确的类型，而不是返回string
-        $this->_handler->options(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, 1);
-
-        mysqli_query($this->_handler, "SET NAMES ".self::$config['charset']);
-
+        return $this;
     }
     
     /**
@@ -327,7 +430,7 @@ class db_connection
         // Change #PB# to db_prefix
         $sql = $this->table_prefix($sql);
 
-        if (self::$config['safe_test'])
+        if (self::$config[$this->_db_name]['safe_test'])
         {
             $sql = $this->filter_sql($sql);
         }
@@ -399,10 +502,7 @@ class db_connection
 
         //兼容字段中有复杂计算不替换#PB#的情况
         $this->_sql = $this->table_prefix($this->_sql);
-        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
-        {
-            db::$queries[] = $this->_sql;
-        }
+        PHP_SAPI != 'cli' && db::$queries[] = $this->_sql;
 
         return $this->_sql;
     }
@@ -421,30 +521,33 @@ class db_connection
         // Compile the SQL query
         $sql = $sql ? $sql : $this->compile();
 
-        if ( $this->_as_sql ) 
-        {
-            return $sql;
-        }
+        //获取当前实例组
+        $instance_name = isset($this->_atts['instance_name']) ? 
+            $this->_atts['instance_name'] : self::get_instance_name();
 
         // 用户手动指定使用主数据库 或 从数据库状态不可用
-        if ( $is_master === true || $this->_enable_slave === false )
+        if ( 
+            $is_master === true || 
+            (isset($is_master) && $this->_enable_slave === false) || 
+            !empty($this->_atts['lock'])
+        )
         {
-            $db_name = 'default_w';
+            $db_name = $instance_name['master'];
         }
         else
         {
             if ($this->_type === db::SELECT)
             {
-                $db_name = 'default_r';
+                $db_name = $instance_name['slave'];
             }
             else
             {
-                $db_name = 'default_w';
+                $db_name = $instance_name['master'];
             }
         }
 
-        $db_conn = self::instance($db_name);
-
+        // echo $db_name;echo "{$sql}<br>";
+        $db_conn = self::$_instance[$db_name];
         event::trigger(onSql, [$sql, $db_name]);
 
         try
@@ -455,27 +558,26 @@ class db_connection
             // 加 @ 去掉下面两个警告
             // mysqli_query(): MySQL server has gone away
             // mysqli_query(): Error reading result set's header
-            $this->_result = @mysqli_query($db_conn->_handler, $sql);
+            $this->_result = @mysqli_query($db_conn->_handler(), $sql);
 
             // Stop and aggregate the query time results
             $query_time = microtime(true) - $time_start;
-            if ( strtoupper(PHP_SAPI) != 'CLI' ) 
-            {
-                db::$query_times[] = $query_time;
-            }
+            PHP_SAPI != 'cli' && db::$query_times[] = $query_time;
 
             // 记录慢查询
-            if ( self::$config['slow_query'] && ($query_time > self::$config['slow_query']) )
+            if ( self::$config[$this->_db_name]['slow_query'] && ($query_time > self::$config[$this->_db_name]['slow_query']) )
             {
                 log::warning(sprintf('Slow Query: %s [%ss]', $sql, $query_time));
             }
         }
         catch (Exception $e)
         {
-            $errno  = $e->getCode();
+            $errno = $e->getCode();
             $errmsg = $e->getMessage();
-            // Mysql 等待超时
-            if ($errno == 2013 || $errno == 2006) 
+            log::error($sql.$errmsg, 'SQL Error');
+            
+            // Mysql 等待超时,如果是开启了事务，不应该重试，因为重连可能导致事务id发生变化
+            if ( empty($this->_atts['start']) && in_array($errno, [2013, 2006]) ) 
             {
                 log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $sql), 'SQL Error');
                 // 重新链接，$this 默认是default_w 的
@@ -485,11 +587,11 @@ class db_connection
                 return $this->execute($is_master, $params, $sql);
             }
 
-            // 如果发生错误，应该重置，否则会发生不可预见的问题
+            //如果发生错误，应该重置，否则会发生不可预见的问题
             $this->reset();
 
             // 没有设置忽略错误
-            if ( !isset($this->_atts['ignore']) || !$this->_atts['ignore'] ) 
+            if ( empty($this->_atts['ignore']) ) 
             {
                 log::error(sprintf("%s [%s]", $errmsg, $sql), 'SQL Error');
                 $tracemsg = $this->get_exception_trace($e);
@@ -522,7 +624,6 @@ class db_connection
                 }
 
                 mysqli_free_result($this->_result);
-
                 if ( empty($rows[0]) && empty($params['index']) ) 
                 {
                     $result = null;
@@ -545,18 +646,17 @@ class db_connection
         {
             // Return a list of insert id and rows created
             $result = array(
-                mysqli_insert_id($db_conn->_handler),
-                mysqli_affected_rows($db_conn->_handler),
+                mysqli_insert_id($db_conn->_handler()),
+                mysqli_affected_rows($db_conn->_handler()),
             );
         }
         elseif ($this->_type === db::UPDATE or $this->_type === db::DELETE)
         {
             // Return the number of rows affected
-            $result = mysqli_affected_rows($db_conn->_handler);
+            $result = mysqli_affected_rows($db_conn->_handler());
         }
 
         $this->reset();
-
         return $result;
     }
 
@@ -613,7 +713,6 @@ class db_connection
         }
 
         $this->_table = $this->_from[0];
-
         return $this;
     }
     
@@ -702,6 +801,7 @@ class db_connection
             }
             $this->_where[] = array('OR' => array($column, $op, $value));
         }
+
         return $this;
     }
 
@@ -723,7 +823,6 @@ class db_connection
     public function and_where_open()
     {
         $this->_where[] = array('AND' => '(');
-
         return $this;
     }
 
@@ -757,7 +856,6 @@ class db_connection
     public function and_where_close()
     {
         $this->_where[] = array('AND' => ')');
-
         return $this;
     }
 
@@ -769,7 +867,6 @@ class db_connection
     public function or_where_close()
     {
         $this->_where[] = array('OR' => ')');
-
         return $this;
     }
 
@@ -815,7 +912,6 @@ class db_connection
     public function limit($number)
     {
         $this->_limit = (int) $number;
-
         return $this;
     }
 
@@ -869,7 +965,6 @@ class db_connection
         $key = key($joins);
 
         $this->_on[$key][] = array($c1, $op, $c2, 'AND');
-
         return $this;
     }
 
@@ -906,7 +1001,6 @@ class db_connection
         $key = key($joins);
 
         $this->_on[$key][] = array($c1, $op, $c2, 'OR');
-
         return $this;
     }
 
@@ -1277,8 +1371,8 @@ class db_connection
     public function get_compiled_update($reset = TRUE)
     {
         // Start an update query
-        $sql = 'UPDATE '.$this->table_prefix($this->_table);
-
+        $sql = 'UPDATE '.(isset($this->_atts['ignore']) && $this->_atts['ignore'] ? ' IGNORE ' : ' ').
+            $this->table_prefix($this->_table);
         if ( ! empty($this->_join))
         {
             // Add tables to join
@@ -1834,7 +1928,34 @@ class db_connection
         if( !empty($index_name) )
         {
             $this->_atts['index_name'] = $index_name;
-        } 
+        }
+
+        return $this; 
+    }
+
+    /**
+     * 当前查询指定库
+     * @param string $name 实例名称
+     * @param string $config_file 实例配置文件名称，如果指定了会尝试初始化
+     * @param string $default_db 是否为默认库
+     * @return  $this
+     */
+    public function from_db($name = null, $config_file = null, $default_db = null)
+    {
+        if( $name )
+        {
+            !empty($config_file) && self::init_db($name, $config_file, $default_db);
+            $instance_name = self::get_instance_name($name);
+
+            if( !isset(self::$_instance[$instance_name['master']]) )
+            {
+                throw new Exception("instance:{$name} is not exit", 3001);
+            }
+
+            $this->_atts['instance_name'] = $instance_name;
+        }
+
+        return $this;
     }
 
     /**
@@ -1846,7 +1967,6 @@ class db_connection
      */
     public function dup(array $pairs) 
     {
-
         foreach ($pairs as $column => $value) 
         {
             $this->_dups[] = array($column, $value);
@@ -1858,7 +1978,15 @@ class db_connection
     //主要用于更新或者删除是是否有条件
     public function has_where() 
     {
-        return !empty( $this->_where);
+        foreach(self::$_instance as $instance)
+        {
+            if( $instance->_where )
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1876,22 +2004,24 @@ class db_connection
     {
         if ($table !== null)
         {
-            $table = str_replace('#PB#', self::$config['prefix'], trim($table));
+            $table = str_replace('#PB#', self::$config[$this->_db_name]['prefix'], trim($table));
             $table = str_replace('#!PB#', '#PB#', $table);
             return $table;
         }
 
-        return self::$config['prefix'];
+        return self::$config[$this->_db_name]['prefix'];
     }
 
     public function errno() 
     {
-        return mysqli_errno($this->_handler);
+        $instance_name = self::$config[$this->_db_name]['current_instance'];
+        return mysqli_errno(self::$_instance[$instance_name]->_handler());
     }
 
     public function error() 
     {
-        return mysqli_error($this->_handler);
+        $instance_name = self::$config[$this->_db_name]['current_instance'];
+        return mysqli_error(self::$_instance[$instance_name]->_handler());
     }
 
     /**
@@ -2147,9 +2277,12 @@ class db_connection
         $value = $this->quote_identifier($value);
   
         // 当前字段属于加密字段
-        if ( ! empty(self::$config['crypt_fields'][$table]) && in_array($field, self::$config['crypt_fields'][$table])) 
+        if ( 
+            !empty(self::$config[$this->_db_name]['crypt_fields'][$table]) && 
+            in_array($field, self::$config[$this->_db_name]['crypt_fields'][$table])
+        ) 
         {
-            $value = "AES_DECRYPT({$value}, '".self::$config['crypt_key']."')";
+            $value = "AES_DECRYPT({$value}, '".self::$config[$this->_db_name]['crypt_key']."')";
             // 只处理SELECT子句中的字段
             if ($select && !$inside) 
             {
@@ -2201,9 +2334,12 @@ class db_connection
         }
 
         // 当前字段属于加密字段
-        if ( ! empty(self::$config['crypt_fields'][$table]) && in_array($field, self::$config['crypt_fields'][$table])) 
+        if ( 
+            !empty(self::$config[$this->_db_name]['crypt_fields'][$table]) && 
+            in_array($field, self::$config[$this->_db_name]['crypt_fields'][$table])
+        ) 
         {
-            $value = "AES_ENCRYPT('{$value}', '".self::$config['crypt_key']."')";
+            $value = "AES_ENCRYPT('{$value}', '".self::$config[$this->_db_name]['crypt_key']."')";
         }
         else 
         {
@@ -2469,54 +2605,42 @@ class db_connection
 
     public function autocommit($mode = true)
     {
-        self::instance(); //强制主库
-        return mysqli_autocommit($this->_handler, $mode);
+        return mysqli_autocommit(
+            static::$_instance[self::get_instance_name($this->_db_name, 'master')]->_handler(), 
+            $mode
+        );
     }
 
     public function start()
     {
-        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
-        {
-            db::$queries[] = 'autocommit false';
-        }
+        PHP_SAPI != 'cli' && db::$queries[] = 'autocommit false';
+        $this->_atts['start'] = true; //数据库重连可能会导致事务丢失，标记开启了事务不重连
+
         return $this->autocommit(false);
     }
 
     public function commit()
     {
-        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
-        {
-            db::$queries[] = 'commit';
-        }
-        mysqli_commit($this->_handler);
-
-        return true;
+        PHP_SAPI != 'cli' && db::$queries[] = 'commit';
+        return mysqli_commit(static::$_instance[self::get_instance_name($this->_db_name, 'master')]->_handler());
     }
 
     public function rollback()
     {
-        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
-        {
-            db::$queries[] = 'rollback';
-        }
-        mysqli_rollback($this->_handler);
-        
-        return true;
+        PHP_SAPI != 'cli' && db::$queries[] = 'rollback';
+        return mysqli_rollback(static::$_instance[self::get_instance_name($this->_db_name, 'master')]->_handler());
     }
 
     public function end()
     {
-        if ( strtoupper(PHP_SAPI) != 'CLI' ) 
-        {
-            db::$queries[] = 'autocommit true';
-        }
+        PHP_SAPI != 'cli' && db::$queries[] = 'autocommit true';
         return $this->autocommit(true);
     }
 
     public function get_exception_trace($e) 
     {
         $ret = $e->getMessage();
-        foreach ($e->getTrace() as $k=>$frame) 
+        foreach ($e->getTrace() as $k => $frame) 
         {
             $num = $k+1;
             if ( $num != 2 ) 
@@ -2617,6 +2741,21 @@ class db_connection
         }
 
         return $sql;
+    }
+
+    /**
+     * 获取实例名称数组
+     * @param string $name 实例名称
+     */
+    public static function get_instance_name($name = null, $type = null)
+    {
+        $name = !$name ? self::$_default_name : $name;
+        $instance_name = [
+            'master' => $name .'_w',
+            'slave'  => $name .'_r'
+        ];
+
+        return !empty($type) ? $instance_name[$type] : $instance_name;
     }
 
     /**
