@@ -198,7 +198,7 @@ class db_connection
     {
         $name  = empty($name) ? self::$_default_name : $name;
         $config_file = empty($config_file) ? 'database' : $config_file;
-        self::$config[$name] = config::instance('app_config')->get('config', $config_file);
+        self::$config[$name] = config::instance($config_file)->get();
         if( isset(self::$config[$name]['host']['master']) )
         {
             $instance_name = self::get_instance_name($name);
