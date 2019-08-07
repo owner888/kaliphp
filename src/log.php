@@ -323,8 +323,6 @@ class log
 
         $msg = empty($context) ? $msg : $context.' - '.$msg;
 
-        $level = isset(self::$levels[$level]) ? strtolower(self::$levels[$level]) : strtolower($level);
-
         self::$logs[ $level ][] = $msg;
         if( PHP_SAPI == 'cli' || count(self::$logs[ $level ]) >= self::$max_log ) 
         {
@@ -344,14 +342,19 @@ class log
         // 保存到日志文件
         foreach( self::$logs as $level => $msgs )
         {
-            // 不是系统日志
-            if ( !isset(self::$levels[$level]) && ( SYS_CONSOLE || self::is_terminal() || config::instance('log')->get('log_type') == 'monolog' ) ) 
+            if ( isset(self::$levels[$level]) ) 
             {
-                $level = 'notice';
+                $is_sys_log = true;
+                $level = strtolower(self::$levels[$level]);
+            }
+            else 
+            {
+                $is_sys_log = false;
+                $level = strtolower($level);
             }
 
             // 是否输出到浏览器
-            if ( SYS_CONSOLE ) 
+            if ( SYS_CONSOLE && $is_sys_log ) 
             {
                 foreach( $msgs as $msg ) 
                 {
@@ -359,7 +362,7 @@ class log
                 }
             }
 
-            if ( self::is_terminal() ) 
+            if ( self::is_terminal() && $is_sys_log ) 
             {
                 foreach( $msgs as $msg ) 
                 {
@@ -367,7 +370,7 @@ class log
                 }
             }
 
-            if ( config::instance('log')->get('log_type') == 'monolog' ) 
+            if ( config::instance('log')->get('log_type') == 'monolog' && $is_sys_log ) 
             {
                 foreach($msgs as $msg) 
                 {

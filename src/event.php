@@ -184,13 +184,13 @@ class event
         cls_security::ip_filter();
         // 国家过滤器
         cls_security::country_filter();
+
         //log::info('filter: '.$request->getHostInfo().$request->getUrl());
     }
 
     /**
      * 请求入口
      * @param $event
-     * @param $request TXRequest
      */
     public static function on_request($event)
     {
@@ -212,14 +212,43 @@ class event
             'ac' => 'index',
         ];
         $forms = array_merge($forms, req::$forms);
-        log::notice(json_encode($forms));
+        log::info('request: '.json_encode($forms));
+
+        //log::info('request: '.$request->getHostInfo().$request->getUrl());
+    }
+
+    /**
+     * 响应
+     * @param $event
+     */
+    public static function on_response($event)
+    {
+        $url = sprintf("ct=%s&ac=%s", kali::$ct, kali::$ac);
+        // 不在日志记录方法里面
+        if ( !in_array(req::method(), self::$config['log_request_methods']) && !in_array('*', self::$config['log_request_methods'])) 
+        {
+            return;
+        }
+
+        // 不是日志记录请求
+        if ( !in_array($url, self::$config['log_request_uris']) && !in_array('*', self::$config['log_request_uris']) ) 
+        {
+            return;
+        }
+
+        $forms = [
+            'ct' => 'index',
+            'ac' => 'index',
+        ];
+        $forms = array_merge($forms, req::$forms);
+        log::log('response', json_encode($forms));
 
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 
     public static function on_sql($event, string $sql = null, string $db = null)
     {
-        log::info("{$db} - {$sql}", 'SQL query');
+        log::info(sprintf('SQL Query: %s [%s]', $sql, $db));
         if ( SYS_CONSOLE )
         {
             cls_chrome::info('%c SQL语法 %c '.$sql.' ','color: white; background: #34495e; padding:5px 0;', 'background: #95a5a6; padding:5px 0;');
@@ -238,7 +267,6 @@ class event
                     ++ $step;
                 }
                 cls_chrome::info('%c 路径 %c ' .str_replace(array('%file','%line'), array($val['file'],$val['line']),SYS_EDITOR) . ' ','color: white; background: #27ae60; padding:5px 0;', 'background: #2ecc71; padding:5px 0;');
-
             }
         }
     }
