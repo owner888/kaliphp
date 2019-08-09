@@ -12,6 +12,7 @@
 
 namespace kaliphp;
 use kaliphp\kali;
+use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_security;
 use kaliphp\lib\cls_filter;
 use kaliphp\lib\cls_cli;
@@ -30,42 +31,43 @@ class req
 {
     public static $config = [];
 
-    // 用户的cookie
+    /**
+     * @var  string  $raw  raw PHP input
+     */
+    protected static $raw_input = null;
+
+    // $_COOKIE 变量
     public static $cookies = array();
 
-    // 把GET、POST的变量合并一块，相当于 _REQUEST
+    // Returns all of the GET, POST, PUT, PATCH or DELETE array's，like $_REQUEST
     public static $forms = array();
 
-    // _GET 变量
+    // $_GET 变量
     public static $gets = array();
 
-    // _POST 变量
+    // $_POST 变量
     public static $posts = array();
 
-    // file_get_contents("input://");
+    // All PUT input
+    public static $puts = array();
+
+    // All DELETE input
+    public static $deletes = array();
+
+    // All PATCH input
+    public static $patchs = array();
+
+	// parsed request body as json
     public static $jsons = array();
+
+    // parsed request body as xml
+    public static $xmls = array();
 
     // 文件变量
     public static $files = array();
 
     // 这个可以强制设置
     public static $is_force_ajax = false;
-
-    /**
-     * Raw input stream data
-     * Holds a cache of php://input contents
-     *
-     * @var	string
-     */
-    private static $_raw_input_stream;
-
-    /**
-     * Parsed input stream data
-     * Parsed from php://input at runtime
-     *
-     * @var	array
-     */
-    private $_input_stream;
 
     // url_rewrite
     public static $url_rewrite = false;
@@ -88,86 +90,13 @@ class req
      */
     public static function _init()
     {
-        //命令行模式
-        if( self::method() === 'CLI' ) 
-        {
-            // 把命令行参数转化为get参数
-            if ( count(cls_cli::$args) > 0) 
-            {
-                foreach (cls_cli::$args as $k=>$v) 
-                {
-                    if (!is_numeric($k)) 
-                    {
-                        $_GET[$k] = $v;
-                    }
-                }
-            }
-        }
-
         self::$config = config::instance('config')->get('request');
 
-        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
+		// get php raw input
+        self::$raw_input = file_get_contents('php://input');
 
-        // 处理get
-        if( count($_GET) > 0 )
-        {
-            if( !$magic_quotes_gpc ) $_GET = self::add_s( $_GET );
-            if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
-
-            foreach($_GET as $k=>$v)
-            {
-                self::$gets[$k] = $v;
-                self::$forms[$k] = $v;
-            }
-        }
-
-        // 处理post
-        if( count($_POST) > 0 )
-        {
-            if( !$magic_quotes_gpc ) $_POST = self::add_s( $_POST );
-            if (self::$config['global_xss_filtering']) $_POST = cls_security::xss_clean($_POST);
-
-            foreach($_POST as $k=>$v)
-            {
-                self::$posts[$k] = $v;
-                self::$forms[$k] = $v;
-            }
-        }
-
-        //处理cookie
-        if( count($_COOKIE) > 0 )
-        {
-            if( !$magic_quotes_gpc ) $_COOKIE = self::add_s( $_COOKIE );
-            if (self::$config['global_xss_filtering']) $_COOKIE = cls_security::xss_clean($_COOKIE);
-
-            self::$cookies = $_COOKIE;
-        }
-
-        unset($_GET);
-        unset($_POST);
-        unset($_REQUEST);
-
-        //上传的文件处理
-        if( isset($_FILES) && count($_FILES) > 0 )
-        {
-            if( !$magic_quotes_gpc ) $_FILES = self::add_s( $_FILES );
-            self::filter_files($_FILES);
-        }
-
-        // 是否启用rewrite(保留参数)
-        //self::$url_rewrite = isset($GLOBALS['config']['use_rewrite']) ? $GLOBALS['config']['use_rewrite'] : false;
-        self::$url_rewrite = false;
-
-        //处理url_rewrite(暂时不实现)
-        if( self::$url_rewrite )
-        {
-            $gstr = self::server('QUERY_STRING');
-
-            if( empty($gstr) )
-            {
-                $gstr = self::server('PATH_INFO');
-            }
-        }
+        // fetch global input data
+        self::hydrate();
 
         //默认ac和ct
         self::$forms['ct'] = isset(self::$forms['ct']) ? self::$forms['ct'] : 'index';
@@ -200,6 +129,26 @@ class req
         return eval( $phpcode );
     }
 
+	/**
+	 * Returns PHP's raw input
+	 *
+	 * @return  array
+	 */
+	public static function raw()
+	{
+		return self::$raw_input;
+	}
+
+	/**
+	 * Returns all of the GET, POST, PUT, PATCH or DELETE array's
+	 *
+	 * @return  array
+	 */
+	public static function all()
+	{
+		return array_merge(self::$gets, self::$posts, self::$puts, self::$patchs, self::$deletes);
+	}
+
     /**
      * 获得指定表单值
      * 
@@ -210,120 +159,172 @@ class req
      * @author seatle <seatle@foxmail.com> 
      * @created time :2014-12-16 10:48
      */
-    public static function item( $formname = '', $defaultvalue = null, $filter_type = '' )
+    public static function item( $index = null, $default = null, $filter_type = '' )
     {   
-        if( !isset(self::$forms[$formname]) || self::$forms[$formname] === '' )
-        {
-            $value = $defaultvalue;
-        } 
-        else 
-        {
-            $value = self::$forms[$formname];
-        }
+        $value = (func_num_args() === 0) ? self::all() : cls_arr::get(self::all(), $index, $default);
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+    }
 
+	/**
+	 * Gets the specified GET variable.
+	 *
+	 * @param   string  $index    The index to get
+	 * @param   string  $default  The default value
+	 * @return  string|array
+	 */
+    public static function get( $index = null, $default = null, $filter_type = '' )
+    {   
+        $value = (func_num_args() === 0) ? self::$gets : cls_arr::get(self::$gets, $index, $default);
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+    }
+
+	/**
+	 * Gets the specified POST variable.
+	 *
+	 * @param   string  $index    The index to get
+	 * @param   string  $default  The default value
+	 * @return  string|array
+	 */
+    public static function post( $index = null, $default = null, $filter_type = '' )
+    {   
+        $value = (func_num_args() === 0) ? self::$posts : cls_arr::get(self::$posts, $index, $default);
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+    }
+
+	/**
+	 * Fetch an item from the php://input for put arguments
+	 *
+	 * @param   string  $index    The index key
+	 * @param   mixed   $default  The default value
+	 * @return  string|array
+	 */
+	public static function put( $index = null, $default = null, $filter_type = '' )
+	{
+        $value = (func_num_args() === 0) ? self::$puts : cls_arr::get(self::$puts, $index, $default);
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+	}
+
+	/**
+	 * Fetch an item from the php://input for patch arguments
+	 *
+	 * @param   string  $index    The index key
+	 * @param   mixed   $default  The default value
+	 * @return  string|array
+	 */
+	public static function patch( $index = null, $default = null, $filter_type = '' )
+	{
+        $value = (func_num_args() === 0) ? self::$patchs : cls_arr::get(self::$patchs, $index, $default);
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+	}
+
+	/**
+	 * Fetch an item from the php://input for delete arguments
+	 *
+	 * @param   string  $index    The index key
+	 * @param   mixed   $default  The default value
+	 * @return  string|array
+	 */
+	public static function delete( $index = null, $default = null, $filter_type = '' )
+	{
+        $value = (func_num_args() === 0) ? self::$deletes : cls_arr::get(self::$deletes, $index, $default);
+        return cls_filter::filter($value, $filter_type, self::$throw_error);
+	}
+
+    /**
+     * Get the request body interpreted as JSON.
+     *
+     * @param   mixed  $index
+     * @param   mixed  $default
+     * @return  array  parsed request body content.
+     */
+    public static function json( $index = null, $default = null, $filter_type = '' )
+    {
+        $value = (func_num_args() === 0) ? self::$jsons : cls_arr::get(self::$jsons, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**
-     * 获得get表单值
+     * Get the request body interpreted as XML.
+     *
+     * @param   mixed  $index
+     * @param   mixed  $default
+     * @return  array  parsed request body content.
      */
-    public static function get( $formname = '', $defaultvalue = null, $filter_type = '' )
-    {   
-        if( !isset(self::$gets[$formname]) || self::$gets[$formname] === '' )
-        {
-            $value = $defaultvalue;
-        } 
-        else 
-        {
-            $value = self::$gets[$formname];
-        }
-
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * 获得post表单值
-     */
-    public static function post( $formname = '', $defaultvalue = null, $filter_type = '' )
-    {   
-        if( !isset(self::$posts[$formname]) || self::$posts[$formname] === '' )
-        {
-            $value = $defaultvalue;
-        } 
-        else 
-        {
-            $value = self::$posts[$formname];
-        }
-
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * 获得post表单值
-     */
-    public static function jsons( $formname = '', $defaultvalue = null, $filter_type = '' )
-    {   
-        if( !isset(self::$posts[$formname]) || self::$posts[$formname] === '' )
-        {
-            $value = $defaultvalue;
-        } 
-        else 
-        {
-            $value = self::$posts[$formname];
-        }
-
+    public static function xml( $index = null, $default = null, $filter_type = '' )
+    {
+        $value = (func_num_args() === 0) ? self::$xmls : cls_arr::get(self::$xmls, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**
      * 获得指定cookie值
      */
-    public static function cookie( $key = '', $defaultvalue = null, $filter_type = '' )
+    public static function cookie( $index = null, $default = null, $filter_type = '' )
     {
-        if( !isset(self::$cookies[$key]) || self::$cookies[$key] === '' )
-        {
-            $value = $defaultvalue;
-        } 
-        else 
-        {
-            $value = self::$cookies[$key];
-        }
-
+        $value = (func_num_args() === 0) ? self::$cookies : cls_arr::get(self::$cookies, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
     /**
-     * Fetch an item from the php://input stream
+     * 获得SERVER值
      *
-     * Useful when you need to access PUT, DELETE or PATCH request data.
-     *
-     * @param	string	$index		Index for item to be fetched
-     * @param	bool	$default	The default value
-     * @return	mixed
+     * @param   string  $index    索引
+     * @param   mixed   $default  默认值
+     * @return  string|array
      */
-    public function input_stream($index = null, $default = null)
+    public static function server( $index = null, $default = null )
     {
-        $input_stream = file_get_contents('php://input');
-
-        if ( func_num_args() === 0 ) 
-        {
-            return $input_stream;
-        }
-
-        if ( !is_array($input_stream) )
-        {
-            parse_str($input_stream, $input_stream);
-            is_array($input_stream) || $input_stream = array();
-        }
-
-        // 安全过滤
-        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
-        if( !$magic_quotes_gpc ) $input_stream = self::add_s( $input_stream );
-        if (self::$config['global_xss_filtering']) $input_stream = cls_security::xss_clean($input_stream);
-
-        return !isset($input_stream[$index]) ? $default : $input_stream[$index];
+		return (func_num_args() === 0) ? $_SERVER : cls_arr::get($_SERVER, strtoupper($index), $default);
     }
 
+	/**
+	 * Fetch a item from the HTTP request headers
+	 *
+	 * @param   mixed $index
+	 * @param   mixed $default
+	 * @return  array
+	 */
+	public static function headers( $index = null, $default = null )
+	{
+		static $headers = null;
+
+		// do we need to fetch the headers?
+		if ( $headers === null )
+		{
+			// deal with fcgi or nginx installs
+			if ( ! function_exists('getallheaders'))
+			{
+				$server = cls_arr::filter_prefixed(static::server(), 'HTTP_', true);
+
+				foreach ($server as $key => $value)
+				{
+					$key = join('-', array_map('ucfirst', explode('_', strtolower($key))));
+
+					$headers[$key] = $value;
+				}
+
+				$value = static::server('Content_Type', static::server('Content-Type')) and $headers['Content-Type'] = $value;
+				$value = static::server('Content_Length', static::server('Content-Length')) and $headers['Content-Length'] = $value;
+			}
+			else
+			{
+				$headers = getallheaders();
+			}
+		}
+
+		return empty($headers) ? $default : ((func_num_args() === 0) ? $headers : cls_arr::get(array_change_key_case($headers), strtolower($index), $default));
+	}
+
+    /**
+     * Return's the query string
+     *
+     * @param   string $default
+     * @return  string
+     */
+    public static function query_string($default = '')
+    {
+        return static::server('QUERY_STRING', $default);
+    }
 
     /**
      * 获取用户的公共IP地址
@@ -386,11 +387,6 @@ class req
             $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
             return strtoupper($records['countryCode']);
         }
-    }
-
-    public static function timezone_set($ip = '')
-    {
-        return -8;
     }
 
     public static function language()
@@ -528,66 +524,6 @@ class req
         $regex_match .= ")/i";
 
         return isset($_SERVER['HTTP_X_WAP_PROFILE']) or isset($_SERVER['HTTP_PROFILE']) or preg_match($regex_match, strtolower(static::server('HTTP_USER_AGENT')));
-    }
-
-    /**
-     * Return's the query string
-     *
-     * @param   string $default
-     * @return  string
-     */
-    public static function query_string($default = '')
-    {
-        return static::server('QUERY_STRING', $default);
-    }
-
-    /**
-     * 获得SERVER值
-     *
-     * @param   string  $index    索引
-     * @param   mixed   $default  默认值
-     * @return  string|array
-     */
-    public static function server($index = null, $default = null)
-    {
-        if ( func_num_args() === 0 ) 
-        {
-            return $_SERVER;
-        }
-        return !isset($_SERVER[strtoupper($index)]) ? $default : $_SERVER[strtoupper($index)];
-    }
-
-    /**
-     * 把指定数据转化为路由数据
-     *
-     * @param  $dfarr   默认数据列表 array( array(key, dfvalue)... )
-     * @param  $datas   数据列表
-     * @param  $method  方法
-     * @return boolean
-     */
-    public static function assign_values(&$dfarr, &$datas = null, $method = 'GET')
-    {
-        $method = strtoupper( $method );
-        foreach($dfarr as $k => $v)
-        {
-            if( isset($datas[$k]) )
-            {
-                req::$forms[ $v[0] ] = $datas[$k];
-            }
-            else 
-            {
-                req::$forms[ $v[0] ] = $v[1];
-            }
-            //给值gets/posts
-            if( $method == 'GET' ) 
-            {
-                req::$gets[ $v[0] ] = req::$forms[ $v[0] ];
-            }
-            else 
-            {
-                req::$posts[ $v[0] ] = req::$forms[ $v[0] ];
-            }
-        }
     }
 
     /**
@@ -840,6 +776,236 @@ class req
             return false;
         }
         return true;
+    }
+
+    /**
+     * 把指定数据转化为路由数据
+     *
+     * @param  $dfarr   默认数据列表 array( array(key, dfvalue)... )
+     * @param  $datas   数据列表
+     * @param  $method  方法
+     * @return boolean
+     */
+    public static function assign_values(&$dfarr, &$datas = null, $method = 'GET')
+    {
+        $method = strtoupper( $method );
+        foreach($dfarr as $k => $v)
+        {
+            if( isset($datas[$k]) )
+            {
+                req::$forms[ $v[0] ] = $datas[$k];
+            }
+            else 
+            {
+                req::$forms[ $v[0] ] = $v[1];
+            }
+            //给值gets/posts
+            if( $method == 'GET' ) 
+            {
+                req::$gets[ $v[0] ] = req::$forms[ $v[0] ];
+            }
+            else 
+            {
+                req::$posts[ $v[0] ] = req::$forms[ $v[0] ];
+            }
+        }
+    }
+
+    /**
+     * Hydrates the input array
+     *
+     * @return  void
+     */
+    protected static function hydrate()
+    {
+        // get the input method and unify it
+        $method = strtolower(self::method());
+
+        // get the content type from the header, strip optional parameters
+        $content_header = self::headers('Content-Type');
+        if (($content_type = strstr($content_header, ';', true)) === false)
+        {
+            $content_type = $content_header;
+        }
+
+        // fetch the raw input data
+        $php_input = self::raw();
+
+        // handle form-urlencoded input
+        if ( $content_type == 'application/x-www-form-urlencoded' )
+        {
+            // double-check if max_input_vars is not exceeded,
+            // it doesn't always give an E_WARNING it seems...
+            if ( $method == 'get' or $method == 'post' )
+            {
+                if ($php_input and ($amps = substr_count($php_input, '&')) > ini_get('max_input_vars'))
+                {
+                    throw new \Exception('Input truncated by PHP. Number of variables exceeded '.ini_get('max_input_vars').'. To increase the limit to at least the '.$amps.' needed for this HTTP request, change the value of "max_input_vars" in php.ini.');
+                }
+            }
+            else
+            {
+                $php_input = urldecode($php_input);
+                // other methods than GET and POST need to be parsed manually
+                parse_str($php_input, $php_input);
+            }
+        }
+
+        // handle multipart/form-data input
+        elseif ( $content_type == 'multipart/form-data' )
+        {
+            // grab multipart boundary from content type header
+            preg_match('/boundary=(.*)$/', $content_header, $matches);
+            $boundary = $matches[1];
+
+            // split content by boundary and get rid of last -- element
+            $blocks = preg_split('/-+'.$boundary.'/', $php_input);
+            array_pop($blocks);
+
+            // loop data blocks
+            $php_input = array();
+            foreach ($blocks as $id => $block)
+            {
+                // skip empty blocks
+                if ( ! empty($block))
+                {
+                    // parse uploaded files
+                    if (strpos($block, 'application/octet-stream') !== FALSE)
+                    {
+                        // match "name", then everything after "stream" (optional) except for prepending newlines
+                        preg_match("/name=\"([^\"]*)\".*stream[\n|\r]+([^\n\r].*)?$/s", $block, $matches);
+                    }
+                    // parse all other fields
+                    else
+                    {
+                        // match "name" and optional value in between newline sequences
+                        preg_match('/name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $block, $matches);
+                    }
+
+                    // store the result, if any
+                    $php_input[$matches[1]] = isset($matches[2]) ? $matches[2] : '';
+                }
+            }
+        }
+
+        // handle json input
+        elseif ($content_type == 'application/json')
+        {
+            self::$jsons = $php_input = json_decode($php_input, true);
+        }
+
+        // handle xml input
+        elseif ($content_type == 'application/xml' or $content_type == 'text/xml')
+        {
+            self::$xmls = $php_input = self::xml_to_array(new \SimpleXMLElement($php_input));
+        }
+
+        // unknown input format
+        elseif ($php_input and ! is_array($php_input))
+        {
+            // don't know how to handle it, allow the application to handle it
+            // reset the method to avoid having it stored below!
+            $method = null;
+        }
+
+        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
+
+        //命令行模式
+        if( self::method() === 'CLI' ) 
+        {
+            // 把命令行参数转化为get参数
+            if ( count(cls_cli::$args) > 0) 
+            {
+                foreach (cls_cli::$args as $k=>$v) 
+                {
+                    if (!is_numeric($k)) 
+                    {
+                        $_GET[$k] = $v;
+                    }
+                }
+            }
+            // CLI环境下没必要往下执行了
+            return;
+        }
+
+        // 处理get
+        if( count($_GET) > 0 )
+        {
+            if( !$magic_quotes_gpc ) $_GET = self::add_s( $_GET );
+            if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
+            self::$gets = $_GET;
+        }
+
+        // 处理post
+        if( count($_POST) > 0 )
+        {
+            if( !$magic_quotes_gpc ) $_POST = self::add_s( $_POST );
+            if (self::$config['global_xss_filtering']) $_POST = cls_security::xss_clean($_POST);
+            self::$posts = $_POST;
+        }
+
+        //处理cookie
+        if( count($_COOKIE) > 0 )
+        {
+            if( !$magic_quotes_gpc ) $_COOKIE = self::add_s( $_COOKIE );
+            if (self::$config['global_xss_filtering']) $_COOKIE = cls_security::xss_clean($_COOKIE);
+            self::$cookies = $_COOKIE;
+        }
+
+        //上传的文件处理
+        if( isset($_FILES) && count($_FILES) > 0 )
+        {
+            if( !$magic_quotes_gpc ) $_FILES = self::add_s( $_FILES );
+            self::filter_files($_FILES);
+        }
+
+        unset($_GET);
+        unset($_POST);
+        unset($_REQUEST);
+
+        // store the parsed data based on the request method
+        if ($method == 'put' or $method == 'patch' or $method == 'delete')
+        {
+            self::${$method.'s'} = $php_input;
+        }
+
+        //// 是否启用rewrite(保留参数)
+        //self::$url_rewrite = isset($GLOBALS['config']['use_rewrite']) ? $GLOBALS['config']['use_rewrite'] : false;
+        //self::$url_rewrite = false;
+
+        ////处理url_rewrite(暂时不实现)
+        //if( self::$url_rewrite )
+        //{
+            //$gstr = self::server('QUERY_STRING');
+
+            //if( empty($gstr) )
+            //{
+                //$gstr = self::server('PATH_INFO');
+            //}
+        //}
+    }
+
+    public static function xml_to_array($xmls) 
+    {
+        $array = [];
+
+        foreach ($xmls as $key => $xml) 
+        {
+            $count = $xml->count();
+
+            if ($count == 0) 
+            {
+                $res = (string) $xml;
+            } 
+            else 
+            {
+                $res = self::xml_to_array($xml);
+            }
+
+            $array[$key] = $res;
+        }
+
+        return $array;
     }
 }
 
