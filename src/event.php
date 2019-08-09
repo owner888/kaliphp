@@ -21,7 +21,8 @@ defined('afterAction') or define('afterAction', 2);
 defined('onException') or define('onException', 3);
 defined('onError') or define('onError', 4);
 defined('onRequest') or define('onRequest', 5);
-defined('onFilter') or define('onFilter', 6);
+defined('onResponse') or define('onResponse', 6);
+defined('onFilter') or define('onFilter', 7);
 defined('onSql') or define('onSql', 'onSql');
 
 /**
@@ -159,6 +160,7 @@ class event
         event::on(onException, ['kaliphp\event', 'on_exception']);
         event::on(onFilter, ['kaliphp\event', 'on_filter']);
         event::on(onRequest, ['kaliphp\event', 'on_request']);
+        event::on(onResponse, ['kaliphp\event', 'on_response']);
         event::on(onSql, ['kaliphp\event', 'on_sql']);
     }
 
@@ -189,7 +191,7 @@ class event
     }
 
     /**
-     * 请求入口
+     * 请求
      * @param $event
      */
     public static function on_request($event)
@@ -213,7 +215,6 @@ class event
         ];
         $forms = array_merge($forms, req::$forms);
         log::info('request: '.json_encode($forms));
-
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 
@@ -241,8 +242,7 @@ class event
             'ac' => 'index',
         ];
         $forms = array_merge($forms, req::$forms);
-        log::log('response', json_encode($forms));
-
+        log::info('response: '.json_encode($forms));
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 

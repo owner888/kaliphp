@@ -143,7 +143,8 @@ class cache
 
         $cachekey = self::_get_key($key);
 
-        if( self::$need_mem ) 
+        // CLI下会有内存溢出的情况
+        if( PHP_SAPI != 'cli' && self::$need_mem ) 
         {
             self::$_caches[ $cachekey ] = $value;
         }

@@ -136,7 +136,8 @@ class kali
         defined('onException') or define('onException', 3);
         defined('onError') or define('onError', 4);
         defined('onRequest') or define('onRequest', 5);
-        defined('onFilter') or define('onFilter', 6);
+        defined('onResponse') or define('onResponse', 6);
+        defined('onFilter') or define('onFilter', 7);
         defined('onSql') or define('onSql', 'onSql');
     }
 
