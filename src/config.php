@@ -31,6 +31,7 @@ class config
 {
     private static $_instance = [];
     private $_name;
+    private $_from_db_config;
     private $_cfg_caches = [];
     private $_alias = [];
 
@@ -42,13 +43,15 @@ class config
      * db_config 在 数据库里面
      * @return config
      */
-    public static function instance($name = 'config')
+    public static function instance($name = 'config', $from_db_config = false)
     {
-        if (!isset(self::$_instance[$name]))
+        $instance_key = static::_get_instance_key($from_db_config);
+        if (!isset(self::$_instance[$instance_key][$name]))
         {
-            self::$_instance[$name] = new self($name);
+            self::$_instance[$instance_key][$name] = new self($name, $from_db_config);
         }
-        return self::$_instance[$name];
+
+        return self::$_instance[$instance_key][$name];
     }
 
     /**
@@ -56,9 +59,20 @@ class config
      * config constructor.
      * @param $name
      */
-    private function __construct($name)
+    private function __construct($name, $from_db_config = false)
     {
         $this->_name = $name;
+        $this->_from_db_config = $from_db_config;
+    }
+
+    /**
+     * 获取当前配置的类型
+     * @param  boolean $from_db_config 是否取数据库
+     * @return string                  返回当前配置类型key
+     */
+    private static function _get_instance_key($from_db_config = false)
+    {
+        return $from_db_config ? 'db_config' : 'config';
     }
 
     /**
@@ -67,10 +81,11 @@ class config
      */
     private function load_config()
     {
-        if (!isset($this->_cfg_caches[$this->_name])) 
+        $instance_key = static::_get_instance_key(false);
+        if (!isset($this->_cfg_caches[$instance_key][$this->_name])) 
         {
             $env_name = $this->_name. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
-            $this->_cfg_caches[$this->_name] = [];
+            $this->_cfg_caches[$instance_key][$this->_name] = [];
 
             //如果有config$env_name优先使用，否则加载哪里config
             //config优先顺序 数据库->系统config->app config
@@ -79,20 +94,38 @@ class config
                 if( file_exists($file = $path.$env_name.'.php') || file_exists($file = $path.$this->_name.'.php') )
                 {
                     $config = require $file; 
-                    $this->_cfg_caches[$this->_name] = util::array_merge_multiple(
-                        (array) $this->_cfg_caches[$this->_name], 
+                    $this->_cfg_caches[$instance_key][$this->_name] = util::array_merge_multiple(
+                        (array) $this->_cfg_caches[$instance_key][$this->_name], 
                         (array) $config
                     );
                 }
             }
 
-            if( empty($this->_cfg_caches[$this->_name]) )
+            if( empty($this->_cfg_caches[$instance_key][$this->_name]) )
             {
                 throw new Exception($path, 1002);
             }
         }
 
-        return $this->_cfg_caches[$this->_name];
+        return $this->_cfg_caches[$instance_key][$this->_name];
+    }
+
+    /**
+     * 加载应用配置文件
+     * 先加载对应的配置，比如database.php，看看有没有相应环境的配置，比如database_dev.php，有就覆盖
+     * @param string $module
+     * @return mixed
+     * @throws TXException
+     */
+    private function load_db_config()
+    {
+        $instance_key = static::_get_instance_key(true);
+        if (!isset($this->_dbcfg_caches[$instance_key][$this->_name])) 
+        {
+            $this->_dbcfg_caches[$instance_key][$this->_name] = $this->cache($this->_name);
+        }
+
+        return $this->_dbcfg_caches[$instance_key][$this->_name];
     }
 
     /**
@@ -139,7 +172,8 @@ class config
             return false;
         }
 
-        $this->_cfg_caches[$this->_name][$key] = $value;
+        $instance_key = static::_get_instance_key($this->_from_db_config); 
+        $this->_cfg_caches[$instance_key][$this->_name][$key] = $value;
     }
 
     /**
@@ -150,8 +184,7 @@ class config
      */
     public function get( $key = null, $defaultvalue = null, $alias = true )
     {
-        $config = $this->load_config();
-
+        $config = $this->_from_db_config ? $this->load_db_config() : $this->load_config();
         if ( $config && $key === null ) 
         {
             return $config;

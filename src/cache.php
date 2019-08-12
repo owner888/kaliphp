@@ -188,7 +188,7 @@ class cache
             unset(self::$_caches[ $cachekey ]);
         }
 
-        return self::$handle->delete( $cachekey );
+        return self::$handle->del( $cachekey );
     }
 
     /**
