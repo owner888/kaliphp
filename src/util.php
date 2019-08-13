@@ -440,7 +440,7 @@ class util
     public static function order_id($num = 7)
     {
         //return cls_snowflake::instance(0, 1)->nextid();
-        return date("ymdHis").self::random('numeric', $num);
+        return date("ymdHis").self::uniqid('numeric', $num);
     }
 
     /**
@@ -490,6 +490,62 @@ class util
         $date_obj = new \DateTime($datetime, new \DateTimeZone($from_timezone));
         $date_obj->setTimezone(new \DateTimeZone($to_timezone));
         return $date_obj->format($format);
+    }
+
+    /**
+     * 获取不重复的ID(只是保证当前字典中不重复，所以订单号加上当前的年月日时分秒就肯定不会重复)
+     * 比如：date("ymdHis").self::uniqid()
+     * @Author han
+     * @param  string  $type   类型
+     * @param  integer $num    随机位数
+     * @param  string  $action get/create
+     * @return mix  返回唯一ID
+     */
+    public static function uniqid($type = 'numeric', $num = 7, $action = 'get')
+    {
+        $max_num = 1000; //一次创建唯一ID数量
+        $key = sprintf('%s:%s_ %d', __FUNCTION__, $type, $num);
+        $lock_name = 'lock:'.$key;
+
+        //创建订单号
+        if( $action == 'create' )
+        {
+            //声明静态变量，防止高并发统一进程出现重复
+            static $ids = [];
+            for($i = 1; $i <= $max_num; $i++)
+            {
+                while( true )
+                {
+                    $id = util::random($type, $num);
+                    if( !isset($ids[$id]) ) 
+                    {
+                        $ids[$id] = 1;
+                        break;
+                    }
+                }
+
+                //加入到字典
+                cls_redis::instance()->sAdd($key, $id);
+            }
+
+            //删除锁
+            cls_redis_lock::unlock($lock_name, true);
+        }
+        //抛出一个id,没有没有了就重新取max_num条出来
+        else if( false == ($id = cls_redis::instance()->sPop($key)) )
+        {
+            $id = util::random($type, $num);
+            //进程结束后批量创建ID
+            if( false != cls_redis_lock::lock($lock_name, 0, 30) )
+            {
+                util::shutdown_function(
+                    [__CLASS__, __FUNCTION__],
+                    [$type, $num, 'create']
+                );
+            }
+        }
+
+        return $id;
     }
 
     /**
@@ -958,6 +1014,12 @@ class util
      **/
     public static function shutdown_function($func, $params = array(), $end = false)
     {
+        if ( PHP_SAPI === 'cli' ) 
+        {
+            call_user_func_array($func, $params);
+            return;
+        }
+
         static $stack = array();
 
         if( $func )
