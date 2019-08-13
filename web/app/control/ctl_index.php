@@ -183,7 +183,7 @@ class ctl_index
                         else 
                         {
                             // 保存用户ID到COOKIE和SESSION
-                            kali::$auth->auth_user( $user );
+                            kali::$auth->set_logininfo( $user );
                             $jumpurl = empty($gourl) ? '?ct=index' : $gourl;
                             cls_msgbox::show('成功登录', '成功登录，正在重定向你访问的页面', $jumpurl);
                         }

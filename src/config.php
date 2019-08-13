@@ -15,6 +15,7 @@ use kaliphp\kali;
 use kaliphp\cache;
 use kaliphp\db;
 use kaliphp\util;
+use kaliphp\lib\cls_arr;
 use Exception;
 
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);
@@ -30,176 +31,162 @@ defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
 class config
 {
     private static $_instance = [];
-    private $_name;
-    private $_from_db_config;
+    private $_module = 'config';
+    private $_source = 'file';
     private $_cfg_caches = [];
     private $_alias = [];
 
     /**
      * 单例
+     *
      * @param mixed $name config|app_config|db_config
      * config 在 kali/config
      * app_config 在 app/config
      * db_config 在 数据库里面
      * @return config
      */
-    public static function instance($name = 'config', $from_db_config = false)
+    public static function instance( $module = 'config', $source = 'file' )
     {
-        $instance_key = static::_get_instance_key($from_db_config);
-        if (!isset(self::$_instance[$instance_key][$name]))
+        if (!isset(self::$_instance[$source][$module]))
         {
-            self::$_instance[$instance_key][$name] = new self($name, $from_db_config);
+            self::$_instance[$source][$module] = new self($module, $source);
         }
 
-        return self::$_instance[$instance_key][$name];
+        return self::$_instance[$source][$module];
     }
 
     /**
-     * 构造
      * config constructor.
+     *
      * @param $name
      */
-    private function __construct($name, $from_db_config = false)
+    private function __construct( $module = 'config', $source = 'file' )
     {
-        $this->_name = $name;
-        $this->_from_db_config = $from_db_config;
-    }
-
-    /**
-     * 获取当前配置的类型
-     * @param  boolean $from_db_config 是否取数据库
-     * @return string                  返回当前配置类型key
-     */
-    private static function _get_instance_key($from_db_config = false)
-    {
-        return $from_db_config ? 'db_config' : 'config';
+        $this->_module = $module;
+        $this->_source = $source;
     }
 
     /**
      * 加载系统配置文件
+     * 先加载对应的配置，比如database.php，看看有没有相应环境的配置，比如database_dev.php，有就覆盖
+     *
      * @throws Exception
      */
-    private function load_config()
+    public function load()
     {
-        $instance_key = static::_get_instance_key(false);
-        if (!isset($this->_cfg_caches[$instance_key][$this->_name])) 
+        if ( !isset($this->_cfg_caches[$this->_source][$this->_module]) ) 
         {
-            $env_name = $this->_name. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
-            $this->_cfg_caches[$instance_key][$this->_name] = [];
+            $this->_cfg_caches[$this->_source][$this->_module] = [];
 
-            //如果有config$env_name优先使用，否则加载哪里config
-            //config优先顺序 数据库->系统config->app config
-            foreach([__DIR__ . DS . 'config' . DS, APPPATH. DS . 'config' . DS] as $path)
+            if ( $this->_source === 'db' ) 
             {
-                if( file_exists($file = $path.$env_name.'.php') || file_exists($file = $path.$this->_name.'.php') )
+                $this->_cfg_caches[$this->_source][$this->_module] = $this->cache();
+            }
+            else 
+            {
+                $env = $this->_module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
+
+                //如果有config$env优先使用，否则加载哪里config
+                //config优先顺序 数据库->系统config->app config
+                foreach([__DIR__ . DS . 'config' . DS, APPPATH. DS . 'config' . DS] as $path)
                 {
-                    $config = require $file; 
-                    $this->_cfg_caches[$instance_key][$this->_name] = util::array_merge_multiple(
-                        (array) $this->_cfg_caches[$instance_key][$this->_name], 
-                        (array) $config
-                    );
+                    if( file_exists($file = $path.$env.'.php') || file_exists($file = $path.$this->_module.'.php') )
+                    {
+                        $config = require $file; 
+                        $this->_cfg_caches[$this->_source][$this->_module] = util::array_merge_multiple(
+                            (array) $this->_cfg_caches[$this->_source][$this->_module], 
+                            (array) $config
+                        );
+                    }
+                }
+
+                if( empty($this->_cfg_caches[$this->_source][$this->_module]) )
+                {
+                    throw new Exception($path, 1002);
                 }
             }
-
-            if( empty($this->_cfg_caches[$instance_key][$this->_name]) )
-            {
-                throw new Exception($path, 1002);
-            }
         }
 
-        return $this->_cfg_caches[$instance_key][$this->_name];
-    }
-
-    /**
-     * 加载应用配置文件
-     * 先加载对应的配置，比如database.php，看看有没有相应环境的配置，比如database_dev.php，有就覆盖
-     * @param string $module
-     * @return mixed
-     * @throws TXException
-     */
-    private function load_db_config()
-    {
-        $instance_key = static::_get_instance_key(true);
-        if (!isset($this->_dbcfg_caches[$instance_key][$this->_name])) 
-        {
-            $this->_dbcfg_caches[$instance_key][$this->_name] = $this->cache($this->_name);
-        }
-
-        return $this->_dbcfg_caches[$instance_key][$this->_name];
+        return $this->_cfg_caches[$this->_source][$this->_module];
     }
 
     /**
      * 获取/设置配置缓存
-     * @param  string  $module  模块
-     * @param  boolean $update  是否更新
+     * @param  bool    $update  是否更新
      * @return array   $configs 配置信息
      */
-    public function cache($module = null, $update = false)
+    public function cache( bool $update = false )
     {
         $cache_key = __CLASS__ .':sys_db_config';
         $configs = cache::get($cache_key);
-        if( empty($configs) || !empty($update) )
+        if( $update || empty($configs) )
         {
-            $query = db::select('name,value,group')
+            $rsid = db::select('name,value,group')
                 ->from('#PB#_config')
                 ->as_result()
                 ->execute();
 
             $configs = [];
-            while( $row = db::fetch($query) )
+            while( $row = db::fetch($rsid) )
             {
                 $configs[$row['group']][$row['name']] = $row['value'];
             }
 
-            util::shutdown_function(
-                ['kaliphp\cache', 'set'],
-                [$cache_key, $configs, 0]
-            );
+            cache::set($cache_key, $configs, 0);
         }
 
-        if( !empty($module) )
+        if( !empty($this->_module) )
         {
-            $configs = isset($configs[$module]) ? $configs[$module] : [];
+            $configs = isset($configs[$this->_module]) ? $configs[$this->_module] : [];
         }
 
         return $configs;
     }
 
+    /**
+	 * Sets a (dot notated) config item
+	 *
+	 * @param    string   $item   a (dot notated) config key
+	 * @param    mixed    $value  the config value
+	 */
     public function set( $key, $value )
     {
-        if ( empty($key) || empty($value) ) 
-        {
-            return false;
-        }
-
-        $instance_key = static::_get_instance_key($this->_from_db_config); 
-        $this->_cfg_caches[$instance_key][$this->_name][$key] = $value;
+		strpos($key, '.') === false or $this->_cfg_caches[$this->_source][$this->_module][$key] = $value;
+		cls_arr::set($this->_cfg_caches[$this->_source][$this->_module], $key, $value);
     }
 
     /**
-     * get core config
-     * @param $key
-     * @param bool $alias
-     * @return mixed|null
+     * Returns a (dot notated) config setting
+     *
+     * @param   string   $item      name of the config item, can be dot notated
+     * @param   mixed    $default   the return value if the item isn't found
+     * @return  mixed               the config setting or default if not found
      */
-    public function get( $key = null, $defaultvalue = null, $alias = true )
+    public function get( $key = null, $default = null, $alias = true )
     {
-        $config = $this->_from_db_config ? $this->load_db_config() : $this->load_config();
-        if ( $config && $key === null ) 
+        $configs = $this->load();
+
+        $value = (func_num_args() === 0) ? $configs : cls_arr::get($configs, $key, $default);
+        $value = $alias ? $this->get_alias($value) : $value;
+        $value = empty($value) ? $default : $value;
+
+        return $value;
+    }
+
+    /**
+     * Deletes a (dot notated) config item
+     *
+     * @param    string       $item  a (dot notated) config key
+     * @return   array|bool          the \Arr::delete result, success boolean or array of success booleans
+     */
+    public static function del($key)
+    {
+        if ( isset($this->_cfg_caches[$this->_source][$this->_module][$key]) )
         {
-            return $config;
+            unset($this->_cfg_caches[$this->_source][$this->_module][$key]);
         }
 
-        if( !isset($config[$key]) || $config[$key] === '' )
-        {
-            $value = $defaultvalue;
-        } 
-        else 
-        {
-            $value = $config[$key];
-            $value = $alias ? $this->get_alias($config[$key]) : $config[$key];
-        }
-        return $value;
+        return cls_arr::delete($this->_cfg_caches[$this->_source][$this->_module], $key);
     }
 
     /**

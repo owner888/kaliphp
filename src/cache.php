@@ -129,9 +129,9 @@ class cache
 
     /**
      * 增加/修改一个缓存
-     * @parem $key        键(key=md5(self::$df_prefix.'_'.$key))
+     * @param $key        键(key=md5(self::$df_prefix.'_'.$key))
      * @param $value      值
-     * @parem $cachetime  有效时间，单位是秒(0不限, -1使用系统默认)
+     * @param $cachetime  有效时间，单位是秒(0不限, -1使用系统默认)
      * @return void
      */               
     public static function set($key, $value, $cachetime = -1)
@@ -176,10 +176,10 @@ class cache
 
     /**
      * 删除缓存
-     * @parem $key        键
-     * @return int        0|1
+     * @param string $key  键
+     * @return int  0|1
      */               
-    public static function del($key)
+    public static function del( $key )
     {
         $cachekey = self::_get_key($key);
 
@@ -193,10 +193,11 @@ class cache
 
     /**
      * 读取缓存
-     * @parem $key        键
-     * @return string|array
+     *
+     * @param $key  键
+     * @return bool | string | array
      */               
-    public static function get($key)
+    public static function get( $key )
     {
         //全局禁用cache(调试使用的情况)
         if( ! self::$config['enable'] ) 
@@ -210,14 +211,9 @@ class cache
         {
             return self::$_caches[ $cachekey ];
         }
-        if( self::$cache_type == 'redis' ) 
+        if( self::$cache_type === 'redis' ) 
         {
             $value = self::$handle->get( $cachekey );
-            //if ( empty($value)) 
-            //{
-                //log::error('empty redis value - '.$cachekey);
-                //log::error("Server is running: " . self::$handle->ping());
-            //}
             return self::$config['serialize'] ? unserialize($value) : $value;
         }
         else 
@@ -228,15 +224,16 @@ class cache
 
     /**
      * 读取缓存过期时间
-     * @parem $key        键
-     * @return void
-     */  
-    public static function ttl($key)
+     * 
+     * @param string $key
+     * @return int
+     */
+    public static function ttl( $key )
     {
         //全局禁用cache(调试使用的情况)
         if( ! self::$config['enable'] ) 
         {
-            return false;
+            return -2;
         }
 
         $cachekey = self::_get_key($key);
@@ -246,7 +243,7 @@ class cache
             // memcache无法获取key的过期时间
             $value = self::$handle->get( $cachekey );
             $expire = empty($value['expire']) ? 0 : $value['expire'];
-            return $expire;
+            return (int)$expire;
         }
         else 
         {
@@ -254,24 +251,30 @@ class cache
         }
     }
 
-    public static function has($key)
+    /**
+     * 缓存是否存在
+     * 
+     * @param string $key
+     * @return bool
+     */
+    public static function has( $key )
     {
         return static::get($key) ? true : false;
     }
 
     /**
      * 自增缓存（针对数值缓存）
-     * @access public
-     * @param  string $name 缓存变量名
+     *
+     * @param  string $key 缓存变量名
      * @param  int    $step 步长
      * @return false|int
      */
-    public static function inc($key, $step = 1)
+    public static function inc( $key, int $step = 1 )
     {
         $cachekey = self::_get_key($key);
         if( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
         {
-            if (!self::has($key)) 
+            if ( !self::has($key) ) 
             {
                 self::set($key, 0);
             }
@@ -290,12 +293,12 @@ class cache
 
     /**
      * 自减缓存（针对数值缓存）
-     * @access public
+     *
      * @param  string $name 缓存变量名
      * @param  int    $step 步长
      * @return false|int
      */
-    public static function dec($key, $step = 1)
+    public static function dec( $key, int $step = 1 )
     {
         $cachekey = self::_get_key($key);
 
@@ -320,16 +323,17 @@ class cache
 
     /**
      * 清除保存在缓存类的缓存
-     * @return void
+     *
+     * @return bool
      */               
-    public static function free_mem($flush_memc = false)
+    public static function free_mem( bool $flush_memc = false )
     {
         if( isset(self::$_caches) ) 
         {
             self::$_caches = array();
         }
 
-        if ($flush_memc)
+        if ( $flush_memc )
         {
             return self::$handle->flush();
         }
@@ -339,7 +343,8 @@ class cache
 
     /**
      * 关闭链接
-     * @return void
+     *
+     * @return bool
      */               
     public static function free()
     {
@@ -360,6 +365,7 @@ class cache
 
     /**
      * 调用 Redis、Memcache 除了 set、get 的其他方法
+     *
      * @param $method
      * @param $arguments
      * @return mixed
