@@ -11,6 +11,7 @@
  */
 
 namespace kaliphp;
+
 use kaliphp\kali;
 use kaliphp\config;
 use kaliphp\util;
@@ -82,18 +83,20 @@ class errorhandler
      */
     public static function shutdown_handler()
     {
+        if ( req::method() == 'CLI' )
+        {
+            return;
+        }
+
         // exception_handler 是直接调用的 error_handler
         // 如果 error_handler 函数还抛出异常，这里就会到这里来
-		$last_error = error_get_last();
+        //$last_error = error_get_last();
 
         // Set a mark point for benchmarking
         cls_benchmark::mark('loading_time:_base_classes_end');
 
-        if (req::method() !== 'CLI')
-        {
-            // 输出HTML
-            tpl::output();
-        }  
+        // 输出HTML
+        tpl::output();
 
         // 如果有错误信息，显示
         self::show_error();
@@ -109,45 +112,43 @@ class errorhandler
         // 反正是长链，缓存不要关了，否则session_regenerate_id会出问题
         //if( !session_id() || $sess_config['type'] != 'cache' ) 
         //{
-            //cache::free();
+        //cache::free();
         //}
     }
-    
-    
+
+
     /**
      * 错误接管函数
      * trigger_error 直接到这里来
-     * throw new Exception 先到handle_exception，再到这里来
+     * throw new Exception 先到 exception_handler，再到这里来
      * trigger_error 不会中断程序，只是警告，excetion会中断程序
      */
-    public static function error_handler($code, $message, $file, $line, $vars)
+    public static function error_handler($errno, $errstr, $errfile, $errline, array $errcontext)
     {
-        $log_type = 'debug';
-
-        //ajax和api接口直接输出json
-        if ( req::is_ajax() ) 
-        {
-            $log_type = 'ajax';
-        }
-        $err = self::format_errmsg($log_type, $code, $message, $file, $line, $vars);
+        $err = self::format_errstr($errno, $errstr, $errfile, $errline, $errcontext);
+        // 存在错误信息
         if( $err != '@' )
         {
-            self::$_debug_error_msg .= $err;
+            log::debug("\nError Trace:\n".self::strip_tags($err));
+            // CLI下面没必要保存日志到最后，直接debug里面输出即可
+            if ( PHP_SAPI != 'cli' ) 
+            {
+                self::$_debug_error_msg .= $err;
+            }
         }
     }
 
     /**
-     * exception接管函数
+     * exception 接管函数
      */
     public static function exception_handler($e)
     {
-        $code    = $e->getCode();
-        $message = $e->getMessage();
-        $message = self::fmt_code($code, $message);
-        $file    = $e->getFile();
-        $line    = $e->getLine();
-        $trace   = $e->getTrace();
-        self::error_handler($code, $message, $file, $line, $trace);
+        $errno      = $e->getCode();
+        $errstr     = self::fmt_code($errno, $e->getMessage());
+        $errfile    = $e->getFile();
+        $errline    = $e->getLine();
+        $errcontext = $e->getTrace();
+        self::error_handler($errno, $errstr, $errfile, $errline, $errcontext);
     }
 
     /**
@@ -155,7 +156,7 @@ class errorhandler
      */
     public static function xhprof_handler()
     {
-        if(PHP_SAPI !== 'cli' && function_exists('xhprof_enable') && DEBUG_MODE === true)
+        if( PHP_SAPI !== 'cli' && function_exists('xhprof_enable') && DEBUG_MODE === true )
         {
             $xhprof_data = xhprof_disable();
             include PATH_LIBRARY. "/debug/xhprof_lib/utils/xhprof_lib.php";
@@ -168,52 +169,23 @@ class errorhandler
 
     /**
      * 显示调试信息（程序结束时执行）
-     * 仅在 handler_php_shutdown 里调用
+     * 仅在 shutdown_handler 里调用
+     * CLI 不会跑到这里来，在 error_handler 方法里面 _debug_error_msg 没有被赋值
      */
     public static function show_error()
     {
-        // ajax/app接口报错
-        if ( req::is_ajax() && self::$_debug_error_msg != '' ) 
-        {
-            log::debug("Error Trace:\n".self::$_debug_error_msg);
-
-            if( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
-            {
-                echo json_encode(array(
-                    'code' => -1,
-                    'msg'  => self::$_debug_error_msg
-                ));
-            }
-            else 
-            {
-                echo json_encode(array(
-                    'code' => -1,
-                    'msg'  => 'System Error'
-                ));
-            }
-            // 直接返回不要处理下面的html错误格式化
-            return;
-        }
-
-
         if( self::$_debug_error_msg != '' || self::$_debug_mt_info !='' )
         {
-            $errmsg = self::$_debug_error_msg;
-            //$errmsg = str_replace(array("<font color='#3F7640'>","</font>"), array("\033[33;1m","\033[0m"), $errmsg);
-            $errmsg = preg_replace("/<font([^>]*)>|<\/font>|<\/div>|<\/strong>|<strong>|<br \/>/iU", '', $errmsg);
-            $errmsg = preg_replace("/<div style='font-size:14px([^>]*)>/iU", "-----------------------------------------------\n错误跟踪：", $errmsg);
-            $errmsg = str_replace(array("-&lt;","&gt;"), array("<",">"), $errmsg);
-            $errmsg = strip_tags($errmsg);
-
-            log::debug("\nError Trace:\n".$errmsg);
-
-            if ( PHP_SAPI == 'cli') 
+            if( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
             {
-                echo $errmsg;
-            }
-            else 
-            {
-                if( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
+                if ( req::is_ajax() ) 
+                {
+                    util::return_json([
+                        'code' => -1,
+                        'msg'  => self::strip_tags(self::$_debug_error_msg)."\n性能追踪：".self::strip_tags(self::$_debug_mt_info)
+                    ]);
+                }
+                else 
                 {
                     $js  = '<script language=\'javascript\'>';
                     $js .= 'function debug_close_all() {';
@@ -239,128 +211,106 @@ class errorhandler
     /**
      * 格式化错误信息
      */
-    public static function format_errmsg($log_type='debug', $errno, $errmsg, $filename, $linenum, $vars)
+    public static function format_errstr( $errno, $errstr, $errfile, $errline, array $errcontext )
     {
-        $user_errors = array(E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE);
+        $user_errors = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE ];
 
-        //处理从 catch 过来的错误
-        if (in_array($errno, $user_errors))
+        // 处理从 catch 过来的错误
+        if ( in_array($errno, $user_errors) )
         {
-            foreach($vars as $k=>$e)
+            foreach( $errcontext as $e )
             {
                 if( is_object($e) && method_exists($e, 'getMessage') ) 
                 {
-                    $errno     = $e->getCode();
-                    $errmsg    = $errmsg.' '.$e->getMessage();
-                    $linenum   = $e->getLine();
-                    $filename  = $e->getFile();
-                    $backtrace = $e->getTrace();
+                    $errno      = $e->getCode();
+                    $errstr     = $errstr.' '.$e->getMessage();
+                    $errline    = $e->getLine();
+                    $errfile    = $e->getFile();
+                    $errcontext = $e->getTrace();
                 }
             }
         }
 
-        //生产环境不理会普通的警告错误
-        $not_save_error = array(E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_NOTICE, E_USER_WARNING, E_WARNING);
-        if( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
+        //// 生产环境不理会普通的警告错误
+        //$not_save_error = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_NOTICE, E_USER_WARNING, E_WARNING ];
+        //if( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
+        //{
+        //return '@';
+        //}
+
+        // 错误文件不存在
+        if( !is_file($errfile) )
         {
             return '@';
         }
 
-        //读取源码指定行
-        if( !is_file($filename) )
-        {
-            return '@';
-        }
-
-        $fp = fopen($filename, 'r');
+        // 读取源码指定行
+        $fp = fopen($errfile, 'r');
         $n = 0;
-        $error_line = '';
+        $errline_str = '';
         while( !feof($fp) )
         {
             $line = fgets($fp, 1024);
             $n++;
-            if( $n==$linenum ) 
+            if( $n == $errline ) 
             {
-                $error_line = trim($line);
+                $errline_str = trim($line);
                 break;
             }
         }
         fclose($fp);
 
-        //如果错误行用 @ 进行屏蔽，不显示错误
-        if( $error_line[0]=='@' || preg_match("/[\(\t ]@/", $error_line) ) 
+        // 如果错误行用 @ 进行屏蔽，不显示错误
+        if( $errline_str[0] == '@' || preg_match("/[\(\t ]@/", $errline_str) ) 
         {
             return '@';
         }
 
-        // 如果是ajax/app请求，返回文本错误信息
-        if( $log_type=='ajax' )
-        {
-            return $errmsg = "Fatal error:  $errmsg in {$filename}:{$linenum}";
-        }
+        $err = "<div style='font-size:14px;line-height:160%;border-bottom:1px dashed #ccc;margin-top:8px;'>\n";
 
-        // 如果是html，返回html错误信息
-        $err = '';
-        if( $log_type=='debug' )
-        {
-            $err = "<div style='font-size:14px;line-height:160%;border-bottom:1px dashed #ccc;margin-top:8px;'>\n";
-        }
-        else
-        {
-            if( !empty($_SERVER['REQUEST_URI']) )
-            {
-                $script_name = $_SERVER['REQUEST_URI'];
-                $nowurl = $script_name;
-            } 
-            else
-            {
-                $script_name = $_SERVER['PHP_SELF'];
-                $nowurl = empty($_SERVER['QUERY_STRING']) ? $script_name : $script_name.'?'.$_SERVER['QUERY_STRING'];
-            }
-
-            //替换不安全字符
-            $f_arr_s = array('<', '*', '#', '"', "'", "\\", '(');
-            $f_arr_r = array('〈', '×', '＃', '“', "‘", "＼", '（');
-            $nowurl = str_replace($f_arr_s, $f_arr_r, $nowurl);
-
-            $nowtime = date('Y-m-d H:i:s');
-            $err = "Time: ".$nowtime.' @URL: '.$nowurl."\n";
-        }
-
-        if( empty(self::$_debug_errortype[$errno]) )
+        // 错误类型不存在
+        if( !isset(self::$_debug_errortype[$errno]) || !self::$_debug_errortype[$errno] )
         {
             self::$_debug_errortype[$errno] = "<font color='#466820'>手动抛出</font>";
         }
 
-        $error_line = htmlspecialchars($error_line);
-
-        //$err .= "<strong>PHPCALL框架应用错误跟踪：</strong><br />\n";
-        $err .= "发生环境：" . date("Y-m-d H:i:s", time()).'::' . req::cururl() . "<br />\n";
+        $err .= "发生环境：" . date("Y-m-d H:i:s", time()) . '::' . req::cururl() . "<br />\n";
         $err .= "错误类型：" . self::$_debug_errortype[$errno] . "<br />\n";
-        $err .= "出错原因：<font color='#3F7640'>" . $errmsg . "</font><br />\n";
-        //$err .= "提示位置：" . $filename . " 第 {$linenum} 行<br />\n";
-        $err .= "提示位置：<a href=\"".str_replace(array('%file','%line'), array($filename, $linenum),SYS_EDITOR)."\">" . $filename . "</a> 第 {$linenum} 行<br />\n";
-        $err .= "断点源码：<font color='#747267'>{$error_line}</font><br />\n";
+        $err .= "出错原因：<font color='#3F7640'>" . $errstr . "</font><br />\n";
+        $err .= "提示位置：<a href=\"" . str_replace([ '%file','%line' ], [ $errfile, $errline ], SYS_EDITOR) . "\">" . $errfile . "</a> 第 {$errline} 行<br />\n";
+        $err .= "断点源码：<font color='#747267'>" . htmlspecialchars($errline_str) . "</font><br />\n";
         $err .= "详细跟踪：<br />\n";
 
         $backtrace = debug_backtrace();
         array_shift($backtrace);
-        $narr = array('class', 'type', 'function', 'file', 'line');
-        foreach($backtrace as $i => $l)
+        $narr = [ 'class', 'type', 'function', 'file', 'line' ];
+        foreach ( $backtrace as $i => $trace )
         {
-            foreach($narr as $k)
+            foreach ( $narr as $k )
             {
-                if( !isset($l[$k]) ) $l[$k] = '';
+                if( !isset($trace[$k]) ) $trace[$k] = '';
             }
-            $err .= "<font color='#747267'>[$i] in function {$l['class']}{$l['type']}{$l['function']} ";
-            if($l['file']) $err .= " in {$l['file']} ";
-            if($l['line']) $err .= " on line {$l['line']} ";
+            $err .= "<font color='#747267'>[$i] in function {$trace['class']}{$trace['type']}{$trace['function']} ";
+            if($trace['file']) $err .= " in {$trace['file']} ";
+            if($trace['line']) $err .= " on line {$trace['line']} ";
             $err .= "</font><br />\n";
         }
 
-        $err .= $log_type=='debug' ? "</div>\n" : "------------------------------------------\n";
+        $err .= "<span></span></div>\n";
 
         return $err;
+    }
+
+    public static function strip_tags($errstr)
+    {
+        //$errstr = str_replace(array("<font color='#3F7640'>","</font>"), array("\033[33;1m","\033[0m"), $errstr);
+        $errstr = preg_replace("/<font([^>]*)>|<\/font>|<\/div>|<\/strong>|<strong>|<br \/>/iU", '', $errstr);
+        $errstr = preg_replace("/<div style='font-size:14px([^>]*)>/iU", "-----------------------------------------------\n错误跟踪：", $errstr);
+        $errstr = preg_replace("/<span><\/span>/iU", "-----------------------------------------------", $errstr);
+        $errstr = str_replace(array("-&lt;","&gt;"), array("<",">"), $errstr);
+        $errstr = strip_tags($errstr);
+
+        return $errstr;
     }
 
     /**
@@ -369,16 +319,16 @@ class errorhandler
      * @param array $params
      * @return string
      */
-    public static function fmt_code($code, $message)
+    public static function fmt_code($errno, $errstr)
     {
-        $msgtpl = config::instance('exception')->get($code);
+        $msgtpl = config::instance('exception')->get($errno);
         if ( empty($msgtpl)) 
         {
-            return $message;
+            return $errstr;
         }
 
         // 如果是序列化数据，反序列化
-        $msg  = util::is_serialized($message) ? unserialize($message) : $message;
+        $msg  = util::is_serialized($errstr) ? unserialize($errstr) : $errstr;
         if ( !is_array($msg)) 
         {
             $msg = [$msg];
