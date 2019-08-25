@@ -13,7 +13,7 @@
 namespace kaliphp\lib;
 
 /**
- * The Arr class provides a few nice functions for making
+ * The cls_arr class provides a few nice functions for making
  * dealing with arrays easier
  *
  * @package     KaliPHP
@@ -32,9 +32,9 @@ class cls_arr
      */
     public static function get($array, $key = null, $default = null)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         if (is_null($key))
@@ -61,7 +61,7 @@ class cls_arr
 
         foreach (explode('.', $key) as $key_part)
         {
-            if (($array instanceof \ArrayAccess and isset($array[$key_part])) === false)
+            if (($array instanceof \cls_arrayAccess and isset($array[$key_part])) === false)
             {
                 if ( ! is_array($array) or ! array_key_exists($key_part, $array))
                 {
@@ -135,7 +135,7 @@ class cls_arr
         {
             foreach ($array as $i => $a)
             {
-                $return[] = (is_object($a) and ! ($a instanceof \ArrayAccess)) ? $a->{$key} :
+                $return[] = (is_object($a) and ! ($a instanceof \cls_arrayAccess)) ? $a->{$key} :
                     ($get_deep ? static::get($a, $key) : $a[$key]);
             }
         }
@@ -143,8 +143,8 @@ class cls_arr
         {
             foreach ($array as $i => $a)
             {
-                $index !== true and $i = (is_object($a) and ! ($a instanceof \ArrayAccess)) ? $a->{$index} : $a[$index];
-                $return[$i] = (is_object($a) and ! ($a instanceof \ArrayAccess)) ? $a->{$key} :
+                $index !== true and $i = (is_object($a) and ! ($a instanceof \cls_arrayAccess)) ? $a->{$index} : $a[$index];
+                $return[$i] = (is_object($a) and ! ($a instanceof \cls_arrayAccess)) ? $a->{$key} :
                     ($get_deep ? static::get($a, $key) : $a[$key]);
             }
         }
@@ -153,7 +153,7 @@ class cls_arr
     }
 
     /**
-     * Array_key_exists with a dot-notated key from an array.
+     * cls_array_key_exists with a dot-notated key from an array.
      *
      * @param   array   $array    The search array
      * @param   mixed   $key      The dot-notated key or array of keys
@@ -161,9 +161,9 @@ class cls_arr
      */
     public static function key_exists($array, $key)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         is_object($key) and $key = (string) $key;
@@ -180,7 +180,7 @@ class cls_arr
 
         foreach (explode('.', $key) as $key_part)
         {
-            if (($array instanceof \ArrayAccess and isset($array[$key_part])) === false)
+            if (($array instanceof \cls_arrayAccess and isset($array[$key_part])) === false)
             {
                 if ( ! is_array($array) or ! array_key_exists($key_part, $array))
                 {
@@ -302,7 +302,7 @@ class cls_arr
      *
      * The array given must have an even number of elements or null will be returned.
      *
-     *     Arr::to_assoc(array('foo','bar'));
+     *     cls_arr::to_assoc(array('foo','bar'));
      *
      * @param   string      $arr  the array to change
      * @return  array|null  the new array or null
@@ -721,7 +721,7 @@ class cls_arr
     {
         if ( ! is_array($array))
         {
-            throw new \InvalidArgumentException('Arr::sort() - $array must be an array.');
+            throw new \InvalidArgumentException('cls_arr::sort() - $array must be an array.');
         }
 
         if (empty($array))
@@ -745,7 +745,7 @@ class cls_arr
             break;
 
         default:
-            throw new \InvalidArgumentException('Arr::sort() - $order must be asc or desc.');
+            throw new \InvalidArgumentException('cls_arr::sort() - $order must be asc or desc.');
             break;
         }
 
@@ -792,6 +792,30 @@ class cls_arr
         return $array;
     }
 
+    public static function is_sort($array, $order = 'asc')
+    {
+        if ( ! is_array($array))
+        {
+            throw new \InvalidArgumentException('cls_arr::is_sort() - $array must be an array.');
+        }
+
+        $array = array_values($array);
+
+        if ( $order == 'asc' ) 
+        {
+            $asc_array = $array;
+            sort($asc_array);
+            return $asc_array === $array;
+        }
+        else 
+        {
+            $desc_array = $array;
+            arsort($desc_array);
+            $desc_array = array_values($desc_array);
+            return  $desc_array === $array;
+        }
+    }
+
     /**
      * Find the average of an array
      *
@@ -826,7 +850,7 @@ class cls_arr
 
         if ( ! is_array($source) or ! is_array($replace))
         {
-            throw new \InvalidArgumentException('Arr::replace_key() - $source must an array. $replace must be an array or string.');
+            throw new \InvalidArgumentException('cls_arr::replace_key() - $source must an array. $replace must be an array or string.');
         }
 
         $result = array();
@@ -863,14 +887,14 @@ class cls_arr
 
         if ( ! is_array($array))
         {
-            throw new \InvalidArgumentException('Arr::merge() - all arguments must be arrays.');
+            throw new \InvalidArgumentException('cls_arr::merge() - all arguments must be arrays.');
         }
 
         foreach ($arrays as $arr)
         {
             if ( ! is_array($arr))
             {
-                throw new \InvalidArgumentException('Arr::merge() - all arguments must be arrays.');
+                throw new \InvalidArgumentException('cls_arr::merge() - all arguments must be arrays.');
             }
 
             foreach ($arr as $k => $v)
@@ -910,14 +934,14 @@ class cls_arr
 
         if ( ! is_array($array))
         {
-            throw new \InvalidArgumentException('Arr::merge_assoc() - all arguments must be arrays.');
+            throw new \InvalidArgumentException('cls_arr::merge_assoc() - all arguments must be arrays.');
         }
 
         foreach ($arrays as $arr)
         {
             if ( ! is_array($arr))
             {
-                throw new \InvalidArgumentException('Arr::merge_assoc() - all arguments must be arrays.');
+                throw new \InvalidArgumentException('cls_arr::merge_assoc() - all arguments must be arrays.');
             }
 
             foreach ($arr as $k => $v)
@@ -994,7 +1018,7 @@ class cls_arr
     /**
      * Searches the array for a given value and returns the
      * corresponding key or default value.
-     * If $recursive is set to true, then the Arr::search()
+     * If $recursive is set to true, then the cls_arr::search()
      * function will return a delimiter-notated key using $delimiter.
      *
      * @param   array   $array     The search array
@@ -1007,9 +1031,9 @@ class cls_arr
      */
     public static function search($array, $value, $default = null, $recursive = true, $delimiter = '.', $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         if ( ! is_null($default) and ! is_int($default) and ! is_string($default))
@@ -1084,9 +1108,9 @@ class cls_arr
      */
     public static function sum($array, $key)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         return array_sum(static::pluck($array, $key));
@@ -1123,9 +1147,9 @@ class cls_arr
      */
     public static function previous_by_key($array, $key, $get_value = false, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         // get the keys of the array
@@ -1161,9 +1185,9 @@ class cls_arr
      */
     public static function next_by_key($array, $key, $get_value = false, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         // get the keys of the array
@@ -1199,9 +1223,9 @@ class cls_arr
      */
     public static function previous_by_value($array, $value, $get_value = true, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         // find the current value in the array
@@ -1237,9 +1261,9 @@ class cls_arr
      */
     public static function next_by_value($array, $value, $get_value = true, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
         }
 
         // find the current value in the array
@@ -1266,7 +1290,7 @@ class cls_arr
     /**
      * Return the subset of the array defined by the supplied keys.
      *
-     * Returns $default for missing keys, as with Arr::get()
+     * Returns $default for missing keys, as with cls_arr::get()
      *
      * @param   array    $array    the array containing the values
      * @param   array    $keys     list of keys (or indices) to return
