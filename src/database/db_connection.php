@@ -2205,9 +2205,17 @@ class db_connection
                 return $this->quote_identifier((string) $value);
             }
         }
-
-        // 使用sum、max、min函数的不处理
-        if (strcspn($value, "()'") !== strlen($value))
+        // GROUP BY 写法在Mysql8 以后需要加 GROUP_CONCAT
+        elseif ( $select && $this->_group_by ) 
+        {
+            // 不属于 GROUP BY 的参数，也不是Mysql函数
+            if ( !in_array($value, $this->_group_by) && strcspn($value, "()'") === strlen($value) ) 
+            {
+                return "GROUP_CONCAT(`{$value}`) AS `{$value}`";
+            }
+        }
+        // 处理Mysql函数
+        elseif (strcspn($value, "()'") !== strlen($value))
         {
             // 匹配CONCAT()
             if ( preg_match("#^concat\((.*?)\)#i", $value, $matchs) )
