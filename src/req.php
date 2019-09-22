@@ -952,6 +952,14 @@ class req
             self::$cookies = $_COOKIE;
         }
 
+        // 处理request
+        if( count($_REQUEST) > 0 )
+        {
+            if( !$magic_quotes_gpc ) $_REQUEST = self::add_s( $_REQUEST );
+            if (self::$config['global_xss_filtering']) $_REQUEST = cls_security::xss_clean($_REQUEST);
+            self::$forms = $_REQUEST;
+        }
+
         //上传的文件处理
         if( isset($_FILES) && count($_FILES) > 0 )
         {
