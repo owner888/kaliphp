@@ -69,7 +69,10 @@ class tpl
             self::$_instance->setCompileDir(util::path_exists( self::$compile_dir ));
             self::$_instance->setCacheDir(util::path_exists( self::$cache_dir ));
             self::$_instance->addPluginsDir(__dir__.DS.'lib'.DS.'smarty_plugins');
-
+            if ( is_dir(APPPATH.DS.'smarty_plugins')) 
+            {
+                self::$_instance->addPluginsDir(APPPATH.DS.'smarty_plugins');
+            }
             self::$_instance->setLeftDelimiter(self::$config['left_delimiter']);
             self::$_instance->setRightDelimiter(self::$config['right_delimiter']);
             self::$_instance->setCompileCheck(self::$config['compile_check']);
