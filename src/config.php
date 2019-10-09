@@ -87,8 +87,8 @@ class config
                 $env = $this->_module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
 
                 //如果有config$env优先使用，否则加载哪里config
-                //config优先顺序 数据库->系统config->app config
-                foreach([__DIR__ . DS . 'config' . DS, APPPATH. DS . 'config' . DS] as $path)
+                //config优先顺序 数据库 -> app config -> 系统config
+                foreach([ __DIR__ . DS . 'config' . DS, APPPATH. DS . 'config' . DS ] as $path)
                 {
                     if( file_exists($file = $path.$env.'.php') || file_exists($file = $path.$this->_module.'.php') )
                     {

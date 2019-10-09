@@ -555,7 +555,7 @@ class util
      * @param   int     $length  the number of characters
      * @return  string  the random string
      */
-    public static function random($type = 'alnum', $length = 16)
+    public static function random($type = 'alnum', $length = 32)
     {
         switch($type)
         {
@@ -607,7 +607,21 @@ class util
                 break;
 
             case 'unique':
-                return md5(uniqid(mt_rand()));
+                //会产生大量的重复数据
+                //$str = uniqid();
+                //生成的唯一标识重复量明显减少
+                //$str = uniqid('',true);
+                //$str = md5(uniqid(mt_rand()));
+                //生成的唯一标识中没有重复
+                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(session_create_id()) : md5(uniqid(md5(microtime(true)),true));
+                if ( $length == 32 ) 
+                {
+                    return $str;
+                }
+                else 
+                {
+                    return substr($str, 8, 16);
+                }
                 break;
 
             case 'sha1' :
@@ -628,7 +642,15 @@ class util
             case 'web':
                 // 即使同一个IP，同一款浏览器，要在微妙内生成一样的随机数，也是不可能的
                 // 进程ID保证了并发，微妙保证了一个进程每次生成都会不同，IP跟AGENT保证了一个网段
-                return md5(getmypid().microtime().$_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT']);
+                $str = md5(getmypid().uniqid(md5(microtime(true)),true).$_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT']);
+                if ( $length == 32 ) 
+                {
+                    return $str;
+                }
+                else 
+                {
+                    return substr($str, 8, 16);
+                }
                 break;
         }
     }
@@ -898,6 +920,44 @@ class util
         }
         return $str;
     }
+
+    /**
+     * 分离中英文
+     * 
+     * @param mixed $text
+     * @return void
+     * @author seatle <seatle@foxmail.com> 
+     * @created time :2019-10-09 13:36
+     */
+    public static function arr_split_zh($text)
+    {  
+        $text = iconv("UTF-8", "gb2312", $text);  
+        $cind = 0;  
+        $arr_en_cont = $arr_cn_cont = array();  
+
+        for($i=0; $i < strlen($text); $i++)  
+        {  
+            if( strlen(substr($text, $cind, 1)) > 0 )
+            {  
+                if( ord(substr($text, $cind, 1)) < 0xA1 )
+                { 
+                    //如果为英文则取1个字节  
+                    array_push($arr_en_cont, substr($text, $cind, 1));  
+                    $cind++;  
+                }
+                else
+                {  
+                    array_push($arr_cn_cont, substr($text, $cind, 2));  
+                    $cind+=2;  
+                }  
+            }  
+        }  
+        foreach ($arr_cn_cont as &$row)  
+        {  
+            $row = iconv("gb2312", "UTF-8", $row);  
+        }  
+        return [trim(implode('', $arr_cn_cont)), trim(implode('', $arr_en_cont))];  
+    } 
 
     /**
      * 下载文件

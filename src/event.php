@@ -75,6 +75,37 @@ class event
         return $fh;
     }
 
+    
+    /**
+     * 将配置文件的hook绑定
+     * @param $confHooks
+     * @notice 要求绑定的回调的类必须是 app.hook下或bingo.hook下的类，
+     *         原类名必须以Hook结尾，但是写在配置文件时不用写结尾的Hook,
+     *         例如：['test'=>[['test','method']]]里的绑定方法会被处理为：
+     *         TestHook::method
+     * @notice 类名不可以是句点格式，默认会先从app的hook目录查找，
+     *         再去bingo的hook目录查找
+     */
+    public static function bind_by_config($events)
+    {
+        foreach ($events as $event_name => $callbacks)
+        {
+            foreach ($callbacks as $callback) 
+            {
+                if (is_array($callback) and $callback)
+                {
+
+                    $callback[0] = ucfirst($callback[0]).'Hook';
+                }
+                else if (is_null($callBack)) 
+                {
+                    self::$_hooks[$hookName] = array();
+                }
+                self::bindHook($hookName,$callBack);
+            }
+        }
+    }
+
     /**
      * 绑定永久事件
      * @param callable $method
@@ -132,12 +163,13 @@ class event
      * @param array $params
      * @return bool
      */
-    public static function trigger($event, $params=[])
+    public static function trigger( $event, $params = [] )
     {
         if (!isset(self::$monitors[$event]))
         {
             return false;
         }
+        // 把 $event 插入 $params 数组中
         array_unshift($params, $event);
         foreach (self::$monitors[$event] as $fh => &$value)
         {
