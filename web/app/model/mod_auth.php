@@ -76,8 +76,8 @@ class mod_auth extends cls_auth
         else 
         {
             $token = req::item('token', '');
-            $uid = static::get_token_uid( $token );
-            $uid = $uid ? $uid : 0;
+            $uid   = static::get_uid_by_token( $token );
+            $uid   = $uid ? $uid : 0;
         }
 
         $auth = static::instance( $uid );
