@@ -7,6 +7,7 @@ use kaliphp\kali;
 use kaliphp\req;
 use kaliphp\tpl;
 
+
 define('SYS_DEBUG', true);
 define('SYS_CONSOLE', false);
 // dev pre pub
