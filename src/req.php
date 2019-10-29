@@ -412,6 +412,15 @@ class req
     }
 
     /**
+     * 获得当前网站Url
+     */
+    public static function site_url($uri = '', $protocol = null)
+    {
+        $protocol = $protocol ? $protocol : self::server('REQUEST_SCHEME');
+        return $protocol.'://'.self::server('SERVER_NAME').$uri;    
+    }
+
+    /**
      * 获得当前的Url
      */
     public static function cururl()

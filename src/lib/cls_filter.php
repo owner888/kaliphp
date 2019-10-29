@@ -208,7 +208,7 @@ class cls_filter
         // 去掉魔法引号
         if ( $magic_slashes )
         {
-            $data = self::filter( $data[$field], 'stripslashes');
+            $data = self::filter($data, 'stripslashes');
         }
 
         //用于配置过滤空值

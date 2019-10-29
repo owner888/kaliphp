@@ -14,8 +14,11 @@ namespace kaliphp\lib;
 
 use kaliphp\cache;
 use kaliphp\db;
+use kaliphp\req;
 use kaliphp\config;
 use kaliphp\session;
+use kaliphp\lib\cls_crypt;
+use kaliphp\lib\cls_redis;
 
 class cls_auth 
 {
@@ -32,6 +35,8 @@ class cls_auth
     protected static $_cache_prefix = 'auth_user';
     // 验证句柄
     public static $auth_hand = 'auth_hand';
+    //token命名规则
+    public static $token_key = 'token:%s:%s';
     // 用户表
     public static $table_config = [
         'user'          => '#PB#_admin',            // 用户表
@@ -62,12 +67,12 @@ class cls_auth
     }
 
     /**
-	 * 创建实例
-	 *
-	 * @param   string    $name    Identifier for this mod_auth
-	 * @param   array     $config  Configuration array
-	 * @return  cls_validate
-	 */
+     * 创建实例
+     *
+     * @param   string    $name    Identifier for this mod_auth
+     * @param   array     $config  Configuration array
+     * @return  cls_validate
+     */
     public static function instance( $uid = 0 )
     {
         if ( isset(static::$_instances[$uid]) )
@@ -203,13 +208,13 @@ class cls_auth
 
     /**
      * 销毁登陆信息
-     * 
      * @param mixed $uid
      * @return void
      */
     public function del_logininfo( $uid = null )
     {
         $uid = $uid == null ? $this->uid : $uid;
+        $token = (array) req::item('token', null);
 
         $session_id = db::select('session_id')
             ->from(static::$table_config['user'])
@@ -221,8 +226,13 @@ class cls_auth
         session::del( $session_id );
         // 删除用户缓存数据
         $this->del_cache( $uid );
+
+        $token = $token ? $token : static::get_token_by_uid($uid);
         // 删除TOKEN缓存信息
-        static::del_token_uid( $session_id );
+        foreach ($token as $tk) 
+        {
+            $token = static::unbind_token_uid( $tk, $uid );
+        }
 
         // 删除 session_id 值
         db::update(static::$table_config['user'])
@@ -234,43 +244,80 @@ class cls_auth
     }
 
     /**
-     * 设置 token 对应的 uid
-     * 
-     * @param mixed $token
-     * @param mixed $uid
-     * @param float $expire
-     * @return void
+     * 获取token相关redis key
+     * @param  string $id   键
+     * @param  string $type 类型
+     * @return string 返回key
      */
-    public static function set_token_uid( $token, $uid, $expire = 3600 )
+    private static function _get_token_key($id, $type = 'uid_token')
     {
-        cache::set("uid:{$token}", $uid, $expire);
+        return sprintf(self::$token_key, $type, $id);
     }
 
     /**
-     * 获取 token 对应的 uid
-     * 
-     * @param mixed $token
-     * @param mixed $uid
-     * @param float $expire
-     * @return void
+     * 绑定token到uid
+     * @param  string  $token  32位token
+     * @param  string  $uid    用户UID
+     * @param  integer $expire token失效时间
+     * @return bool            true表示绑定成功 false绑定失败
      */
-    public static function get_token_uid( $token )
+    public static function bind_token_uid(string $token, string $uid, $expire = 3600)
     {
-        $uid = cache::get("uid:{$token}");
-        return $uid;
+        $toekn_key = static::_get_token_key($uid);
+        //redis hash如果key存在返回0，不存在返回1 失败返回false
+        if( false !== cls_redis::instance()->hSet($toekn_key, $token, time()+$expire) ) 
+        {
+            cls_redis::instance()->set(static::_get_token_key($token, 'token_uid'), $uid, $expire);
+            cls_redis::instance()->expire($toekn_key, $expire);
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * 删除 token 对应的 uid
-     * 
-     * @param mixed $token
-     * @param mixed $uid
-     * @param float $expire
-     * @return void
+     * 解绑某个token
+     * @param  string      $token 32位token
+     * @param  string|null $uid   用户UID 不填会尝试获取
+     * @return bool            true表示解绑成功 false解绑失败
      */
-    public static function del_token_uid( $token )
+    public static function unbind_token_uid(string $token, string $uid = null)
     {
-        cache::del("uid:{$token}");
+        $uid = $uid ? $uid : static::get_uid_by_token($token);
+        $toekn_key = static::_get_token_key($uid);
+
+        cls_redis::instance()->del(static::_get_token_key($token, 'token_uid'), $token);
+        return cls_redis::instance()->hDel(static::_get_token_key($uid), $token);
+    }
+
+    /**
+     * 通过uid获取绑定在uid上的所有token
+     * @param  string      $token 32位token
+     * @param  string|null $uid   用户UID 不填会尝试获取
+     * @return array       绑定在uid上的所有token
+     */
+    public static function get_token_by_uid(string $uid)
+    {
+        $token_arr = (array) cls_redis::instance()->hGetAll(static::_get_token_key($uid));
+        foreach($token_arr as $key => $val)
+        {
+            if ( $val < time() )
+            {
+                unset($token_arr[$key]);
+            }
+        }
+
+        return $token_arr;
+    }
+
+    /**
+     * 通过token获取UID
+     * @param  string      $token 32位token
+     * @return string      返回token绑定的uid
+     */
+    public static function get_uid_by_token(string $token)
+    {
+        return cls_redis::instance()->get(static::_get_token_key($token, 'token_uid'));
     }
 
     /**

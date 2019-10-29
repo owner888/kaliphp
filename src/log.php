@@ -104,35 +104,35 @@ class log
             throw new \Exception('Unable to create the log file. The configured log path "'.$path.'" does not exist.');
         }
 
-        // determine the name of the logfile
-        $filename = config::instance('log')->get('log_file');
-        if (empty($filename))
-        {
-            $filename = date('Y-m-d').'.log';
-            //$filename = date('Y').DS.date('m').DS.date('d').'.log';
-        }
+        //// determine the name of the logfile
+        //$filename = config::instance('log')->get('log_file');
+        //if (empty($filename))
+        //{
+            //$filename = date('Y-m-d').'.log';
+            ////$filename = date('Y').DS.date('m').DS.date('d').'.log';
+        //}
 
-        $fullpath = dirname($filename);
+        //$fullpath = dirname($filename);
 
-        // make sure the log directories exist
-        try
-        {
-            // make sure the full path exists
-            if ( ! is_dir($path.$fullpath))
-            {
-                util::path_exists($path.$fullpath);
-            }
+        //// make sure the log directories exist
+        //try
+        //{
+            //// make sure the full path exists
+            //if ( ! is_dir($path.$fullpath))
+            //{
+                //util::path_exists($path.$fullpath);
+            //}
 
-            // open the file
-            $handle = fopen($path.$filename, 'w');
-            @chmod($path.$filename, 0777);
-            fclose($handle);
-        }
-        catch (\Exception $e)
-        {
-            config::instance('log')->set('log_threshold', NONE);
-            throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
-        }
+            //// open the file
+            //$handle = fopen($path.$filename, 'w');
+            //@chmod($path.$filename, 0777);
+            //fclose($handle);
+        //}
+        //catch (\Exception $e)
+        //{
+            //config::instance('log')->set('log_threshold', NONE);
+            //throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
+        //}
 
         if ( config::instance('log')->get('log_type') == 'monolog' ) 
         {
