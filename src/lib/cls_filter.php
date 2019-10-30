@@ -11,6 +11,7 @@
  */
 
 namespace kaliphp\lib;
+use common\func\pub_func;
 use Exception;
 
 /**
@@ -72,6 +73,9 @@ class cls_filter
             {
                 case 'int':
                     $val = intval( $val );
+                    break;
+                case 'stripslashes':
+                    $val = $val ? stripslashes($val) : $val;
                     break;
                 case 'float':
                     $val = floatval( $val );
@@ -208,9 +212,9 @@ class cls_filter
         // 去掉魔法引号
         if ( $magic_slashes )
         {
-            $data = self::filter($data, 'stripslashes');
+            $data = self::filter( $data, 'stripslashes');
         }
-
+        
         //用于配置过滤空值
         if (!empty($filter['_config_']))
         {
@@ -345,7 +349,8 @@ class cls_filter
             case 'regex':
                 if (!isset($config['regex']))
                 {
-                    continue;
+                    $ret[$field] = isset($data[$field]) ? $data[$field] : $default;
+                    break;
                 }
 
                 $replace = isset($config['replace']) ? $config['replace'] : '';
@@ -365,6 +370,14 @@ class cls_filter
                 {
                     $ret[$field] = $default;
                 }
+                break;
+            case 'array':
+                if(isset($data[$field]) && !is_array($data[$field]))
+                {
+                    return $field;
+                } 
+                
+                $ret[$field] = isset($data[$field]) ? (array) $data[$field] : $default;
                 break;
 
             case 'text':
@@ -392,6 +405,7 @@ class cls_filter
                         );
                     }
                 }
+
                 break;
             }
 
@@ -466,3 +480,4 @@ class cls_filter
 
 
 }
+
