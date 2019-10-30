@@ -32,60 +32,61 @@ class cls_profiler {
 
     public $enable_profiler = false;
 
-	/**
-	 * List of profiler sections available to show
-	 *
-	 * @var array
-	 */
-	protected $_available_sections = array(
-		'benchmarks',
-		'get',
-		'memory_usage',
-		'post',
-		'uri_string',
-		'controller_info',
-		'queries',
-		'http_headers',
-		'cookie_data',
-		'session_data',
-		'config'
-	);
+    /**
+     * List of profiler sections available to show
+     *
+     * @var array
+     */
+    protected $_available_sections = array(
+        'benchmarks',
+        'get',
+        'memory_usage',
+        'post',
+        'uri_string',
+        'controller_info',
+        'queries',
+        'http_headers',
+        'cookie_data',
+        'session_data',
+        'config'
+    );
 
-	/**
-	 * Number of queries to show before making the additional queries togglable
-	 *
-	 * @var int
-	 */
-	protected $_query_toggle_count = 25;
+    /**
+     * Number of queries to show before making the additional queries togglable
+     *
+     * @var int
+     */
+    protected $_query_toggle_count = 25;
 
     public static function _init()
     {
         self::$config = config::instance('config')->get('profiler');
     }
 
-	/**
-	 * Class constructor
-	 *
-	 * Initialize Profiler
-	 *
-	 * @param	array	$config	Parameters
-	 */
-	public function __construct($config = array())
-	{
+    /**
+     * Class constructor
+     *
+     * Initialize Profiler
+     *
+     * @param	array	$config	Parameters
+     */
+    public function __construct($config = array())
+    {
         // 默认显示所有
-		foreach ($this->_available_sections as $section)
-		{
-			if ( ! isset($config[$section]))
-			{
-				$this->_compile_{$section} = TRUE;
-			}
-		}
+        foreach ($this->_available_sections as $section)
+        {
+            if ( ! isset($config[$section]))
+            {
+                $var = '_compile_'.$section;
+                $this->{$var} = TRUE;
+            }
+        }
 
-		$this->set_sections($config);
+        $this->set_sections($config);
         //log::info('Profiler Class Initialized');
-	}
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
     // 单例模式，生成实例
     public static function instance()
@@ -97,80 +98,81 @@ class cls_profiler {
         return self::$_instance;
     }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
     public function enable_profiler($val = TRUE)
-	{
-		$this->enable_profiler = is_bool($val) ? $val : TRUE;
-	}
+    {
+        $this->enable_profiler = is_bool($val) ? $val : TRUE;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * Set Sections
-	 *
-	 * Sets the private _compile_* properties to enable/disable Profiler sections
-	 *
-	 * @param	mixed	$config
-	 * @return	void
-	 */
-	public function set_sections($config)
-	{
-		if (isset($config['query_toggle_count']))
-		{
-			$this->_query_toggle_count = (int) $config['query_toggle_count'];
-			unset($config['query_toggle_count']);
-		}
+    /**
+     * Set Sections
+     *
+     * Sets the private _compile_* properties to enable/disable Profiler sections
+     *
+     * @param	mixed	$config
+     * @return	void
+     */
+    public function set_sections($config)
+    {
+        if (isset($config['query_toggle_count']))
+        {
+            $this->_query_toggle_count = (int) $config['query_toggle_count'];
+            unset($config['query_toggle_count']);
+        }
 
-		foreach ($config as $method => $enable)
-		{
-			if (in_array($method, $this->_available_sections))
-			{
-				$this->_compile_{$method} = ($enable !== FALSE);
-			}
-		}
-	}
+        foreach ($config as $method => $enable)
+        {
+            if (in_array($method, $this->_available_sections))
+            {
+                $var = '_compile_'.$method;
+                $this->{$var} = ($enable !== FALSE);
+            }
+        }
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	protected function _compile_benchmarks()
-	{
-		$profile = array();
-		foreach (cls_benchmark::$marker as $key => $val)
-		{
-			if (preg_match('/(.+?)_end$/i', $key, $match)
-				&& isset(cls_benchmark::$marker[$match[1].'_end'], cls_benchmark::$marker[$match[1].'_start']))
-			{
-				$profile[$match[1]] = cls_benchmark::elapsed_time($match[1].'_start', $key);
-			}
-		}
+    protected function _compile_benchmarks()
+    {
+        $profile = array();
+        foreach (cls_benchmark::$marker as $key => $val)
+        {
+            if (preg_match('/(.+?)_end$/i', $key, $match)
+                && isset(cls_benchmark::$marker[$match[1].'_end'], cls_benchmark::$marker[$match[1].'_start']))
+            {
+                $profile[$match[1]] = cls_benchmark::elapsed_time($match[1].'_start', $key);
+            }
+        }
 
-		$output = "\n\n"
-			.'<div  id="kali_profiler_benchmarks" style="border:1px solid #900;padding:6px 10px 10px 10px;margin:20px 0 20px 0;background-color:#eee;">'
-			."\n"
-			.'<legend style="color:#900;">&nbsp;&nbsp;BENCHMARKS&nbsp;&nbsp;</legend>'
-			."\n\n\n<table style=\"width:100%;\">\n";
+        $output = "\n\n"
+            .'<div  id="kali_profiler_benchmarks" style="border:1px solid #900;padding:6px 10px 10px 10px;margin:20px 0 20px 0;background-color:#eee;">'
+            ."\n"
+            .'<legend style="color:#900;">&nbsp;&nbsp;BENCHMARKS&nbsp;&nbsp;</legend>'
+            ."\n\n\n<table style=\"width:100%;\">\n";
 
-		foreach ($profile as $key => $val)
-		{
-			$key = ucwords(str_replace(array('_', '-'), ' ', $key));
-			$output .= '<tr><td style="padding:5px;width:50%;color:#000;font-weight:bold;background-color:#ddd;">'
-					.$key.'&nbsp;&nbsp;</td><td style="padding:5px;width:50%;color:#900;font-weight:normal;background-color:#ddd;">'
-					.$val."</td></tr>\n";
-		}
+        foreach ($profile as $key => $val)
+        {
+            $key = ucwords(str_replace(array('_', '-'), ' ', $key));
+            $output .= '<tr><td style="padding:5px;width:50%;color:#000;font-weight:bold;background-color:#ddd;">'
+                .$key.'&nbsp;&nbsp;</td><td style="padding:5px;width:50%;color:#900;font-weight:normal;background-color:#ddd;">'
+                .$val."</td></tr>\n";
+        }
 
-		return $output."</table>\n</div>";
-	}
+        return $output."</table>\n</div>";
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * Compile Queries
-	 *
-	 * @return	string
-	 */
-	protected function _compile_queries()
-	{
+    /**
+     * Compile Queries
+     *
+     * @return	string
+     */
+    protected function _compile_queries()
+    {
         $db_config = config::instance('database')->get();
         // 如果没有启动数据库
         if ( count(db::$queries) == 0 )
@@ -185,10 +187,10 @@ class cls_profiler {
                 ."</td></tr>\n</table>\n</div>";
         }
 
-		// Key words we want bolded
-		$highlight = array('SELECT', 'DISTINCT', 'FROM', 'WHERE', 'AND', 'LEFT&nbsp;JOIN', 'ORDER&nbsp;BY', 'GROUP&nbsp;BY', 'LIMIT', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'OR&nbsp;', 'HAVING', 'OFFSET', 'NOT&nbsp;IN', 'IN', 'LIKE', 'NOT&nbsp;LIKE', 'COUNT', 'MAX', 'MIN', 'ON', 'AS', 'AVG', 'SUM', 'AES_ENCRYPT', 'AES_DECRYPT', 'ASC', 'DESC', '(', ')');
+        // Key words we want bolded
+        $highlight = array('SELECT', 'DISTINCT', 'FROM', 'WHERE', 'AND', 'LEFT&nbsp;JOIN', 'ORDER&nbsp;BY', 'GROUP&nbsp;BY', 'LIMIT', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'OR&nbsp;', 'HAVING', 'OFFSET', 'NOT&nbsp;IN', 'IN', 'LIKE', 'NOT&nbsp;LIKE', 'COUNT', 'MAX', 'MIN', 'ON', 'AS', 'AVG', 'SUM', 'AES_ENCRYPT', 'AES_DECRYPT', 'ASC', 'DESC', '(', ')');
 
-		$output  = "\n\n";
+        $output  = "\n\n";
 
         $hide_queries = (count(db::$queries) > $this->_query_toggle_count) ? ' display:none' : '';
         $total_time = number_format(array_sum(db::$query_times), 4).' seconds';
@@ -443,13 +445,13 @@ class cls_profiler {
 
         //foreach (config::$call_configs as $config => $val)
         //{
-            //if (is_array($val) OR is_object($val))
-            //{
-                //$val = print_r($val, TRUE);
-            //}
+        //if (is_array($val) OR is_object($val))
+        //{
+        //$val = print_r($val, TRUE);
+        //}
 
-            //$output .= '<tr><td style="padding:5px;vertical-align:top;color:#900;background-color:#ddd;">'
-                //.$config.'&nbsp;&nbsp;</td><td style="padding:5px;color:#000;background-color:#ddd;">'.htmlspecialchars($val, ENT_QUOTES, 'utf-8')."</td></tr>\n";
+        //$output .= '<tr><td style="padding:5px;vertical-align:top;color:#900;background-color:#ddd;">'
+        //.$config.'&nbsp;&nbsp;</td><td style="padding:5px;color:#000;background-color:#ddd;">'.htmlspecialchars($val, ENT_QUOTES, 'utf-8')."</td></tr>\n";
         //}
 
         return $output."</table>\n</div>";
@@ -529,21 +531,21 @@ class cls_profiler {
     public function run()
     {
         $output = '<style>
-        #kali_profiler{ clear:both; padding:0 20px !important; margin-bottom:15px; }
-        #kali_profiler>div{ background: #fff; padding:20px 15px; }
-        #kali_profiler>div tr td div{ word-break: break-all; word-wrap: break-word; background: #fff; padding:10px; }
-        #kali_profiler table{ display: table; border-collapse: separate; border-spacing: 2px; border-color: grey; background: none; background-color: none; }
-        #kali_profiler div{ overflow-x: scroll; }
-        </style>';
+            #kali_profiler{ clear:both; padding:0 20px !important; margin-bottom:15px; }
+            #kali_profiler>div{ background: #fff; padding:20px 15px; }
+            #kali_profiler>div tr td div{ word-break: break-all; word-wrap: break-word; background: #fff; padding:10px; }
+            #kali_profiler table{ display: table; border-collapse: separate; border-spacing: 2px; border-color: grey; background: none; background-color: none; }
+            #kali_profiler div{ overflow-x: scroll; }
+            </style>';
         $output .= '<div id="kali_profiler"><div>';
         $fields_displayed = 0;
 
         foreach ($this->_available_sections as $section)
         {
-            if ($this->_compile_{$section} !== FALSE)
+            $var = '_compile_'.$section;
+            if ($this->{$var} !== FALSE)
             {
-                $func = '_compile_'.$section;
-                $output .= $this->{$func}();
+                $output .= $this->{$var}();
                 $fields_displayed++;
             }
         }
@@ -558,11 +560,11 @@ class cls_profiler {
         $output .= '
             <script>
                 $(".kali_profiler_toggle").on("click",function(){
-                   
+
                     var txt = $(this).text();
                     if(txt=="Hide"){
                         $(this).text("Show");
-                       
+
                     }else{
                         $(this).text("Hide");
                     }
