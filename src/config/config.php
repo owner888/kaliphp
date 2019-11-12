@@ -14,6 +14,10 @@ return [
         'country_whitelist' => [],
         // 国家黑名单
         'country_blacklist' => [],
+        // 跨域访问白名单
+        'allow_origin' => [
+            //'*'
+        ],
     ],
 
     // 访问权限设置

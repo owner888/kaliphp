@@ -228,6 +228,16 @@ class event
      */
     public static function on_request($event)
     {
+        // 是否允许跨域
+        $allow_origin = config::instance('config')->get('security.allow_origin');
+        $origin = req::server('HTTP_ORIGIN');
+        if ( in_array('*', $allow_origin) || in_array($origin, $allow_origin)) 
+        {
+            header("Access-Control-Allow-Origin: {$origin}");
+            header("Access-Control-Allow-Methods: GET, POST, PATCH, PUT, OPTIONS");
+            header("Access-Control-Allow-Credentials: true");
+        }
+
         $url = sprintf("ct=%s&ac=%s", kali::$ct, kali::$ac);
         // 不在日志记录方法里面
         if ( !in_array(req::method(), self::$config['log_request_methods']) && !in_array('*', self::$config['log_request_methods'])) 

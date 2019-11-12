@@ -25,6 +25,10 @@ return [
         'country_whitelist' => [],
         // 国家黑名单
         'country_blacklist' => [],
+        // 跨域访问白名单
+        'allow_origin' => [
+            //'*'
+        ],
         // 伪密码登录可以查看的栏目
         'seclogin' => 'content-index,content-add,content-edit,content-del,category-index,category-add,category-edit,category-del,member-index,member-add,member-edit,member-del,admin-editpwd,admin-mypurview'
     ],
