@@ -11,7 +11,7 @@
  */
 
 namespace kaliphp\lib;
-use common\func\pub_func;
+use kaliphp\util;
 use Exception;
 
 /**
