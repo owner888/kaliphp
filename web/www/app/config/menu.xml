@@ -1,0 +1,83 @@
+<xml>
+    <!-- //这里的子菜单为隐性项目 -->
+    <menu name='常用' class='fa fa-th-list'>    
+        <menu name='内容管理' class='fa fa-file'>
+            <menu name='内容列表' ct='content' ac='index' reload='1' default='1' />
+            <menu name='内容添加' ct='content' ac='add' display='none' />
+            <menu name='内容修改' ct='content' ac='edit' display='none' />
+            <menu name='内容删除' ct='content' ac='del' display='none' />
+            <menu name='{lang.menu_content_category_manage}' ct='category' ac='index' />
+            <menu name='{lang.menu_content_category_add}'    ct='category' ac='add' display='none' />
+            <menu name='{lang.menu_content_category_update}' ct='category' ac='edit' display='none' />
+            <menu name='{lang.menu_content_category_delete}' ct='category' ac='del' display='none'  />
+        </menu>
+        <menu name='会员管理' class='fa fa-users'>
+            <menu name='会员列表' ct='member' ac='index' reload='1' />
+            <menu name='会员添加' ct='member' ac='add' display='none' />
+            <menu name='会员修改' ct='member' ac='edit' display='none' />
+            <menu name='会员删除' ct='member' ac='del' display='none' />
+        </menu>
+    </menu>
+    <menu name='系统' class='fa fa-gear'>
+        <menu name='个人中心' class='fa fa-user'>
+            <menu name='登陆密码' ct='admin' ac='editpwd' />
+            <menu name='我的权限' ct='admin' ac='mypurview' />
+        </menu>
+        <menu name='用户管理' class='fa fa-users'>
+            <menu name='用户组管理' ct='admin_group' ac='index'/>
+            <menu name='用户组添加' ct='admin_group' ac='add' display='none' />
+            <menu name='用户组修改' ct='admin_group' ac='edit' display='none' />
+            <menu name='用户组删除' ct='admin_group' ac='del'  display='none' />
+
+            <menu name='用户管理' ct='admin' ac='index' />
+            <menu name='用户添加' ct='admin' ac='add' display='none' />
+            <menu name='用户修改' ct='admin' ac='edit' display='none' />
+            <menu name='用户删除' ct='admin' ac='del' display='none' />
+
+            <menu name='操作日志' ct='admin' ac='oplog' reload='1'  />
+            <menu name='登录日志' ct='admin' ac='login_log' reload='1'  />
+
+            <menu name='重设MFA' ct='admin' ac='reset_mfa' display='none' />
+            <menu name='用户激活' ct='admin' ac='active' display='none' />
+            <menu name='操作日志删除' ct='admin' ac='oplog_del' display='none' />
+            <menu name='登录日志删除' ct='admin' ac='login_log_del' display='none' />
+            <menu name='清空三个月前登录日志' ct='admin' ac='del_old_login_log' display='none' />
+            <menu name='终断回话' ct='session' ac='terminate' display='none' />
+            <menu name='显示缓存' ct='cache' ac='show_cache' display='none' />
+            <menu name='配置批量修改' ct='config' ac='batch_edit' display='none' />
+        </menu>
+        <menu name='会话管理' class='fa fa-rocket'>
+            <menu name='在线会话' ct='session' ac='online' reload='1' />
+            <menu name='历史会话' ct='session' ac='offline' reload='1' />
+        </menu>
+        <menu name='系统管理' class='fa fa-wrench'>
+            <menu name='配置管理' ct='config' ac='index' />
+            <menu name='配置添加' ct='config' ac='add' display='none'  />
+            <menu name='配置修改' ct='config' ac='edit' display='none'  />
+            <menu name='配置删除' ct='config' ac='del' display='none'  />
+            <menu name='Spam管理' ct='spam' ac='index' />
+        </menu>
+        <menu name='缓存管理' class='fa fa-cloud'>
+            <menu name='缓存管理' ct='cache' ac='index' />
+            <menu name='缓存删除' ct='cache' ac='del' display='none' />
+            <menu name='缓存清理' ct='cache' ac='clear' display='none' />
+            <menu name='Redis键值管理' ct='cache' ac='redis_keys' />
+            <menu name='Redis服务器信息' ct='cache' ac='redis_info' />
+        </menu>
+        <menu name='资源管理' class='fa fa-file'>
+            <menu name='文件管理' ct='filemanage' ac='index' />
+            <menu name='文件新增' ct='filemanage' ac='add' display='none' />
+            <menu name='文件修改' ct='filemanage' ac='edit' display='none' />
+            <menu name='文件删除' ct='filemanage' ac='del' display='none' />
+            <menu name='文件上传' ct='upload' ac='upload' display='none' />
+            <menu name='文件分块上传' ct='upload' ac='upload_chunked' display='none' />
+            <menu name='图片拖拉上传' ct='upload' ac='upload_html5' display='none' />
+        </menu>
+        <menu name='作业中心' class='fa fa-coffee'>
+            <menu name='任务列表' ct='crond' ac='index' />
+            <menu name='任务新增' ct='crond' ac='add' display='none'  />
+            <menu name='任务修改' ct='crond' ac='edit' display='none'  />
+            <menu name='任务删除' ct='crond' ac='del' display='none'  />
+        </menu>
+    </menu>
+</xml>
