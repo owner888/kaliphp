@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use kaliphp\kali;
 use kaliphp\req;
@@ -13,7 +13,7 @@ define('SYS_CONSOLE', false);
 // dev pre pub
 define('SYS_ENV', 'dev');
 // app path
-define('APPPATH', __DIR__.'/app');
+define('APPPATH', __DIR__.'/../app');
 
 # APP信息
 $app_config = [

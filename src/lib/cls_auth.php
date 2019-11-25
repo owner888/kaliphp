@@ -315,8 +315,13 @@ class cls_auth
      * @param  string      $token 32位token
      * @return string      返回token绑定的uid
      */
-    public static function get_uid_by_token(string $token)
+    public static function get_uid_by_token(string $token = null)
     {
+        if ( !$token) 
+        {
+            return null;
+        }
+
         return cls_redis::instance()->get(static::_get_token_key($token, 'token_uid'));
     }
 
