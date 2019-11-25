@@ -44,9 +44,9 @@ class autoloader
             $class_file = __DIR__ . substr($class_path, strlen('kaliphp')) . '.php';
         } 
         // 公共类库
-        elseif (strpos($class, 'pub_mod_') !== false)
+        elseif (strpos($class, 'common') !== false)
         {
-            $class_file = self::$_autoload_root_path . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $class_path . '.php';
+            $class_file = self::$_autoload_root_path . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $class_path . '.php';
         } 
         else 
         {
