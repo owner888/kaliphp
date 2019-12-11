@@ -13,6 +13,7 @@
 namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_filecache;
+use kaliphp\lib\cls_redis;
 
 /**
  * 默认缓存类
@@ -39,7 +40,7 @@ class cache
     public static $cache_type = 'file';
 
     // key默认前缀
-    private static $df_prefix = 'mc_df_';
+    private static $df_prefix = null;
 
     // 默认缓存时间 2 小时，单位是秒
     private static $cache_time = 7200;
@@ -61,7 +62,7 @@ class cache
         // 记得每个项目配置不同的前缀，避免不同项目混用一个memcache造成clear的事情
         if ( !empty(self::$config['prefix'])) 
         {
-            self::$df_prefix  = self::$config['prefix'];
+            self::$df_prefix = self::$config['prefix'];
         }
         self::$cache_time = self::$config['cache_time'];
         self::$cache_type = self::$config['cache_type'];
@@ -71,39 +72,22 @@ class cache
         }
         else if( self::$cache_type == 'redis' )
         {
-            $config = self::$config['redis']['server'];
-            self::$handle = new \Redis();
-            if (isset($config['keep-alive']) && $config['keep-alive'])
-            {
-                self::$handle->pconnect($config['host'], $config['port'], 60);
-                self::$handle->setOption(\Redis::OPT_READ_TIMEOUT, -1);
-            } 
-            else 
-            {
-                self::$handle->connect($config['host'], $config['port']);
-            }
-            if ( !empty($config['pass']) )
-            {
-                if ( !self::$handle->auth($config['pass']) ) 
-                {
-                    trigger_error("Redis Server authentication failed!!");
-                }
-            }
+            self::$handle = cls_redis::instance('cache');
         }
         else if( self::$cache_type == 'memcached' )
         {
             self::$handle = new \Memcached();
-            $servers = array();
+            $servers = [];
             foreach ( self::$config['memcache']['servers'] as $mc )
             {
                 $servers[] = array($mc["host"], $mc["port"], $mc["weight"]);            
             }
-            if ( self::$config['serialize']) 
-            {
-            }
-            // 压缩数据
-            //self::$handle->setOption(\Memcached::OPT_COMPRESSION, true);
             self::$handle->setOption(\Memcached::OPT_CONNECT_TIMEOUT, 60);
+            // 压缩数据
+            //if ( self::$config['serialize']) 
+            //{
+                //self::$handle->setOption(\Memcached::OPT_COMPRESSION, true);
+            //}
             //self::$handle->setOption(\Memcached::OPT_BINARY_PROTOCOL, true); // 支持redis
             //self::$handle->setSaslAuthData($mc['user'], $mc['pass']);
             self::$handle->addServers( $servers );
@@ -124,6 +108,7 @@ class cache
     protected static function _get_key($key)
     {
         $key = md5(cache::$df_prefix.'_'.$key);
+        $key = substr($key, 8, 16);
         return $key;
     }
 

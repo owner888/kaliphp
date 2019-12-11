@@ -39,7 +39,7 @@ class cls_redis
      * @param string $name
      * @return TXRedis
      */
-    public static function instance( $name='redis', array $config = null )
+    public static function instance( $name = 'redis', array $config = null )
     {
         if (!isset(self::$_instances[$name]))
         {
@@ -47,6 +47,7 @@ class cls_redis
             if ( $config === null ) 
             {
                 $config = self::$config['redis']['server'];
+                $config['prefix'] = ($name == 'cache') ? self::$config['prefix'].':cache' : self::$config['prefix'];
             }
             self::$_instances[$name] = new self($config);
         }
@@ -82,7 +83,7 @@ class cls_redis
         $config = $this->connect;
 
         $this->handler = new \Redis();
-        if (isset($config['keep-alive']) && $config['keep-alive'])
+        if ( isset($config['keep-alive']) && $config['keep-alive'] )
         {
             $this->handler->pconnect($config['host'], $config['port'], 60);
         } 
@@ -90,7 +91,7 @@ class cls_redis
         {
             $this->handler->connect($config['host'], $config['port']);
         }
-        if($config["pass"])
+        if( $config["pass"] )
         {
             $this->handler->auth($config["pass"]);
         }
@@ -98,6 +99,11 @@ class cls_redis
         {
             $this->handler->select($config['dbindex']);
         }
+        if( $config['prefix'] )
+        {
+            $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
+        }
+
         // 不需要了，连不上Redis自己会throw
         //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
 
@@ -105,7 +111,6 @@ class cls_redis
         //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);         // don't serialize data
         //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
         //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
-        //$this->handler->setOption(Redis::OPT_PREFIX, $configs['prefix'] . ":");           // 设置前缀
     }
 
     /**

@@ -227,7 +227,7 @@ class cls_auth
         // 删除用户缓存数据
         $this->del_cache( $uid );
 
-        $token = $token ? $token : static::get_token_by_uid($uid);
+        $token = $token ? (array) $token : static::get_token_by_uid($uid);
         // 删除TOKEN缓存信息
         foreach ($token as $tk) 
         {
@@ -263,12 +263,12 @@ class cls_auth
      */
     public static function bind_token_uid(string $token, string $uid, $expire = 3600)
     {
-        $toekn_key = static::_get_token_key($uid);
+        $token_key = static::_get_token_key($uid);
         //redis hash如果key存在返回0，不存在返回1 失败返回false
-        if( false !== cls_redis::instance()->hSet($toekn_key, $token, time()+$expire) ) 
+        if( false !== cls_redis::instance()->hSet($token_key, $token, time()+$expire) )
         {
-            cls_redis::instance()->set(static::_get_token_key($token, 'token_uid'), $uid, $expire);
-            cls_redis::instance()->expire($toekn_key, $expire);
+            cls_redis::instance()->set(static::_get_token_key($token, 'token_uid'), $uid, 0);
+            cls_redis::instance()->expire($token_key, $expire);
             return true;
         }
 

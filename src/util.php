@@ -718,6 +718,39 @@ class util
         return $str;
     }
 
+    /**
+     * 变量友好化打印输出
+     * @param variable  $param  可变参数
+     * @example dump($a,$b,$c,$e,[.1]) 支持多变量，使用英文逗号符号分隔，默认方式 print_r，查看数据类型传入 .1
+     * @version php>=5.6
+     * @return void
+     */
+    public static function dump()
+    {
+		$param = func_get_args();
+        echo '<style>.php-print{background:#eee;padding:10px;border-radius:4px;border:1px solid #ccc;line-height:1.5;white-space:pre-wrap;font-family:Menlo,Monaco,Consolas,"Courier New",monospace;font-size:13px;}</style>', '<pre class="php-print">';
+        if( end($param) === .1 )
+        {
+            // 去掉最后一个参数 .1
+            array_splice($param, -1, 1);
+            foreach($param as $k => $v)
+            {
+                echo $k>0 ? '<hr>' : '';
+                ob_start();
+                self::dump($v);
+                echo preg_replace('/]=>\s+/', '] => <label>', ob_get_clean());
+            }
+        }
+        else
+        {
+            foreach($param as $k => $v)
+            {
+                echo $k>0 ? '<hr>' : '', print_r($v, true);
+            }
+        }
+        echo '</pre>';
+    }
+
     public static function get_soap_client($url) 
     {
         libxml_disable_entity_loader(false);

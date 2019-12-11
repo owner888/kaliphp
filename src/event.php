@@ -228,23 +228,26 @@ class event
      */
     public static function on_request($event)
     {
-        // 是否允许跨域
-        $allow_origin = config::instance('config')->get('security.allow_origin');
-        $origin = req::server('HTTP_ORIGIN');
-        if ( in_array('*', $allow_origin) || in_array($origin, $allow_origin)) 
+        if ( req::method() != 'CLI' ) 
         {
-            header("Access-Control-Allow-Origin: {$origin}");
-            header("Access-Control-Allow-Methods: GET, POST, PATCH, PUT, OPTIONS");
-            header("Access-Control-Allow-Credentials: true");
+            // 是否允许跨域
+            $allow_origin = config::instance('config')->get('security.allow_origin');
+            $origin = req::server('HTTP_ORIGIN');
+            if ( in_array('*', $allow_origin) || in_array($origin, $allow_origin) ) 
+            {
+                header("Access-Control-Allow-Origin: {$origin}");
+                header("Access-Control-Allow-Methods: GET, POST, PATCH, PUT, OPTIONS");
+                header("Access-Control-Allow-Credentials: true");
+            }
         }
 
-        $url = sprintf("ct=%s&ac=%s", kali::$ct, kali::$ac);
         // 不在日志记录方法里面
         if ( !in_array(req::method(), self::$config['log_request_methods']) && !in_array('*', self::$config['log_request_methods'])) 
         {
             return;
         }
 
+        $url = sprintf("ct=%s&ac=%s", kali::$ct, kali::$ac);
         // 不是日志记录请求
         if ( !in_array($url, self::$config['log_request_uris']) && !in_array('*', self::$config['log_request_uris']) ) 
         {
@@ -288,9 +291,10 @@ class event
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 
-    public static function on_sql($event, string $sql = null, string $db = null)
+    public static function on_sql($event, string $sql = null, string $db_name = null, $query_time = 0)
     {
-        log::info(sprintf('SQL Query: %s [%s]', $sql, $db));
+        log::info(sprintf('SQL Query [%s]: %s (%ss)', $db_name, $sql, $query_time));
+
         if ( SYS_CONSOLE )
         {
             cls_chrome::info('%c SQL语法 %c '.$sql.' ','color: white; background: #34495e; padding:5px 0;', 'background: #95a5a6; padding:5px 0;');
