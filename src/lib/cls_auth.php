@@ -126,28 +126,26 @@ class cls_auth
      */
     public function save_user( $data )
     {
-        // 不要保存明文密码
-        if ( isset($data['password']) && $data['password'] ) 
+        //明文加密字段
+        foreach(['password', 'fake_password', 'onetime_password'] as $f)
         {
-            $data['password'] = static::password_hash($data['password']);
+           if( isset($data[$f]) ) $data[$f] = static::password_hash($data[$f]);
         }
 
-        if ( $data['uid'] && $this->get_user($data['uid']) ) 
+        $dups = $data;
+        //不可以修改的字段
+        foreach(['uid', 'regtime', 'regip'] as $f)
         {
-            $uid = $data['uid'];
-            unset($data['uid']);
+           if( isset($dups[$f]) ) unset($dups[$f]);
+        }
 
-            return db::update(static::$table_config['user'])
-                ->set($data)
-                ->where('uid', '=', $uid)
-                ->execute();
-        }
-        else 
-        {
-            return db::insert(static::$table_config['user'])
-                ->set($data)
-                ->execute();
-        }
+        $data['uid']    = isset($data['uid']) ? $data['uid'] : util::random('web', 16);
+        list(, $status) = db::insert(static::$table_config['user'])
+           ->set($data)
+           ->dup($dups)
+           ->execute();
+
+        return $status > 0 ? true : false;
     }
 
     /**
