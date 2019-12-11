@@ -107,7 +107,10 @@ class session
         {
             self::$session_expire = kali::$auth->user['session_expire'];
         }
-        cache::set( 'session_'.$id, $sess_data, self::$session_expire );
+        if ( $sess_data ) 
+        {
+            cache::set( 'session_'.$id, $sess_data, self::$session_expire );
+        }
         // 启动session的情况下，这个方法是最后执行的，比register_shutdown_function还要后面
         // 反正是长链，缓存不要关了，否则session_regenerate_id会出问题
         //cache::free();

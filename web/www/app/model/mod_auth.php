@@ -87,11 +87,7 @@ class mod_auth extends cls_auth
         $safe_actions = ['logout', 'login', 'authentication'];
         if ( !in_array($ac, $safe_actions) ) 
         {
-            if( $auth->user['lastip'] != IP ) //换了IP,强制重新登陆
-            {
-                $auth->logout();
-            }
-            else if(  //登陆IP不在白名单，禁止操作
+            if(  //登陆IP不在白名单，禁止操作
                 !empty($auth->user['safe_ips']) && 
                 !in_array(IP, explode(',', str_replace('，', ',', $auth->user['safe_ips']))) 
             ) 
@@ -254,6 +250,13 @@ class mod_auth extends cls_auth
         if ( $account === null ) 
         {
             $account = $this->uid;
+        }
+        //如果是token先获取token对应的uid
+        else if ( 'token' == $ftype ) 
+        {
+            $account = static::get_uid_by_token($account);
+            $ftype   = 'uid';
+            if ( !$account ) return false;
         }
 
         if ( $ftype != 'uid' ) 
@@ -462,16 +465,22 @@ class mod_auth extends cls_auth
             $group_purviews = $this->get_group_purviews( $groupids );
             $purviews = array_merge($purviews, $group_purviews);
             $purviews = array_flip(array_flip($purviews));
-            if ( in_array('*', $purviews) ) 
+            if ( $purviews ) 
             {
-                $purviews = '*';
+                if ( in_array('*', $purviews) ) 
+                {
+                    $purviews = '*';
+                }
+                else 
+                {
+                    $purviews = implode(",", $purviews);
+                }
+                cache::set($cache_key, $purviews);
             }
             else 
             {
-                $purviews = implode(",", $purviews);
+                $purviews = '';
             }
-            cache::set($cache_key, $purviews);
-            $purviews = !empty($purviews) ? $purviews : '';
         }
 
         $user = $this->get_user($this->uid);

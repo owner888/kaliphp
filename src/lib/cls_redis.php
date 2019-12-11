@@ -123,6 +123,12 @@ class cls_redis
      */
     public function set( $key, $value, $expire = 0, $serialize = null )
     {
+        if ( empty($value) ) 
+        {
+            trigger_error('Cache value cannot be empty');
+            return false;
+        }
+
         if (!$this->handler)
         {
             $this->connect();

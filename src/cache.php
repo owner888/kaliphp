@@ -121,6 +121,12 @@ class cache
      */               
     public static function set($key, $value, $cachetime = -1)
     {
+        if ( empty($value) ) 
+        {
+            trigger_error('Cache value cannot be empty');
+            return false;
+        }
+
         if( $cachetime == -1 ) 
         {
             $cachetime = self::$cache_time;
