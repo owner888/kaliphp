@@ -548,7 +548,6 @@ class db_connection
 
         // echo $db_name;echo "{$sql}<br>";
         $db_conn = self::$_instance[$db_name];
-        event::trigger(onSql, [$sql, $db_name]);
 
         try
         {
@@ -564,10 +563,13 @@ class db_connection
             $query_time = microtime(true) - $time_start;
             PHP_SAPI != 'cli' && db::$query_times[] = $query_time;
 
+            // 触发SQL事件
+            event::trigger(onSql, [$sql, $db_name, round($query_time, 6)]);
+
             // 记录慢查询
             if ( self::$config[$this->_db_name]['slow_query'] && ($query_time > self::$config[$this->_db_name]['slow_query']) )
             {
-                log::warning(sprintf('Slow Query: %s [%ss]', $sql, $query_time));
+                log::warning(sprintf('Slow Query [%s]: %s (%ss)', $db_name, $sql, round($query_time, 6)));
             }
         }
         catch (Exception $e)
@@ -739,7 +741,7 @@ class db_connection
             {
                 if (is_array($val))
                 {
-                    if ( isset($val[3]) && strtoupper($val[3]) == 'OR') 
+                    if ( isset($val[3]) && strtoupper($val[3]) == 'OR')
                     {
                         $this->or_where($val[0], $val[1], $val[2]);
                     }
