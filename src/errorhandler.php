@@ -123,7 +123,7 @@ class errorhandler
      * throw new Exception 先到 exception_handler，再到这里来
      * trigger_error 不会中断程序，只是警告，excetion会中断程序
      */
-    public static function error_handler($errno, $errstr, $errfile, $errline, array $errcontext)
+    public static function error_handler($errno, $errstr, $errfile, $errline, $errcontext)
     {
         $err = self::format_errstr($errno, $errstr, $errfile, $errline, $errcontext);
         // 存在错误信息
@@ -211,7 +211,7 @@ class errorhandler
     /**
      * 格式化错误信息
      */
-    public static function format_errstr( $errno, $errstr, $errfile, $errline, array $errcontext )
+    public static function format_errstr( $errno, $errstr, $errfile, $errline, $errcontext )
     {
         $user_errors = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE ];
 

@@ -116,10 +116,10 @@ class cache
      * 增加/修改一个缓存
      * @param $key        键(key=md5(self::$df_prefix.'_'.$key))
      * @param $value      值
-     * @param $cachetime  有效时间，单位是秒(0不限, -1使用系统默认)
+     * @param $cachetime  有效时间，单位是秒(0不限, null使用系统默认)
      * @return void
      */               
-    public static function set($key, $value, $cachetime = -1)
+    public static function set($key, $value, $cachetime = null)
     {
         if ( empty($value) ) 
         {
@@ -127,13 +127,12 @@ class cache
             return false;
         }
 
-        if( $cachetime == -1 ) 
+        if( $cachetime === null ) 
         {
             $cachetime = self::$cache_time;
         }
 
         $cachekey = self::_get_key($key);
-
         // CLI下会有内存溢出的情况
         if( PHP_SAPI != 'cli' && self::$need_mem ) 
         {
@@ -141,17 +140,10 @@ class cache
         }
 
         // redis 扩展无法跟memcached、memcache一样直接传数组，所以需要先转json
-        if( self::$cache_type == 'redis' ) 
+        if( self::$cache_type === 'redis' ) 
         {
             $value = self::$config['serialize'] ? serialize($value) : $value;
-            if ( $cachetime == 0 ) 
-            {
-                return self::$handle->set($cachekey, $value);
-            }
-            else 
-            {
-                return self::$handle->setex($cachekey, $cachetime, $value);
-            }
+            return self::$handle->set($cachekey, $value, $cachetime);
         } 
         // memcached
         elseif( self::$cache_type == 'memcached' ) 
@@ -197,15 +189,15 @@ class cache
         }
 
         $cachekey = self::_get_key($key);
-
         if( isset(self::$_caches[ $cachekey ]) ) 
         {
             return self::$_caches[ $cachekey ];
         }
+
         if( self::$cache_type === 'redis' ) 
-        {
+        { 
             $value = self::$handle->get( $cachekey );
-            return self::$config['serialize'] ? unserialize($value) : $value;
+            return self::$config['serialize'] ? @unserialize($value) : $value;
         }
         else 
         {

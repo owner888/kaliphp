@@ -27,6 +27,7 @@ class cls_redis
      */
     private $handler;
     private $connect;
+    private $is_cluster = false;
 
     private static $_instances = [];
 
@@ -81,36 +82,61 @@ class cls_redis
     private function connect($config = null)
     {
         $config = $this->connect;
+        if( class_exists('RedisCluster') && !empty($config['cluster']) )
+        {
+            $pass = empty($config['cluster']["pass"]) ? null : $config['cluster']["pass"];
+            $this->handler = new \RedisCluster(
+                null,
+                $config['cluster']['host'],
+                5, 5, true, $pass
+            );
+            
+            $this->handler->setOption(\RedisCluster::OPT_SCAN, \RedisCluster::SCAN_RETRY);
+            //因为集群可能多个项目使用，而集群不支持分库，所以设置一个前缀，所有操作都是隐式加上去的
+            if( $config['prefix'] )
+            {
+                $this->handler->setOption(\RedisCluster::OPT_PREFIX, $config['prefix'] . ':');
+            }
 
-        $this->handler = new \Redis();
-        if ( isset($config['keep-alive']) && $config['keep-alive'] )
-        {
-            $this->handler->pconnect($config['host'], $config['port'], 60);
-        } 
-        else 
-        {
-            $this->handler->connect($config['host'], $config['port']);
+            $this->is_cluster = true;
         }
-        if( $config["pass"] )
+        else
         {
-            $this->handler->auth($config["pass"]);
-        }
-        if( $config['dbindex'] )
-        {
-            $this->handler->select($config['dbindex']);
-        }
-        if( $config['prefix'] )
-        {
-            $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
+            $this->handler = new \Redis();
+            if ( isset($config['keep-alive']) && $config['keep-alive'] )
+            {
+                $this->handler->pconnect($config['host'], $config['port'], 60);
+            } 
+            else 
+            {
+                $this->handler->connect($config['host'], $config['port']);
+            }
+
+            if( $config["pass"] )
+            {
+                $this->handler->auth($config["pass"]);
+            }
+
+            if( $config['dbindex'] )
+            {
+                $this->handler->select($config['dbindex']);
+            }
+            
+            if( $config['prefix'] )
+            {
+                $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
+            }
+
+            // 不需要了，连不上Redis自己会throw
+            //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
+
+            // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
+            //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);         // don't serialize data
+            //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
+            //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
         }
 
-        // 不需要了，连不上Redis自己会throw
-        //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
-
-        // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
-        //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);         // don't serialize data
-        //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
-        //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
+        return $this;
     }
 
     /**
@@ -254,6 +280,56 @@ class cls_redis
             $serialize = self::$config['serialize'];
         }
         return $serialize ? $this->decode($this->handler->lindex($key, $index)) : $this->handler->lindex($key, $index);
+    }
+
+    public function scan($keyword)
+    {
+        $keys = [];
+        if( $this->is_cluster )
+        {
+            $keyword = self::$config['prefix'].$keyword;
+            foreach ($this->handler->_masters() as $master) 
+            {
+                $iterator = null;
+                while ($tmp = $this->handler->scan($iterator, $master, $keyword)) 
+                {
+                    $keys = array_merge($keys, $tmp);
+                }
+            }
+        }
+        else
+        {
+            $iterator = null;
+            while ($tmp = $this->handler->scan($iterator, $keyword)) 
+            {
+                $keys = array_merge($keys, $tmp);
+            }
+        }
+    
+        return $keys;
+    }
+
+    public function infos()
+    {
+        $infos = [];
+        if( $this->is_cluster )
+        {
+            foreach ($this->handler->_masters() as $master) 
+            {
+                $info = (array) $this->handler->info($master);
+                foreach($info as $k => $v)
+                {
+                    $k = $k . '('.implode(":", $master).')';
+                    $infos[$k] = $v;
+                }
+            }
+        }
+        else
+        {
+            $infos = $this->handler->info();
+        }
+
+        return $infos;
     }
 
     public function encode($value)
