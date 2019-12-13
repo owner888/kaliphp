@@ -27,7 +27,7 @@ class cls_redis
      */
     private $handler;
     private $connect;
-    private $is_cluster = false;
+
 
     private static $_instances = [];
 
@@ -98,7 +98,7 @@ class cls_redis
                 $this->handler->setOption(\RedisCluster::OPT_PREFIX, $config['prefix'] . ':');
             }
 
-            $this->is_cluster = true;
+            $this->connect['is_cluster'] = true;
         }
         else
         {
@@ -127,15 +127,20 @@ class cls_redis
                 $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
             }
 
+            if( !empty(\Redis::SERIALIZER_JSON) )
+            {
+                $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_JSON);
+                $this->connect['serializer'] = 'json';
+            }
+
             // 不需要了，连不上Redis自己会throw
             //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
-
             // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
             //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);         // don't serialize data
-            //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
+            //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
             //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
         }
-
+     
         return $this;
     }
 
@@ -147,7 +152,7 @@ class cls_redis
      * @param int           $expire 过期时间，单位：秒，小于等于0则设置一个永不过期的值
      * @return bool
      */
-    public function set( $key, $value, $expire = 0, $serialize = null )
+    public function set( $key, $value, $expire = 0 )
     {
         if ( empty($value) ) 
         {
@@ -159,12 +164,8 @@ class cls_redis
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        $value = $serialize ? $this->encode($value) : $value;
-
+ 
+        $value = $this->encode($value);
         if ( $expire > 0 ) 
         {
             return $this->handler->setex($key, $expire, $value);
@@ -175,17 +176,14 @@ class cls_redis
         }
     }
 
-    public function get( $key, $serialize = null )
+    public function get( $key )
     {
         if (!$this->handler)
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        return $serialize ? $this->decode($this->handler->get($key)) : $this->handler->get($key);
+
+        return $this->decode($this->handler->get($key));
     }
 
     public function hget( $key, $hash, $serialize = null )
@@ -194,11 +192,8 @@ class cls_redis
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        return $serialize ? $this->decode($this->handler->hGet($key, $hash)) : $this->handler->hGet($key, $hash);
+
+        return $this->decode($this->handler->hGet($key, $hash));
     }
 
     public function hset( $key, $hash, $value, $serialize = null )
@@ -207,26 +202,18 @@ class cls_redis
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        $value = $serialize ? $this->encode($value) : $value;
-        return $this->handler->hSet($key, $hash, $value);
+
+        return $this->handler->hSet($key, $hash, $this->encode($value));
     }
 
-    public function lpush( $key, $value, $serialize = null )
+    public function lpush( $key, $value )
     {
         if (!$this->handler)
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        $value = $serialize ? $this->encode($value) : $value;
-        return $this->handler->lpush($key, $value);
+
+        return $this->handler->lpush($key, $this->encode($value));
     }
 
     public function rpop( $key, $serialize = null )
@@ -235,25 +222,18 @@ class cls_redis
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        return $serialize ? $this->decode($this->handler->rpop($key)) : $this->handler->rpop($key);
+ 
+        return $this->decode($this->handler->rpop($key));
     }
 
-    public function rpush( $key, $value, $serialize = null )
+    public function rpush( $key, $value )
     {
         if (!$this->handler)
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        $value = $serialize ? $this->encode($value) : $value;
-        return $this->handler->rpush($key, $value);
+ 
+        return $this->handler->rpush($key, $this->encode($value));
     }
 
     public function lpop( $key, $serialize = null )
@@ -262,11 +242,8 @@ class cls_redis
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        return $serialize ? $this->decode($this->handler->lpop($key)) : $this->handler->lpop($key);
+
+        return $this->decode($this->handler->lpop($key));
     }
 
     public function lindex( $key, $index, $serialize = null )
@@ -275,17 +252,14 @@ class cls_redis
         {
             $this->connect();
         }
-        if ($serialize === null)
-        {
-            $serialize = self::$config['serialize'];
-        }
-        return $serialize ? $this->decode($this->handler->lindex($key, $index)) : $this->handler->lindex($key, $index);
+
+        return $this->decode($this->handler->lindex($key, $index));
     }
 
     public function scan($keyword)
     {
         $keys = [];
-        if( $this->is_cluster )
+        if( $this->connect['is_cluster'] )
         {
             $keyword = self::$config['prefix'].$keyword;
             foreach ($this->handler->_masters() as $master) 
@@ -312,7 +286,7 @@ class cls_redis
     public function infos()
     {
         $infos = [];
-        if( $this->is_cluster )
+        if( $this->connect['is_cluster'] )
         {
             foreach ($this->handler->_masters() as $master) 
             {
@@ -334,12 +308,12 @@ class cls_redis
 
     public function encode($value)
     {
-        return json_encode($value, JSON_UNESCAPED_UNICODE);
+        return !empty($this->connect['serializer']) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE);
     }
 
     public function decode($value)
     {
-        return json_decode($value, true);
+        return !empty($this->connect['serializer']) ? $value : json_decode($value, true);
     }
 
     /**
@@ -358,5 +332,3 @@ class cls_redis
     }
 
 }
-
-

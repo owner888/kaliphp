@@ -84,10 +84,10 @@ class cache
             }
             self::$handle->setOption(\Memcached::OPT_CONNECT_TIMEOUT, 60);
             // 压缩数据
-            //if ( self::$config['serialize']) 
-            //{
-                //self::$handle->setOption(\Memcached::OPT_COMPRESSION, true);
-            //}
+            if ( self::$config['serialize']) 
+            {
+                self::$handle->setOption(\Memcached::OPT_COMPRESSION, true);
+            }
             //self::$handle->setOption(\Memcached::OPT_BINARY_PROTOCOL, true); // 支持redis
             //self::$handle->setSaslAuthData($mc['user'], $mc['pass']);
             self::$handle->addServers( $servers );
@@ -140,13 +140,7 @@ class cache
         }
 
         // redis 扩展无法跟memcached、memcache一样直接传数组，所以需要先转json
-        if( self::$cache_type === 'redis' ) 
-        {
-            $value = self::$config['serialize'] ? serialize($value) : $value;
-            return self::$handle->set($cachekey, $value, $cachetime);
-        } 
-        // memcached
-        elseif( self::$cache_type == 'memcached' ) 
+        if( in_array(self::$cache_type, ['redis', 'memcached']) ) 
         {
             return self::$handle->set($cachekey, $value, $cachetime);
         }
@@ -194,15 +188,7 @@ class cache
             return self::$_caches[ $cachekey ];
         }
 
-        if( self::$cache_type === 'redis' ) 
-        { 
-            $value = self::$handle->get( $cachekey );
-            return self::$config['serialize'] ? @unserialize($value) : $value;
-        }
-        else 
-        {
-            return self::$handle->get( $cachekey );
-        }
+        return self::$handle->get( $cachekey );
     }
 
     /**

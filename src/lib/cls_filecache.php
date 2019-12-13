@@ -319,7 +319,8 @@ class cls_filecache
     {
         //检查文件是否已经打开
         $this->open();
-        if( $key=='' ) {
+        if( !$key ) 
+        {
             return false;
         }
         $index_sign = $this->_get_index_sign( $key );
@@ -328,7 +329,8 @@ class cls_filecache
         fseek($this->_cache_fp, $key_index * 4 + $this->_exit_code_length);
         $darr = unpack('l1h', fread($this->_cache_fp, 4));
         $head_pos = $darr['h'];
-        if( $head_pos==0 ) {
+        if( $head_pos == 0 ) 
+        {
             return false;
         }
         $n_pos = $head_pos;
@@ -342,21 +344,27 @@ class cls_filecache
             $cur_node  = unpack('S1key_len/l1data_len/l1pre/l1next/l1time/l1exptime', $info_dat);
             $cur_node['pos'] = $n_pos;
             $cur_node['curkey'] = false;
-            if($cur_node['key_len'] == 0) {
+            if($cur_node['key_len'] == 0) 
+            {
                 $n_pos = $cur_node['next'];
                 continue;
             }
             $_key = fread($this->_cache_fp, $cur_node['key_len']);
             if( $_key==$key_sign )
             {
-                if( $cur_node['data_len'] > 0 ) {
+                if( $cur_node['data_len'] > 0 ) 
+                {
                     $data = unserialize( fread($this->_cache_fp, $cur_node['data_len']) );
-                } else {
+                } 
+                else 
+                {
                     $data = false;
                 }
                 $cur_node['curkey'] = true;
                 return $need_cur_node ? $cur_node : $this->_check_data($cur_node, $data);
-            } else {
+            } 
+            else 
+            {
                 $n_pos = $cur_node['next'];
             }
         } while( $n_pos > 0 && $n < $this->_link_max );
@@ -374,7 +382,8 @@ class cls_filecache
     {
         //检查文件是否已经打开
         $this->open();
-        if( $key=='' ) {
+        if( !$key ) 
+        {
             return false;
         }
         $index_sign = $this->_get_index_sign( $key );
@@ -383,7 +392,8 @@ class cls_filecache
         fseek($this->_cache_fp, $key_index * 4 + $this->_exit_code_length);
         $darr = unpack('l1h', fread($this->_cache_fp, 4));
         $head_pos = $darr['h'];
-        if( $head_pos==0 ) {
+        if( $head_pos == 0 ) 
+        {
             return false;
         }
         $n_pos = $head_pos;
@@ -402,17 +412,21 @@ class cls_filecache
                 continue;
             }
             $_key = fread($this->_cache_fp, $cur_node['key_len']);
-            if( $_key==$key_sign )
+            if( $_key == $key_sign )
             {
-                if( $cur_node['data_len'] > 0 ) {
+                if( $cur_node['data_len'] > 0 ) 
+                {
                     $data = unserialize( fread($this->_cache_fp, $cur_node['data_len']) );
-                } else {
+                } else 
+                {
                     $data = false;
                 }
                 $cur_node['curkey'] = true;
                 // 保存时的时间 + 过期时间 - 当前时间
                 return $cur_node['time'] + $cur_node['exptime'] - time();
-            } else {
+            } 
+            else 
+            {
                 $n_pos = $cur_node['next'];
             }
         } while( $n_pos > 0 && $n < $this->_link_max );
@@ -427,9 +441,12 @@ class cls_filecache
     */ 
     private function _check_data( &$node, &$data )
     {
-        if( $node['data_len'] == 0 || ($node['exptime'] > 0 && $node['time'] + $node['exptime'] < time()) ) {
+        if( $node['data_len'] == 0 || ($node['exptime'] > 0 && $node['time'] + $node['exptime'] < time()) ) 
+        {
             return false;
-        } else {
+        } 
+        else 
+        {
             return $data;
         }
     }
@@ -451,9 +468,17 @@ class cls_filecache
      */
     public function set( $key, $value, $compress=0, $exptime=0, $block_size=1 )
     {
-        if( $key=='' ) {
+        if( !$key ) 
+        {
             return false;
         }
+
+        if ( empty($value) ) 
+        {
+            trigger_error('Cache value cannot be empty');
+            return false;
+        }
+
         //检查文件是否已经打开
         $this->open();
         
@@ -472,7 +497,8 @@ class cls_filecache
         if( $head_pos==0 )
         {
             //锁定文件
-            if( !$this->is_single ) {
+            if( !$this->is_single ) 
+            {
                 flock($this->_cache_fp, LOCK_EX);
             }
             //4个int标识分别是key_len,value_len,link_pre_pos,link_next_pos,time,exptime
@@ -489,7 +515,8 @@ class cls_filecache
         {
             $cur_node = $this->get($key, true);
             //锁定文件
-            if( !$this->is_single ) {
+            if( !$this->is_single ) 
+            {
                 flock($this->_cache_fp, LOCK_EX);
             }
             //不存在相同的key数据，直接在文件末尾写数据
@@ -520,7 +547,7 @@ class cls_filecache
                 $head_pos = ftell( $this->_cache_fp );
                 fwrite($this->_cache_fp, $save_data);
                 //改变前一个节点link_next_pos的指向
-                if( $cur_node['pre'] > 0)
+                if( $cur_node['pre'] > 0 )
                 {
                     fseek($this->_cache_fp, $cur_node['pre'] + 10);
                     fwrite($this->_cache_fp, pack('l', $head_pos));
@@ -539,7 +566,8 @@ class cls_filecache
             }
         }
         //解除文件写保护
-        if( !$this->is_single ) {
+        if( !$this->is_single ) 
+        {
             flock($this->_cache_fp, LOCK_UN);
         }
         return true;
