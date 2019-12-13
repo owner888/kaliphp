@@ -98,6 +98,12 @@ class cls_redis
                 $this->handler->setOption(\RedisCluster::OPT_PREFIX, $config['prefix'] . ':');
             }
 
+            if( defined('\RedisCluster::SERIALIZER_JSON') )
+            {
+                $this->handler->setOption(\RedisCluster::OPT_SERIALIZER, \RedisCluster::SERIALIZER_JSON);
+                $this->connect['serializer'] = 'json';
+            }
+
             $this->connect['is_cluster'] = true;
         }
         else
@@ -127,12 +133,12 @@ class cls_redis
                 $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
             }
 
-            if( !empty(\Redis::SERIALIZER_JSON) )
+            if( defined('\Redis::SERIALIZER_JSON') )
             {
                 $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_JSON);
                 $this->connect['serializer'] = 'json';
             }
-
+     
             // 不需要了，连不上Redis自己会throw
             //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
             // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
@@ -204,6 +210,16 @@ class cls_redis
         }
 
         return $this->handler->hSet($key, $hash, $this->encode($value));
+    }
+
+    public function hgetall( $key, $serialize = null )
+    {
+        if (!$this->handler)
+        {
+            $this->connect();
+        }
+
+        return $this->decode($this->handler->hGetAll($key));
     }
 
     public function lpush( $key, $value )
@@ -313,7 +329,22 @@ class cls_redis
 
     public function decode($value)
     {
-        return !empty($this->connect['serializer']) ? $value : json_decode($value, true);
+        if( empty($this->connect['serializer']) )
+        {
+            if ( is_array($value) ) 
+            {
+                foreach ($value as $k => $v) 
+                {
+                    $value[$k] = json_decode($v, true);
+                }
+            }
+            else
+            {
+                $value = json_decode($value, true);
+            }
+        }
+
+        return $value;
     }
 
     /**
