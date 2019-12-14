@@ -35,6 +35,8 @@ class cls_auth
     protected static $_cache_prefix = 'auth_user';
     // 验证句柄
     public static $auth_hand = 'auth_hand';
+    //token失效时间（默认3个月）
+    public static $token_expire = 7776000;
     //token命名规则
     public static $token_key = 'token:%s:%s';
     // 用户表
@@ -256,17 +258,18 @@ class cls_auth
      * 绑定token到uid
      * @param  string  $token  32位token
      * @param  string  $uid    用户UID
-     * @param  integer $expire token失效时间
+     * @param  integer $expire token失效时间 0表示永久
      * @return bool            true表示绑定成功 false绑定失败
      */
-    public static function bind_token_uid(string $token, string $uid, $expire = 3600)
+    public static function bind_token_uid(string $token, string $uid, $expire = 0)
     {
+        $expire = $expire ? $expire : static::$token_expire;
         $token_key = static::_get_token_key($uid);
         //redis hash如果key存在返回0，不存在返回1 失败返回false
-        if( false !== cls_redis::instance()->hSet($token_key, $token, time()+$expire) )
+        if( false !== cls_redis::instance()->hSet($token_key, $token, time()+$expire))
         {
-            cls_redis::instance()->set(static::_get_token_key($token, 'token_uid'), $uid, 0);
-            cls_redis::instance()->expire($token_key, $expire);
+            cls_redis::instance()->set(static::_get_token_key($token, 'token_uid'), $uid, $expire);
+            $expire > 0 && cls_redis::instance()->expire($token_key, $expire);
             return true;
         }
 
@@ -315,12 +318,19 @@ class cls_auth
      */
     public static function get_uid_by_token(string $token = null)
     {
-        if ( !$token) 
+        if ( !$token ) 
         {
             return null;
         }
 
-        return cls_redis::instance()->get(static::_get_token_key($token, 'token_uid'));
+        if( false != ($uid = cls_redis::instance()->get(static::_get_token_key($token, 'token_uid'))))
+        {
+            //刷新token相关缓存
+            cls_redis::instance()->expire(static::_get_token_key($token, 'token_uid'), static::$token_expire);
+            cls_redis::instance()->expire(static::_get_token_key($uid), static::$token_expire);
+        }
+
+        return $uid;
     }
 
     /**

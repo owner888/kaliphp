@@ -32,9 +32,9 @@ class cls_arr
      */
     public static function get($array, $key = null, $default = null)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         if (is_null($key))
@@ -61,7 +61,7 @@ class cls_arr
 
         foreach (explode('.', $key) as $key_part)
         {
-            if (($array instanceof \cls_arrayAccess and isset($array[$key_part])) === false)
+            if (($array instanceof \ArrayAccess and isset($array[$key_part])) === false)
             {
                 if ( ! is_array($array) or ! array_key_exists($key_part, $array))
                 {
@@ -135,7 +135,7 @@ class cls_arr
         {
             foreach ($array as $i => $a)
             {
-                $return[] = (is_object($a) and ! ($a instanceof \cls_arrayAccess)) ? $a->{$key} :
+                $return[] = (is_object($a) and ! ($a instanceof \ArrayAccess)) ? $a->{$key} :
                     ($get_deep ? static::get($a, $key) : $a[$key]);
             }
         }
@@ -143,8 +143,8 @@ class cls_arr
         {
             foreach ($array as $i => $a)
             {
-                $index !== true and $i = (is_object($a) and ! ($a instanceof \cls_arrayAccess)) ? $a->{$index} : $a[$index];
-                $return[$i] = (is_object($a) and ! ($a instanceof \cls_arrayAccess)) ? $a->{$key} :
+                $index !== true and $i = (is_object($a) and ! ($a instanceof \ArrayAccess)) ? $a->{$index} : $a[$index];
+                $return[$i] = (is_object($a) and ! ($a instanceof \ArrayAccess)) ? $a->{$key} :
                     ($get_deep ? static::get($a, $key) : $a[$key]);
             }
         }
@@ -161,9 +161,9 @@ class cls_arr
      */
     public static function key_exists($array, $key)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         is_object($key) and $key = (string) $key;
@@ -180,7 +180,7 @@ class cls_arr
 
         foreach (explode('.', $key) as $key_part)
         {
-            if (($array instanceof \cls_arrayAccess and isset($array[$key_part])) === false)
+            if (($array instanceof \ArrayAccess and isset($array[$key_part])) === false)
             {
                 if ( ! is_array($array) or ! array_key_exists($key_part, $array))
                 {
@@ -587,7 +587,7 @@ class cls_arr
     {
         if (count($original) < abs($pos))
         {
-            //\Errorhandler::notice('Position larger than number of elements in array in which to insert.');
+            trigger_error('Position larger than number of elements in array in which to insert.');
             return false;
         }
 
@@ -633,7 +633,7 @@ class cls_arr
 
         if ($pos === false)
         {
-            //\Errorhandler::notice('Unknown key before which to insert the new value into the array.');
+            trigger_error('Unknown key before which to insert the new value into the array.');
             return false;
         }
 
@@ -656,7 +656,7 @@ class cls_arr
 
         if ($pos === false)
         {
-            //\Errorhandler::notice('Unknown key after which to insert the new value into the array.');
+            trigger_error('Unknown key after which to insert the new value into the array.');
             return false;
         }
 
@@ -678,7 +678,7 @@ class cls_arr
 
         if ($key === false)
         {
-            //\Errorhandler::notice('Unknown value after which to insert the new value into the array.');
+            trigger_error('Unknown value after which to insert the new value into the array.');
             return false;
         }
 
@@ -700,7 +700,7 @@ class cls_arr
 
         if ($key === false)
         {
-            //\Errorhandler::notice('Unknown value before which to insert the new value into the array.');
+            trigger_error('Unknown value before which to insert the new value into the array.');
             return false;
         }
 
@@ -1031,9 +1031,9 @@ class cls_arr
      */
     public static function search($array, $value, $default = null, $recursive = true, $delimiter = '.', $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         if ( ! is_null($default) and ! is_int($default) and ! is_string($default))
@@ -1067,6 +1067,35 @@ class cls_arr
         }
 
         return $key === false ? $default : $key;
+    }
+
+    /**
+     * 通过表达式查询
+     * 
+     * @param mixed $array      要查询的数组
+     * @param mixed $expression 查询表达式
+     * @return void
+     *
+     * exp:
+     * $data = array (
+           array ( "name" => "bill", "age" => 40 ),
+           array ( "name" => "john", "age" => 30 ),
+           array ( "name" => "jack", "age" => 50 ),
+           array ( "name" => "john", "age" => 25 )
+       );
+       print_r( cls_arr::arr_search( $data , "age>=30" ) );
+       print_r( cls_arr::arr_search( $data , "name=='john'" ) );
+       print_r( cls_arr::arr_search( $data , "age>25 and name=='john'" ) );
+     */
+    public static function arr_search($array, $expression) 
+    {
+        $result = array();
+        $expression = preg_replace ('/([^\s]+?)(=|>|<|!)/' , '$a[\'$1\']$2' , $expression );
+        foreach ( $array as $a ) 
+        {
+            if (eval ( "return $expression;" ) ) $result [] = $a ;
+        }
+        return $result ;
     }
 
     /**
@@ -1108,9 +1137,9 @@ class cls_arr
      */
     public static function sum($array, $key)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         return array_sum(static::pluck($array, $key));
@@ -1147,9 +1176,9 @@ class cls_arr
      */
     public static function previous_by_key($array, $key, $get_value = false, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         // get the keys of the array
@@ -1185,9 +1214,9 @@ class cls_arr
      */
     public static function next_by_key($array, $key, $get_value = false, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         // get the keys of the array
@@ -1223,9 +1252,9 @@ class cls_arr
      */
     public static function previous_by_value($array, $value, $get_value = true, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         // find the current value in the array
@@ -1261,9 +1290,9 @@ class cls_arr
      */
     public static function next_by_value($array, $value, $get_value = true, $strict = false)
     {
-        if ( ! is_array($array) and ! $array instanceof \cls_arrayAccess)
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or cls_arrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
         }
 
         // find the current value in the array

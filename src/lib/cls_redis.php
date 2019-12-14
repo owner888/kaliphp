@@ -142,9 +142,9 @@ class cls_redis
             // 不需要了，连不上Redis自己会throw
             //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
             // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
-            //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);         // don't serialize data
+            //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_NONE);         // don't serialize data
             //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
-            //$this->handler->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
+            //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
         }
      
         return $this;
@@ -192,7 +192,7 @@ class cls_redis
         return $this->decode($this->handler->get($key));
     }
 
-    public function hget( $key, $hash, $serialize = null )
+    public function hget( $key, $hash )
     {
         if (!$this->handler)
         {
@@ -202,7 +202,7 @@ class cls_redis
         return $this->decode($this->handler->hGet($key, $hash));
     }
 
-    public function hset( $key, $hash, $value, $serialize = null )
+    public function hset( $key, $hash, $value )
     {
         if (!$this->handler)
         {
@@ -212,7 +212,7 @@ class cls_redis
         return $this->handler->hSet($key, $hash, $this->encode($value));
     }
 
-    public function hgetall( $key, $serialize = null )
+    public function hgetall( $key )
     {
         if (!$this->handler)
         {
@@ -232,7 +232,7 @@ class cls_redis
         return $this->handler->lpush($key, $this->encode($value));
     }
 
-    public function rpop( $key, $serialize = null )
+    public function rpop( $key )
     {
         if (!$this->handler)
         {
@@ -252,7 +252,7 @@ class cls_redis
         return $this->handler->rpush($key, $this->encode($value));
     }
 
-    public function lpop( $key, $serialize = null )
+    public function lpop( $key )
     {
         if (!$this->handler)
         {
@@ -262,7 +262,7 @@ class cls_redis
         return $this->decode($this->handler->lpop($key));
     }
 
-    public function lindex( $key, $index, $serialize = null )
+    public function lindex( $key, $index )
     {
         if (!$this->handler)
         {
