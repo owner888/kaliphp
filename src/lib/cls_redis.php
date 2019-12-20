@@ -193,7 +193,7 @@ class cls_redis
         return $this->decode($this->handler->get($key));
     }
 
-    public function hget( $key, $hash, $serialize = null )
+    public function hget( $key, $hash )
     {
         if (!$this->handler)
         {
@@ -203,7 +203,7 @@ class cls_redis
         return $this->decode($this->handler->hGet($key, $hash));
     }
 
-    public function hset( $key, $hash, $value, $serialize = null )
+    public function hset( $key, $hash, $value )
     {
         if (!$this->handler)
         {
@@ -213,7 +213,7 @@ class cls_redis
         return $this->handler->hSet($key, $hash, $this->encode($value));
     }
 
-    public function hgetall( $key, $serialize = null )
+    public function hgetall( $key )
     {
         if (!$this->handler)
         {
@@ -233,7 +233,7 @@ class cls_redis
         return $this->handler->lpush($key, $this->encode($value));
     }
 
-    public function rpop( $key, $serialize = null )
+    public function rpop( $key )
     {
         if (!$this->handler)
         {
@@ -253,7 +253,7 @@ class cls_redis
         return $this->handler->rpush($key, $this->encode($value));
     }
 
-    public function lpop( $key, $serialize = null )
+    public function lpop( $key )
     {
         if (!$this->handler)
         {
@@ -263,7 +263,7 @@ class cls_redis
         return $this->decode($this->handler->lpop($key));
     }
 
-    public function lindex( $key, $index, $serialize = null )
+    public function lindex( $key, $index )
     {
         if (!$this->handler)
         {

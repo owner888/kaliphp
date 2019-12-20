@@ -570,7 +570,6 @@ class db_connection
 
         // echo $db_name;echo "{$sql}<br>";
         $db_conn = self::$_instance[$db_name];
-        event::trigger(onSql, [$sql, $db_name]);
 
         try
         {
@@ -585,10 +584,14 @@ class db_connection
             // Stop and aggregate the query time results
             $query_time = microtime(true) - $time_start;
             static::log_query($query_time, 'query_time');
+
+            // 触发SQL事件
+            event::trigger(onSql, [$sql, $db_name, round($query_time, 6)]);
+
             // 记录慢查询
             if ( self::$config[$this->_db_name]['slow_query'] && ($query_time > self::$config[$this->_db_name]['slow_query']) )
             {
-                log::warning(sprintf('Slow Query: %s [%ss]', $sql, $query_time));
+                log::warning(sprintf('Slow Query [%s]: %s (%ss)', $db_name, $sql, round($query_time, 6)));
             }
         }
         catch (Exception $e)
@@ -2233,8 +2236,8 @@ class db_connection
                 return "GROUP_CONCAT(`{$value}`) AS `{$value}`";
             }
         }
-        // 使用sum、max、min函数的不处理
-        if (strcspn($value, "()'") !== strlen($value))
+        // 处理Mysql函数
+        elseif (strcspn($value, "()'") !== strlen($value))
         {
             // 匹配CONCAT()
             if ( preg_match("#^concat\((.*?)\)#i", $value, $matchs) )
