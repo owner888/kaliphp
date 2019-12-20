@@ -42,6 +42,7 @@ class cls_redis
      */
     public static function instance( $name = 'redis', array $config = null )
     {
+        $name = static::get_muti_name($name);
         if (!isset(self::$_instances[$name]))
         {
             // 没有传配置则调用系统配置好的
@@ -72,7 +73,7 @@ class cls_redis
      */
     public function choose($name)
     {
-        return self::instance($name);
+        return self::instance(static::get_muti_name($name));
     }
 
     /**
@@ -128,7 +129,7 @@ class cls_redis
                 $this->handler->select($config['dbindex']);
             }
             
-            if( $config['prefix'] )
+            if( $config['prefix'] ) 
             {
                 $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
             }
@@ -160,11 +161,11 @@ class cls_redis
      */
     public function set( $key, $value, $expire = 0 )
     {
-        if ( empty($value) ) 
-        {
-            trigger_error('Cache value cannot be empty');
-            return false;
-        }
+       if ( empty($value) ) 
+       {
+           trigger_error('Cache value cannot be empty');
+           return false;
+       }
 
         if (!$this->handler)
         {
@@ -192,7 +193,7 @@ class cls_redis
         return $this->decode($this->handler->get($key));
     }
 
-    public function hget( $key, $hash )
+    public function hget( $key, $hash, $serialize = null )
     {
         if (!$this->handler)
         {
@@ -202,7 +203,7 @@ class cls_redis
         return $this->decode($this->handler->hGet($key, $hash));
     }
 
-    public function hset( $key, $hash, $value )
+    public function hset( $key, $hash, $value, $serialize = null )
     {
         if (!$this->handler)
         {
@@ -212,7 +213,7 @@ class cls_redis
         return $this->handler->hSet($key, $hash, $this->encode($value));
     }
 
-    public function hgetall( $key )
+    public function hgetall( $key, $serialize = null )
     {
         if (!$this->handler)
         {
@@ -232,7 +233,7 @@ class cls_redis
         return $this->handler->lpush($key, $this->encode($value));
     }
 
-    public function rpop( $key )
+    public function rpop( $key, $serialize = null )
     {
         if (!$this->handler)
         {
@@ -252,7 +253,7 @@ class cls_redis
         return $this->handler->rpush($key, $this->encode($value));
     }
 
-    public function lpop( $key )
+    public function lpop( $key, $serialize = null )
     {
         if (!$this->handler)
         {
@@ -262,7 +263,7 @@ class cls_redis
         return $this->decode($this->handler->lpop($key));
     }
 
-    public function lindex( $key, $index )
+    public function lindex( $key, $index, $serialize = null )
     {
         if (!$this->handler)
         {
@@ -275,7 +276,7 @@ class cls_redis
     public function scan($keyword)
     {
         $keys = [];
-        if( $this->connect['is_cluster'] )
+        if( !empty($this->connect['is_cluster']) )
         {
             $keyword = self::$config['prefix'].$keyword;
             foreach ($this->handler->_masters() as $master) 
@@ -302,7 +303,7 @@ class cls_redis
     public function infos()
     {
         $infos = [];
-        if( $this->connect['is_cluster'] )
+        if( !empty($this->connect['is_cluster']) )
         {
             foreach ($this->handler->_masters() as $master) 
             {
@@ -335,16 +336,35 @@ class cls_redis
             {
                 foreach ($value as $k => $v) 
                 {
-                    $value[$k] = json_decode($v, true);
+                    $value[$k] = is_array($v) ? $v : json_decode($v, true);
                 }
             }
             else
             {
-                $value = json_decode($value, true);
+                $value = is_array($value) ? $value : json_decode($value, true);
             }
         }
 
         return $value;
+    }
+
+    /**
+     * cli模式加上进程ID,防止多进程实例串行
+     * @param  string $name 实例名称
+     * @return string       cli下带进程号的实例名称
+     */
+    public static function get_muti_name($name = 'redis')
+    {
+        if (PHP_SAPI == 'cli')
+        {
+            $pid = ':'.posix_getpid();
+            if ( strpos($name, $pid) === false ) 
+            {
+                $name .= $pid;
+            }
+        }
+        
+        return $name;
     }
 
     /**
@@ -361,5 +381,4 @@ class cls_redis
         }
         return call_user_func_array([$this->handler, $method], $arguments);
     }
-
 }

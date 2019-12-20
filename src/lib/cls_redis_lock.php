@@ -102,7 +102,7 @@ class cls_redis_lock
         if ( self::is_locking($name) )
         {
             //删除锁
-            if (cls_redis::instance()->delete("Lock:$name"))
+            if (cls_redis::instance()->del("Lock:$name"))
             {
                 return true;
             }

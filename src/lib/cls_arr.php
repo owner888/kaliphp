@@ -1087,14 +1087,13 @@ class cls_arr
        print_r( cls_arr::arr_search( $data , "name=='john'" ) );
        print_r( cls_arr::arr_search( $data , "age>25 and name=='john'" ) );
      */
-    public static function arr_search($array, $expression) 
+    public static function arr_search( $array, $expression ) 
     {
         $result = array();
-        $expression = preg_replace ('/([^\s]+?)(=|>|<|!)/' , '$a[\'$1\']$2' , $expression );
-        foreach ( $array as $a ) 
-        {
-            if (eval ( "return $expression;" ) ) $result [] = $a ;
-        }
+        $expression = preg_replace_callback( "/([^\s]+?)([=<>!]{1,})/" , function($match) {
+            return "\$a['{$match[1]}'] {$match[2]} ";
+        }, $expression );
+        foreach ( $array as $a ) if ( eval ( "return $expression;" ) ) $result [] = $a ;
         return $result ;
     }
 
