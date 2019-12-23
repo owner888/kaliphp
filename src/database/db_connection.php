@@ -2204,7 +2204,6 @@ class db_connection
      */
     public function quote_field($value, $select = true, $inside = false)
     {
-        $value = trim($value);
         if ($value === '*')
         {
             return $value;
@@ -2227,17 +2226,6 @@ class db_connection
                 // Convert the object to a string
                 return $this->quote_identifier((string) $value);
             }
-        }
-        // GROUP BY 写法在Mysql8 以后需要加 GROUP_CONCAT
-        elseif ( 
-            $select && $this->_group_by && !is_object($value) &&
-            //// 不属于 GROUP BY 的参数，也不是Mysql函数
-            !in_array($value, $this->_group_by) && strcspn($value, "()'") === strlen($value)
-        ) 
-        {
-            //value可能是table.field 这种方式
-            $values = explode('.', $value);
-            return "GROUP_CONCAT(`" .implode('`.`', $values). "`) AS `". str_replace('`', '', end($values)) ."`";
         }
         // 处理Mysql函数
         elseif (strcspn($value, "()'") !== strlen($value))
