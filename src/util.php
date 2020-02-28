@@ -12,6 +12,7 @@
 
 namespace kaliphp;
 use kaliphp\kali;
+use kaliphp\req;
 use kaliphp\lib\cls_redis_lock;
 use kaliphp\lib\cls_snowflake;
 
@@ -613,7 +614,22 @@ class util
                 //$str = uniqid('',true);
                 //$str = md5(uniqid(mt_rand()));
                 //生成的唯一标识中没有重复
-                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(session_create_id()) : md5(uniqid(md5(microtime(true)),true));
+                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(getmypid().session_create_id()) : md5(getmypid().uniqid(microtime(true),true));
+                if ( $length == 32 ) 
+                {
+                    return $str;
+                }
+                else 
+                {
+                    return substr($str, 8, 16);
+                }
+                break;
+
+            case 'web':
+                // 即使同一个IP，同一款浏览器，要在微妙内生成一样的随机数，也是不可能的
+                // 进程ID保证了并发，微妙保证了一个进程每次生成都会不同，IP跟AGENT保证了一个网段
+                $str = md5(util::random('unique').req::server('REMOTE_ADDR').req::server('HTTP_USER_AGENT'));
+
                 if ( $length == 32 ) 
                 {
                     return $str;
@@ -637,20 +653,6 @@ class util
                     $pool[array_rand($pool)],
                     static::random('hexdec', 3),
                     static::random('hexdec', 12));
-                break;
-
-            case 'web':
-                // 即使同一个IP，同一款浏览器，要在微妙内生成一样的随机数，也是不可能的
-                // 进程ID保证了并发，微妙保证了一个进程每次生成都会不同，IP跟AGENT保证了一个网段
-                $str = md5(getmypid().uniqid(md5(microtime(true)),true).$_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT']);
-                if ( $length == 32 ) 
-                {
-                    return $str;
-                }
-                else 
-                {
-                    return substr($str, 8, 16);
-                }
                 break;
         }
     }

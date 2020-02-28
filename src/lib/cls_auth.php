@@ -15,6 +15,7 @@ namespace kaliphp\lib;
 use kaliphp\cache;
 use kaliphp\db;
 use kaliphp\req;
+use kaliphp\util;
 use kaliphp\config;
 use kaliphp\session;
 use kaliphp\lib\cls_crypt;
