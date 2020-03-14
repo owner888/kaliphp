@@ -33,3 +33,6 @@ if ( !(req::item('ct') == 'index' && req::item('ac') == 'index') )
 tpl::assign('title', 'KaliPHP DEMO');
 // 运行MVC
 kali::run();
+
+
+// test ipad
