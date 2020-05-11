@@ -2303,7 +2303,7 @@ class db_connection
             in_array($field, self::$config[$this->_db_name]['crypt_fields'][$table])
         ) 
         {
-            $value = "AES_DECRYPT({$value}, '".self::$config[$this->_db_name]['crypt_key']."')";
+            $value = "CONVERT(AES_DECRYPT({$value}, '".self::$config[$this->_db_name]['crypt_key']."') USING utf8)";
             // 只处理SELECT子句中的字段
             if ($select && !$inside) 
             {
