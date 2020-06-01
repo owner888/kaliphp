@@ -2792,9 +2792,11 @@ class db_connection
             if ( strpos($name, $pid) === false ) 
             {
                 $name .= $pid;
-
                 //兼容子进程下再开子进程
-                !isset(self::$config[$name]) && self::init_db($name);
+                if ( !isset(self::$config[$name]) && isset(static::$_instance[$name .'_w']) ) 
+                {
+                    self::instance($name, static::$_instance[$name .'_w']->_config);
+                }
             }
         }
         

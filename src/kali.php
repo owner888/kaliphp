@@ -73,6 +73,11 @@ class kali
         // 获取配置
         self::$config = $config;
 
+        if ( !defined('APPPATH'))
+        {
+            exit(self::fmt_code(1006, ['APPPATH']));
+        }    
+
         self::$base_root    = APPPATH;
         self::$data_root    = self::$base_root.DS."data";
         self::$log_root     = self::$base_root.DS."data".DS."log";

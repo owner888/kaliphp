@@ -12,7 +12,7 @@
 
 namespace kaliphp;
 use kaliphp\kali;
-use kaliphp\req;
+use kaliphp\lib\cls_redis;
 use kaliphp\lib\cls_redis_lock;
 use kaliphp\lib\cls_snowflake;
 
@@ -441,7 +441,7 @@ class util
     public static function order_id($num = 7)
     {
         //return cls_snowflake::instance(0, 1)->nextid();
-        return date("ymdHis").self::uniqid('numeric', $num);
+        return date("ymdHis").trim(self::uniqid('numeric', $num), '"');
     }
 
     /**
@@ -467,6 +467,17 @@ class util
         }
 
         return true;
+    }
+
+    /**
+     * 获取13位时间戳 
+     * 
+     * @return void
+     */
+    public static function get_millisecond() 
+    {
+        list($s1, $s2) = explode(' ', microtime());
+        return (float)sprintf('%.0f', (floatval($s1) + floatval($s2)) * 1000);
     }
 
     /**
@@ -614,22 +625,7 @@ class util
                 //$str = uniqid('',true);
                 //$str = md5(uniqid(mt_rand()));
                 //生成的唯一标识中没有重复
-                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(getmypid().session_create_id()) : md5(getmypid().uniqid(microtime(true),true));
-                if ( $length == 32 ) 
-                {
-                    return $str;
-                }
-                else 
-                {
-                    return substr($str, 8, 16);
-                }
-                break;
-
-            case 'web':
-                // 即使同一个IP，同一款浏览器，要在微妙内生成一样的随机数，也是不可能的
-                // 进程ID保证了并发，微妙保证了一个进程每次生成都会不同，IP跟AGENT保证了一个网段
-                $str = md5(util::random('unique').req::server('REMOTE_ADDR').req::server('HTTP_USER_AGENT'));
-
+                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(session_create_id()) : md5(uniqid(md5(microtime(true)),true));
                 if ( $length == 32 ) 
                 {
                     return $str;
@@ -653,6 +649,20 @@ class util
                     $pool[array_rand($pool)],
                     static::random('hexdec', 3),
                     static::random('hexdec', 12));
+                break;
+
+            case 'web':
+                // 即使同一个IP，同一款浏览器，要在微妙内生成一样的随机数，也是不可能的
+                // 进程ID保证了并发，微妙保证了一个进程每次生成都会不同，IP跟AGENT保证了一个网段
+                $str = md5(getmypid().uniqid(md5(microtime(true)),true).$_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT']);
+                if ( $length == 32 ) 
+                {
+                    return $str;
+                }
+                else 
+                {
+                    return substr($str, 8, 16);
+                }
                 break;
         }
     }
@@ -1160,7 +1170,7 @@ class util
         if (is_array($src))
         {
             $value = $src;
-            $key_path = explode('/', $key);
+            $key_path = explode('/', str_replace('.', '/', $key));
             foreach ($key_path as $k)
             {
                 if (isset($value[$k]))
@@ -1508,6 +1518,91 @@ class util
 
         return $merged;
     }
+
+    /**
+     * 统一返回图片地址
+     * @param  mix    $img_url，支持数组
+     * @param string  没后缀的自动加上，为空不检查
+     * @return mix    返回可用图片地址
+     */
+    public static function get_img_url($img_url, $suffix = '')
+    {
+        $filelink =  config::instance('upload')->get('filelink');
+        if ( is_array($img_url) ) 
+        {
+            $img_url = array_map(function($v) {
+                return static::get_img_url($v);
+            }, $img_url);
+        }
+        else if ($img_url && false != strcasecmp(substr($img_url, 0, 4), 'http') )
+        {
+            $img_url  = $filelink.'/'.$img_url;
+            $img_url .= $suffix && strpos($img_url, '.') === false ? '.'.$suffix : '';
+        }
+
+        return $img_url;
+    }
+
+    /**
+     * 返回JSON格式的数据，并终止程序运行
+     * @param int $code 错误代码，0为无错误；非零为有错误
+     * @param string $msg 错误描述
+     * @param mixed $data 数据
+     */
+    static function json($code, $msg, $data = [])
+    {
+        $data = (array) $data;
+        static::return_json([
+            'code'      => $code,
+            'msg'       => $msg,
+            'timestamp' => time(),
+            'data'      => (object) $data
+        ]);
+    }
+
+    /**
+     * 返回JSON格式的错误信息，并终止程序运行
+     * @param int $code 错误代码，0为无错误；非零为有错误
+     * @param string $msg 错误描述
+     * @param mixed $data 数据
+     */
+    static function json_error($code, $msg, $data = [])
+    {
+        static::json($code, $msg, $data);
+    }
+    
+    /**
+     * 返回JSON格式的成功信息，并终止程序运行
+     * @param mixed $data 数据
+     * @param int $code 错误代码，0为无错误；非零为有错误
+     * @param string $msg 错误描述
+     */
+    static function json_success($data, $code = 0, $msg = 'successful')
+    {
+        static::json($code, $msg, $data);
+    }
+
+    /**
+     * 变量替换
+     * @Author han
+     * @param  string $format_data 带{xxx}的字符串
+     * @param  array  $params      key value数组
+     */
+    public static function sprintf($format_data, $params = [])
+    {
+        // 替换变量
+        $find_arr    = [];
+        $replace_arr = [];
+        foreach ($params as $key => $param)
+        {
+            $find_arr[]    = '{'. $key .'}';
+            $replace_arr[] = $param;
+        }
+
+        $string = str_replace($find_arr, $replace_arr, $format_data);
+        return $string;
+    }
+
 }
 
 /* vim: set expandtab: */

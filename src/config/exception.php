@@ -7,7 +7,7 @@ return array(
     1003 => 'Autoload file[%s] is fails',
     1004 => 'Autoload registry handler is fail',
     1005 => 'Permission Error: AutoLoad File[%s] can not write',
-    1006 => 'TXAPP has no property [%s]',
+    1006 => '[%s] not defined',
     1007 => 'logs list [%s] not exist or has no permission to write',
 
     /* controller error */

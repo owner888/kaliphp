@@ -86,9 +86,15 @@ class config
             {
                 $env = $this->_module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
 
+                $config_paths[] = __DIR__ . DS . 'config' . DS;
+                if ( defined('APPPATH')) 
+                {
+                    $config_paths[] = APPPATH. DS . 'config' . DS;
+                }
+
                 //如果有config$env优先使用，否则加载哪里config
                 //config优先顺序 数据库 -> app config -> 系统config
-                foreach([ __DIR__ . DS . 'config' . DS, APPPATH. DS . 'config' . DS ] as $path)
+                foreach($config_paths as $path)
                 {
                     if( file_exists($file = $path.$env.'.php') || file_exists($file = $path.$this->_module.'.php') )
                     {
@@ -179,7 +185,7 @@ class config
      * @param    string       $item  a (dot notated) config key
      * @return   array|bool          the \Arr::delete result, success boolean or array of success booleans
      */
-    public static function del($key)
+    public function del($key)
     {
         if ( isset($this->_cfg_caches[$this->_source][$this->_module][$key]) )
         {

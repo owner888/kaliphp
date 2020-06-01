@@ -920,7 +920,7 @@ class req
         $magic_quotes_gpc = ini_get('magic_quotes_gpc');
 
         //命令行模式
-        if( self::method() === 'CLI' ) 
+        if( $method === 'cli' ) 
         {
             // 把命令行参数转化为get参数
             if ( count(cls_cli::$args) > 0) 
@@ -933,8 +933,6 @@ class req
                     }
                 }
             }
-            // CLI环境下没必要往下执行了
-            return;
         }
 
         // 处理get

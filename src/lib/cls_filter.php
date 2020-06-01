@@ -75,7 +75,7 @@ class cls_filter
                     $val = intval( $val );
                     break;
                 case 'stripslashes':
-                    $val = $val ? stripslashes($val) : $val;
+                    $val = $val && !is_object($val) ? stripslashes($val) : $val;
                     break;
                 case 'float':
                     $val = floatval( $val );

@@ -38,7 +38,7 @@ class cls_redis
 
     /**
      * @param string $name
-     * @return TXRedis
+     * @return cla_redis
      */
     public static function instance( $name = 'redis', array $config = null )
     {
@@ -49,6 +49,7 @@ class cls_redis
             if ( $config === null ) 
             {
                 $config = self::$config['redis']['server'];
+                // 如果把redis当cache用，增加一个 :cache 字符用于 Redis UI 分文件夹查看
                 $config['prefix'] = ($name == 'cache') ? self::$config['prefix'].':cache' : self::$config['prefix'];
             }
             self::$_instances[$name] = new self($config);
@@ -368,9 +369,11 @@ class cls_redis
     }
 
     /**
-     * 调用redis其他方法
+     * 调用Redis其他方法
+     *
      * @param $method
      * @param $arguments
+     *
      * @return mixed
      */
     public function __call($method, $arguments)
