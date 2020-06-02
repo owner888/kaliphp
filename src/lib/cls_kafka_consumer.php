@@ -64,11 +64,12 @@ class cls_kafka_consumer
     //public $partitions = [];
     //public $offsets = [];
 
-    private $group_name = 'my-group-name';
-    private $topic_name = null;
-    private $partition  = null;
-    private $offset     = 0;
-    private $timeout    = 12 * 1000;
+    private $group_name       = 'my-group-name';
+    private $topic_name       = null;
+    private $partition        = null;
+    private $offset           = 0;
+    private $timeout          = 12 * 1000;
+    private $timeout_callback = null;
 
     public static function _init()
     {
@@ -218,6 +219,20 @@ class cls_kafka_consumer
         return $this;
     }
 
+    /**
+     * 设置消费超时回调 
+     * 
+     * @param int $callback 回调函数 
+     * 
+     * @return self
+     */
+    public function set_timeout_callback(\Closure $callback): self
+    {
+        $this->timeout_callback  = $callback;
+
+        return $this;
+    }
+
     public function set_max_bytes($max_bytes = 102400): self
     {
         $this->max_bytes  = $max_bytes;
@@ -298,6 +313,10 @@ class cls_kafka_consumer
                         //echo "No more messages; will wait for more\n";
                         break;
                     case RD_KAFKA_RESP_ERR__TIMED_OUT:
+                        if ( $this->timeout_callback ) 
+                        {
+                            call_user_func($this->timeout_callback);
+                        }
                         //echo "Timed out\n";
                         break;
                     default:
