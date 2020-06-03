@@ -113,11 +113,11 @@ class cls_redis
             $this->handler = new \Redis();
             if ( isset($config['keep-alive']) && $config['keep-alive'] )
             {
-                $this->handler->pconnect($config['host'], $config['port'], 60);
+                $this->handler->pconnect($config['host'], $config['port'], $config['timeout']);
             } 
             else 
             {
-                $this->handler->connect($config['host'], $config['port']);
+                $this->handler->connect($config['host'], $config['port'], $config['timeout']);
             }
 
             if( $config["pass"] )

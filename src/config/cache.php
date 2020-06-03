@@ -10,12 +10,12 @@ return [
     'serialize'  => true,
     'memcache' => [
         'servers' => [
-            ['host' => '127.0.0.1', 'port' => 11211, 'weight' => 1, 'keep-alive' => false],
+            ['host' => '127.0.0.1', 'port' => 11211, 'weight' => 1, 'keep-alive' => false, 'timeout' => 5],
         ]
     ],
     // redis目前只支持单台服务器，使用短连接，长链接在php7以上有问题，经常会被莫名回收
     'redis' => [
-        'server' => ['host' => '127.0.0.1', 'port' => 6379, 'pass' => '', 'keep-alive' => false, 'dbindex' => 1]
+        'server' => ['host' => '127.0.0.1', 'port' => 6379, 'pass' => '', 'keep-alive' => false, 'timeout' => 5, 'dbindex' => 1]
     ],
     'kafka' => [
         'mode'    => 1,    // 1线下发送 2线上发送,

@@ -198,7 +198,7 @@ class cls_kafka_consumer
      *
      * @param $group_name
      */
-    public function set_partition($partition = 0): self
+    public function set_partition(int $partition = 0): self
     {
         $this->partition  = $partition;
 
@@ -212,7 +212,7 @@ class cls_kafka_consumer
      * 
      * @return self
      */
-    public function set_timeout($timeout = 12000): self
+    public function set_timeout(int $timeout = 12000): self
     {
         $this->timeout  = $timeout;
 
@@ -233,7 +233,7 @@ class cls_kafka_consumer
         return $this;
     }
 
-    public function set_max_bytes($max_bytes = 102400): self
+    public function set_max_bytes(int $max_bytes = 102400): self
     {
         $this->max_bytes  = $max_bytes;
 

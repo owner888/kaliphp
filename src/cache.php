@@ -82,7 +82,7 @@ class cache
             {
                 $servers[] = array($mc["host"], $mc["port"], $mc["weight"]);            
             }
-            self::$handle->setOption(\Memcached::OPT_CONNECT_TIMEOUT, 60);
+            self::$handle->setOption(\Memcached::OPT_CONNECT_TIMEOUT, $mc['timeout']);
             // 压缩数据
             if ( self::$config['serialize']) 
             {
@@ -97,7 +97,7 @@ class cache
             self::$handle = new \Memcache();
             foreach ( self::$config['memcache']['servers'] as $mc )
             {
-                self::$handle->addServer($mc["host"], $mc["port"], false, $mc["weight"], 60);            
+                self::$handle->addServer($mc["host"], $mc["port"], false, $mc["weight"], $mc['timeout']);            
             }
         }
     }
