@@ -10,6 +10,7 @@ return [
     'prefix'     => 'kali',
     // 是否启用长链接，不要启用，mysqli的长链问题很多
     'keep-alive' => false,
+    'timeout'    => 5,
     // 是否对SQL语句进行安全检查并处理，在插入十万条以上数据的时候会出现瓶颈
     'safe_test'  => true,
     // 慢查询阀值，秒

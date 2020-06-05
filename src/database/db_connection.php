@@ -291,7 +291,10 @@ class db_connection
 
             try
             {
-                $this->_handler = mysqli_connect(
+                $link = mysqli_init();
+                mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, $this->_config['timeout']);
+                //$this->_handler = mysqli_connect(
+                $this->_handler = mysqli_real_connect( $link, 
                     $this->_config['host'], 
                     $this->_config['user'], 
                     $this->_config['pass'], 

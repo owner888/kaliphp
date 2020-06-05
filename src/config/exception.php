@@ -33,7 +33,7 @@ return array(
     3012 => 'filter(not in) must be Array, %s given',
 
     /* Connect error */
-    4001 => 'socket Create Error: [%s]',
+    4001 => 'Socket Create Error: [%s]',
     4002 => 'Socket Connect[%s:%s] Error',
     4003 => 'Socket Len Error',
     4004 => 'Memcache Connect Error [%s:%s]',
