@@ -933,6 +933,44 @@ class util
         }
     }
 
+    /**
+     * 接口响应数据 
+     * 
+     * @param array  $data 响应数据 
+     * @param int    $code 响应代码 
+     * @param string $msg  响应信息 
+     * 
+     * @return void
+     */
+    public static function response_data(array $data, int $code = 0, string $msg = 'successful')
+    {
+        header('Content-type: application/json');
+        self::json_encode([
+            'code' => $code,
+            'msg'  => $msg,
+            'data' => (object)$data,
+        ]);
+    }
+
+    /**
+     * 接口响应错误 
+     * 
+     * @param array  $data 响应数据 
+     * @param int    $code 响应代码 
+     * @param string $msg  响应信息 
+     * 
+     * @return void
+     */
+    public static function response_error(string $msg = 'failed', int $code = -1, array $data = [])
+    {
+        header('Content-type: application/json');
+        self::json_encode([
+            'code' => $code,
+            'msg'  => $msg,
+            'data' => (object)$data,
+        ]);
+    }
+
     public static function return_json($array, $options = JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT )
     {
         header('Content-type: application/json');
