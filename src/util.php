@@ -945,11 +945,14 @@ class util
     public static function response_data(array $data, int $code = 0, string $msg = 'successful')
     {
         header('Content-type: application/json');
-        self::json_encode([
+
+        $json_str = self::json_encode([
             'code' => $code,
             'msg'  => $msg,
             'data' => (object)$data,
         ]);
+
+        exit($json_str);
     }
 
     /**
@@ -964,11 +967,14 @@ class util
     public static function response_error(string $msg = 'failed', int $code = -1, array $data = [])
     {
         header('Content-type: application/json');
-        self::json_encode([
+
+        $json_str = self::json_encode([
             'code' => $code,
             'msg'  => $msg,
             'data' => (object)$data,
         ]);
+
+        exit($json_str);
     }
 
     public static function return_json($array, $options = JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT )
