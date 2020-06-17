@@ -988,7 +988,14 @@ class util
         return json_encode($array, $options);
     }
 
-    // 空数组转对象
+    /**
+     * 空数组转对象 
+     * 实际应用中会真的存在空数组，所以不能这么粗暴的使用
+     * 
+     * @param mixed $str str 
+     * 
+     * @return void
+     */
     public static function empty_array2object( $str )
     {
         // Is the string an array?

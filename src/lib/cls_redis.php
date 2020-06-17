@@ -38,7 +38,7 @@ class cls_redis
 
     /**
      * @param string $name
-     * @return cla_redis
+     * @return self
      */
     public static function instance( $name = 'redis', array $config = null )
     {
@@ -78,12 +78,13 @@ class cls_redis
     }
 
     /**
-     * 创建handler
+     * 创建 handler
      * @throws TXException
      */
     private function connect($config = null)
     {
         $config = $this->connect;
+
         if( class_exists('RedisCluster') && !empty($config['cluster']) )
         {
             $pass = empty($config['cluster']["pass"]) ? null : $config['cluster']["pass"];

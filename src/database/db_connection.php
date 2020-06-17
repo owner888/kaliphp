@@ -234,6 +234,7 @@ class db_connection
                     'user' => self::$config[$name]['user'],
                     'pass' => self::$config[$name]['pass'],
                     'name' => self::$config[$name]['name'],
+                    'timeout' => self::$config[$name]['timeout'],
                     'charset' => self::$config[$name]['charset'],
                 ];
 
@@ -291,10 +292,14 @@ class db_connection
 
             try
             {
-                $link = mysqli_init();
-                mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, $this->_config['timeout']);
+                $this->_handler = mysqli_init();
+                if ( $this->_config['timeout'] ) 
+                {
+                    mysqli_options($this->_handler, MYSQLI_OPT_CONNECT_TIMEOUT, $this->_config['timeout']);
+                }
+                
                 //$this->_handler = mysqli_connect(
-                $this->_handler = mysqli_real_connect( $link, 
+                mysqli_real_connect( $this->_handler, 
                     $this->_config['host'], 
                     $this->_config['user'], 
                     $this->_config['pass'], 

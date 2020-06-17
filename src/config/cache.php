@@ -17,6 +17,26 @@ return [
     'redis' => [
         'server' => ['host' => '127.0.0.1', 'port' => 6379, 'pass' => '', 'keep-alive' => false, 'timeout' => 5, 'dbindex' => 1]
     ],
+    'mqtt' => [
+        'server' => [
+            'host' => '', 
+            'port' => 31883, 
+            'user' => 'testmqtt_langrensha', 
+            'pass' => 'ErZDb07XXfZMlk7', 
+            'keep-alive' => 60,
+            'tls-crt' => [
+                //'ca_file'   => '/path/to/ca.crt',
+                //'cert_file' => '/path/to/client.crt',
+                //'key_file'  => '/path/to/client.key',
+                //'password'  => '/path/to/client.key',
+            ],
+            'tls-psk' => [
+                //'psk' => '',
+                //'identity' => '',
+                //'ciphers' => null
+            ]
+        ]
+    ],
     'kafka' => [
         'mode'    => 1,    // 1线下发送 2线上发送,
         'def_config' => [
