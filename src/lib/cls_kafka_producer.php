@@ -218,6 +218,7 @@ class cls_kafka_producer
 
         while(($len = $this->handler->getOutQLen()) > 0)
         {
+            // 避免客户端过快exit导致数据未完整发完
             $this->handler->poll(50);
         }
 
