@@ -142,9 +142,9 @@ class cls_mqtt
      * @param mixed $topic    消息主题 
      * @param mixed $payload  消息内容 
      * @param int $qos qos    消息回执
-     *                           0: 不保证消息送达
-     *                           1: 保证消息送达
-     *                           2: 保证只有一条消息送达
+     *                           0: 最多一次，不保证消息送达
+     *                           1: 最少一次，保证消息送达，需要自己处理重复信息
+     *                           2: 只一次，保证只有一条消息送达，不需要自己处理重复信息，性能最差
      * @param mixed $retain   消息是否置顶
      * 
      * @return void
