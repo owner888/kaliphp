@@ -17,7 +17,8 @@ use Mosquitto\Message;
 
 /**
  * MQTT操作类 
- * MQTT 操作文档: https://mosquitto-php.readthedocs.io/en/latest/
+ * MQTT 英文操作文档: https://mosquitto-php.readthedocs.io/en/latest/
+ * MQTT 中文操作文档: https://www.kancloud.cn/liao-song/mosquitto-php/500403
  * ex:
    cls_mqtt::instance()->send( 'topic', 'payload', 1 );
  * 
