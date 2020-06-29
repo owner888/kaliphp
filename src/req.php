@@ -316,17 +316,6 @@ class req
 	}
 
     /**
-     * Return's the query string
-     *
-     * @param   string $default
-     * @return  string
-     */
-    public static function query_string($default = '')
-    {
-        return static::server('QUERY_STRING', $default);
-    }
-
-    /**
      * 获取用户的公共IP地址
      *
      * @param   string $default
@@ -412,28 +401,55 @@ class req
     }
 
     /**
-     * 获得当前网站Url
+     * Return's the query string
+     *
+     * @param   string $default
+     * @return  string
      */
-    public static function site_url($uri = '', $protocol = null)
+    public static function query_string($default = '')
+    {
+        return static::server('QUERY_STRING', $default);
+    }
+
+    /**
+     * 获得当前网址，不包含 Query String
+     */
+    public static function url($uri = '', $protocol = null)
     {
         $protocol = $protocol ? $protocol : self::server('REQUEST_SCHEME');
         return $protocol.'://'.self::server('SERVER_NAME').$uri;    
     }
 
     /**
-     * 获得当前的Url
+     * 获得当前完整网址，包含 Query String
+     * 
+     * @return string
+     */
+    public static function full_url()
+    {
+        return self::url().'?'.self::query_string();    
+    }
+
+    public static function path()
+    {
+        return self::cururl();
+    }
+
+    /**
+     * 获得当前请求路径
+     * new name path
      */
     public static function cururl()
     {
         if(!empty(self::server("REQUEST_URI")))
         {
-            $scriptName = self::server("REQUEST_URI");
-            $nowurl = $scriptName;
+            $script_name = self::server("REQUEST_URI");
+            $nowurl = $script_name;
         }
         else
         {
-            $scriptName = self::server("PHP_SELF");
-            $nowurl = empty(self::server("QUERY_STRING")) ? $scriptName : $scriptName."?".self::server("QUERY_STRING");
+            $script_name = self::server("PHP_SELF");
+            $nowurl = empty(self::server("QUERY_STRING")) ? $script_name : $script_name."?".self::server("QUERY_STRING");
         }
         return $nowurl;
     }
@@ -480,6 +496,25 @@ class req
     }
 
     /**
+     * 客户端请求的编码是否 JSON 内容 
+     * Accept 属于请求头，表示客户端希望接收到的数据内容
+     * Content-Type 属于实体头，表示客户端发送到服务端的数据内容
+     * 
+     * @return bool
+     */
+    public static function is_json()
+    {
+        if (self::item('is_json', 0, 'int'))
+        {
+            return true;
+        }
+
+        $http_accept = req::server('HTTP_ACCEPT');
+        $http_accepts = explode(',', $http_accept);
+        return in_array('application/json', $http_accepts);
+    }
+
+    /**
      * jquery 发出 ajax 请求时，会在请求头部添加一个名为X-Requested-With的信息，信息内容为 XMLHttpRequest
      * js 需要如下处理
      * var xmlhttp=new XMLHttpRequest(); 
@@ -487,9 +522,7 @@ class req
      * xmlhttp.setRequestHeader("X-Requested-With","XMLHttpRequest"); 
      * xmlhttp.send();
      * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2017-07-13 15:53
+     * @return bool
      */
     public static function is_ajax()
     {
@@ -519,6 +552,7 @@ class req
 
     /**
      * 通关ua判断是否为手机
+     *
      * @return bool
      */
     public static function is_mobile()
@@ -538,10 +572,7 @@ class req
     /**
      * 获取请求方法 POST、GET、PUT、DELETE、HEAD、OPTIONS
      * 
-     * @param mixed $upper
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2017-12-07 17:17
+     * @return string
      */
     public static function method()
     {
@@ -563,10 +594,9 @@ class req
     /**
      * 前页
      * 
-     * @param mixed $url
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2018-06-29 12:03
+     * @param string $gourl
+     *
+     * @return string
      */
     public static function forword($gourl = '')
     {
@@ -578,9 +608,8 @@ class req
      * 设置跳转页
      * 
      * @param string $gourl
+     *
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2018-06-29 12:03
      */
     public static function set_redirect($gourl = '')
     {
@@ -591,10 +620,9 @@ class req
     /**
      * 跳转页
      * 
-     * @param mixed $gourl
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2018-06-29 12:03
+     * @param string $gourl
+     *
+     * @return string
      */
     public static function redirect($gourl = '')
     {
@@ -615,6 +643,7 @@ class req
     /**
      * 移动上传的文件
      * $item 是用于当文件表单名为数组，如 upfile[] 之类的情况, $item 表示数组的具体键值，下同
+     *
      * @return bool
      */
     public static function move_upload_file( $formname, $filename, $item = '' )
@@ -776,7 +805,8 @@ class req
      * 检查文件后缀是否为指定值
      *
      * @param  string  $subfix
-     * @return boolean
+     *
+     * @return bool
      */
     public static function check_subfix($formname, $subfix = array('csv'), $item= '')
     {
@@ -793,7 +823,8 @@ class req
      * @param  $dfarr   默认数据列表 array( array(key, dfvalue)... )
      * @param  $datas   数据列表
      * @param  $method  方法
-     * @return boolean
+     *
+     * @return bool
      */
     public static function assign_values(&$dfarr, &$datas = null, $method = 'GET')
     {
@@ -900,7 +931,19 @@ class req
         // handle json input
         elseif ($content_type == 'application/json')
         {
-            self::$jsons = $php_input = json_decode($php_input, true);
+            if (util::is_json($php_input)) 
+            {
+                $php_input = json_decode($php_input, true);
+            }
+            else 
+            {
+                $php_input = urldecode($php_input);
+                parse_str($php_input, $php_input);
+            }
+
+            self::$jsons = $php_input;
+
+            self::${$method.'s'} = $php_input;
         }
 
         // handle xml input

@@ -942,7 +942,7 @@ class util
      * 
      * @return void
      */
-    public static function response_data(array $data, int $code = 0, string $msg = 'successful')
+    public static function response_data(int $code = 0, string $msg = 'successful', array $data)
     {
         header('Content-type: application/json');
 
@@ -964,7 +964,7 @@ class util
      * 
      * @return void
      */
-    public static function response_error(string $msg = 'failed', int $code = -1, array $data = [])
+    public static function response_error(int $code = -1, string $msg = 'failed', array $data = [])
     {
         header('Content-type: application/json');
 

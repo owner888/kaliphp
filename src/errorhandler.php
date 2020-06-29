@@ -178,7 +178,7 @@ class errorhandler
         {
             if( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
             {
-                if ( req::is_ajax() ) 
+                if ( req::is_json() ) 
                 {
                     util::return_json([
                         'code' => -1,

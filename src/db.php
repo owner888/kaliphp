@@ -278,7 +278,7 @@ class db
     }
 
     /**
-     * 创建一个未转移的表达式
+     * 原始表达式
      * 在查询构建器中使用SQL函数的唯一方法
      *
      *     $expression = db::expr('COUNT(users.id)');
@@ -289,6 +289,18 @@ class db
     public static function expr($string)
     {
         return new db_expression($string);
+    }
+
+    /**
+     * Alias expr method
+     * 
+     * @param mixed $string string 
+     * 
+     * @return void
+     */
+    public static function raw($string)
+    {
+        return self::expr($string);
     }
 
     /**
