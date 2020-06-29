@@ -17,6 +17,7 @@ use Mosquitto\Message;
 
 /**
  * MQTT操作类 
+ * 连接错误也没有异常抛出，不知道为啥
  * MQTT 英文操作文档: https://mosquitto-php.readthedocs.io/en/latest/
  * MQTT 中文操作文档: https://www.kancloud.cn/liao-song/mosquitto-php/500403
  * ex:

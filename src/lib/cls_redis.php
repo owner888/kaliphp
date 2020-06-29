@@ -42,8 +42,8 @@ class cls_redis
      */
     public static function instance( $name = 'redis', array $config = null )
     {
-        $name = static::get_muti_name($name);
-        if (!isset(self::$_instances[$name]))
+        $_name = static::get_muti_name($name);
+        if (!isset(self::$_instances[$_name]))
         {
             // 没有传配置则调用系统配置好的
             if ( $config === null ) 
@@ -52,9 +52,9 @@ class cls_redis
                 // 如果把redis当cache用，增加一个 :cache 字符用于 Redis UI 分文件夹查看
                 $config['prefix'] = ($name == 'cache') ? self::$config['prefix'].':cache' : self::$config['prefix'];
             }
-            self::$_instances[$name] = new self($config);
+            self::$_instances[$_name] = new self($config);
         }
-        return self::$_instances[$name];
+        return self::$_instances[$_name];
     }
 
     /**
