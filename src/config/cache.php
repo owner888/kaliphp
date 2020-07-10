@@ -57,6 +57,12 @@ return [
         'online_push_topic' => ['shutdown_function'],           // 在线推的topic名称
         'shudtown_function_topic_name' => 'shutdown_function',
     ],
+    'gearman' => [
+        'servers' => [
+            ['host' => '192.168.10.47', 'port' => 4730]
+        ],
+        //'options' => GEARMAN_CLIENT_NON_BLOCKING | GEARMAN_CLIENT_FREE_TASKS | GEARMAN_CLIENT_UNBUFFERED_RESULT,
+    ],
     'session' => [
         'type'   => 'cache',      // session类型 default || cache || mysql
         'expire' => 1440,         // session 回收时间 默认24分钟:1440、一天:86400

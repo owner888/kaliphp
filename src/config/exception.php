@@ -38,6 +38,8 @@ return array(
     4003 => 'Socket Len Error',
     4004 => 'Memcache Connect Error [%s:%s]',
     4005 => 'Redis Connect Error [%s:%s]',
+    4006 => 'MQTT Connect Error [%s:%s]',
+    4007 => 'Kafka Connect Error [%s:%s]',
 
     /* lib error */
     5001 => '[%s] not in form[%s] values',

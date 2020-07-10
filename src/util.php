@@ -626,6 +626,7 @@ class util
                 //$str = md5(uniqid(mt_rand()));
                 //生成的唯一标识中没有重复
                 $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(session_create_id()) : md5(uniqid(md5(microtime(true)),true));
+                $str = md5(getmypid().$str);
                 if ( $length == 32 ) 
                 {
                     return $str;
@@ -637,7 +638,7 @@ class util
                 break;
 
             case 'sha1' :
-                return sha1(uniqid(mt_rand(), true));
+                return sha1(getmypid().uniqid(mt_rand(), true));
                 break;
 
             case 'uuid':
@@ -1594,13 +1595,22 @@ class util
         return $img_url;
     }
 
+    public static function debug_backtrace($number = 1)
+    {
+        $debug_backtrace = debug_backtrace();
+        for ($i = 1; $i <= $number; $i++) 
+        {
+            print_r($debug_backtrace[$i]); 
+        }
+    }
+
     /**
      * 返回JSON格式的数据，并终止程序运行
      * @param int $code 错误代码，0为无错误；非零为有错误
      * @param string $msg 错误描述
      * @param mixed $data 数据
      */
-    static function json($code, $msg, $data = [])
+    public static function json($code, $msg, $data = [])
     {
         $data = (array) $data;
         static::return_json([
@@ -1617,7 +1627,7 @@ class util
      * @param string $msg 错误描述
      * @param mixed $data 数据
      */
-    static function json_error($code, $msg, $data = [])
+    public static function json_error($code, $msg, $data = [])
     {
         static::json($code, $msg, $data);
     }
@@ -1628,7 +1638,7 @@ class util
      * @param int $code 错误代码，0为无错误；非零为有错误
      * @param string $msg 错误描述
      */
-    static function json_success($data, $code = 0, $msg = 'successful')
+    public static function json_success($data, $code = 0, $msg = 'successful')
     {
         static::json($code, $msg, $data);
     }

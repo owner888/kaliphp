@@ -12,6 +12,8 @@
 
 namespace kaliphp\lib;
 use kaliphp\config;
+use kaliphp\log;
+use kaliphp\util;
 use Mosquitto\Client;
 use Mosquitto\Message;
 
@@ -30,14 +32,53 @@ class cls_mqtt
     public static $config = [];
 
     /**
+     * 实例名 
+     * 
+     * @var string
+     */
+    private $name;
+
+    /**
+     * MQTT Client类实例
+     *
      * @var \Mosquitto\Client
      */
     private $handler;
+
+    /**
+     * 连接配置信息 
+     * 
+     * @var array
+     */
     private $connect;
 
+    /**
+     * 发布消息成功回调 
+     * 
+     * @var mixed
+     */
     public $on_publish_callback;
 
+    /**
+     * 断开链接回调 
+     * 
+     * @var mixed
+     */
+    public $on_disconnect_callback;
+
+    /**
+     * 实例数组 
+     *
+     * @var array
+     */
     private static $_instances = [];
+
+    /**
+     * 链接次数
+     *
+     * @var int 
+     */
+    public static $count = 0;
 
     public static function _init()
     {
@@ -48,9 +89,10 @@ class cls_mqtt
      * @param string $name
      * @return self
      */
-    public static function instance( $name = 'mqtt', array $config = null )
+    public static function instance( $name = 'kaliphp', array $config = null )
     {
         $name = static::get_muti_name($name);
+        log::debug($name);
         if (!isset(self::$_instances[$name]))
         {
             // 没有传配置则调用系统配置好的
@@ -58,7 +100,7 @@ class cls_mqtt
             {
                 $config = self::$config['mqtt']['server'];
             }
-            self::$_instances[$name] = new self($config);
+            self::$_instances[$name] = new self($name, $config);
         }
         return self::$_instances[$name];
     }
@@ -68,8 +110,9 @@ class cls_mqtt
      *
      * @param $config   链接配置
      */
-    public function __construct( array $config = null )
+    public function __construct( string $name, array $config = null )
     {
+        $this->name    = $name;
         $this->connect = $config;
     }
 
@@ -85,17 +128,20 @@ class cls_mqtt
 
     /**
      * 创建 handler
-     * @throws TXException
      */
     private function connect($config = null)
     {
+        if ( self::$count != 0 ) 
+        {
+            log::debug("MQTT reconnect " . self::$count);
+        }
+
         $config = $this->connect;
 
-        $this->handler = new Client();
+        $client_id = isset($config['client_id']) ? $config['client_id'] : $this->name;
+        $this->handler = new Client($client_id);
         // QoS 1 and 2 消息队列
         $this->handler->setMaxInFlightMessages(100);
-
-        //$this->get_class_methods();
 
         if( !empty($config['user']) && !empty($config['pass']) )
         {
@@ -121,9 +167,39 @@ class cls_mqtt
             );
         }
 
+        // 无法连接会抛出系统级别错误，所以不需要做异常处理
         $this->handler->connect($config['host'], $config['port'], $config['keep-alive']);
 
+        // 只有 loopForever 的时候会触发，loop 多少秒也不能让他触发
+        if (is_callable($this->on_publish_callback)) 
+        {
+            $callback = $this->on_publish_callback;
+            $this->handler->onPublish(function($mid) use ($callback) {
+                call_user_func($callback, $mid);
+            });
+        }
+
+        if (is_callable($this->on_disconnect_callback)) 
+        {
+            $callback = $this->on_disconnect_callback;
+            // $rc 为0表示客户端请求断开，其他任何值表示意外断开
+            $this->handler->onDisconnect(function($rc) use ($callback) {
+                call_user_func($callback, $rc);
+            });
+        }
+
+        self::$count++;
         return $this;
+    }
+
+    public function get_socket()
+    {
+        if ( !$this->handler ) 
+        {
+            return -2;
+        }
+
+        return $this->handler->getSocket();
     }
 
     public function on_publish_callback($callback)
@@ -134,6 +210,18 @@ class cls_mqtt
         }
 
         $this->on_publish_callback = $callback;
+
+        return $this;
+    }
+
+    public function on_disconnect_callback($callback)
+    {
+        if (!is_callable($callback)) 
+        {
+            return $this;
+        }
+
+        $this->on_disconnect_callback = $callback;
 
         return $this;
     }
@@ -153,26 +241,38 @@ class cls_mqtt
      */
     public function publish($topic, $payload, $qos = 0, $retain = false)
     {
-        if (!$this->handler)
+        $try_times = 0;
+        //最大尝试获取socket的次数
+        while( ++$try_times <= 10 )
         {
+            // echo $try_times."\n";
+            if ( $this->get_socket() > 0 )
+            {
+                break;
+            }
+
             $this->connect();
         }
 
-        // 只有 loopForever 的时候会触发，loop 多少秒也不能让他触发
-        if (is_callable($this->on_publish_callback)) 
+        $ret = $this->handler->publish($topic, $payload, $qos, $retain);
+        try
         {
-            $callback = $this->on_publish_callback;
-            $this->handler->onPublish(function($mid) use ($callback) {
-                call_user_func($callback, $mid);
-            });
+            log::debug(__method__." --- 222 --- ".$this->get_socket());
+            // QoS 为1、2的时候，除了消息体还有回执内容，loop一下确保信息能够发完
+            $this->handler->loop(100);
         }
+        catch (\Mosquitto\Exception $e)
+        {
+            $msg = $e->getMessage();
+            log::debug($msg);
 
-        $this->handler->publish($topic, $payload, $qos, $retain);
+            // 彻底销毁连接
+            $this->handler = null;
+            // return $this->publish($topic, $payload, $qos, $retain);
+        }
+        //$this->handler->loopForever();
 
-        // QoS 为1、2的时候，除了消息体还有回执内容，loop一下确保信息能够发完
-        $this->handler->loop(1000);
-
-        return $this;
+        return $ret;
     }
 
     /**
@@ -180,7 +280,7 @@ class cls_mqtt
      * @param  string $name 实例名称
      * @return string       cli下带进程号的实例名称
      */
-    public static function get_muti_name($name = 'redis')
+    public static function get_muti_name($name = 'mqtt')
     {
         if (PHP_SAPI == 'cli')
         {
@@ -211,11 +311,10 @@ class cls_mqtt
      */
     public function __call($method, $arguments)
     {
-        if (!$this->handler)
+        if ($this->get_socket() < 0)
         {
             $this->connect();
         }
         return call_user_func_array([$this->handler, $method], $arguments);
     }
-}
-
+} 

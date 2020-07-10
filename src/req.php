@@ -510,6 +510,8 @@ class req
         }
 
         $http_accept = req::server('HTTP_ACCEPT');
+        $http_accepts = explode(';', $http_accept);
+        $http_accept = $http_accepts[0];
         $http_accepts = explode(',', $http_accept);
         return in_array('application/json', $http_accepts);
     }

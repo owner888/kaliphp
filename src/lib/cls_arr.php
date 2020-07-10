@@ -1087,7 +1087,7 @@ class cls_arr
        print_r( cls_arr::arr_search( $data , "name=='john'" ) );
        print_r( cls_arr::arr_search( $data , "age>25 and name=='john'" ) );
      */
-    public static function arr_search( $array, $expression ) 
+    public static function arr_search( array $array, $expression ) 
     {
         $result = array();
         $expression = preg_replace_callback( "/([^\s]+?)([=<>!]{1,})/" , function($match) {
