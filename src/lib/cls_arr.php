@@ -54,19 +54,24 @@ class cls_arr
 
         is_object($key) and $key = (string) $key;
 
-        // object of type stdClass must change to array
-        if (is_object($array)) 
-        {
-            $array = (array)$array;
-        }
-
         if (array_key_exists($key, $array))
         {
+            // object of type stdClass must change to array
+            if (is_object($array)) 
+            {
+                $array = (array)$array;
+            }
             return $array[$key];
         }
 
         foreach (explode('.', $key) as $key_part)
         {
+            // object of type stdClass must change to array
+            if (is_object($array)) 
+            {
+                $array = (array)$array;
+            }
+
             if (($array instanceof \ArrayAccess and isset($array[$key_part])) === false)
             {
                 if ( ! is_array($array) or ! array_key_exists($key_part, $array))
@@ -1093,8 +1098,13 @@ class cls_arr
        print_r( cls_arr::arr_search( $data , "name=='john'" ) );
        print_r( cls_arr::arr_search( $data , "age>25 and name=='john'" ) );
      */
-    public static function arr_search( array $array, $expression ) 
+    public static function arr_search( array $array, string $expression ) 
     {
+        if ( !$array ) 
+        {
+            return $array;
+        }
+
         $result = array();
         $expression = preg_replace_callback( "/([^\s]+?)([=<>!]{1,})/" , function($match) {
             return "\$a['{$match[1]}'] {$match[2]} ";
