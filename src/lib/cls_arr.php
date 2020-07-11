@@ -32,9 +32,9 @@ class cls_arr
      */
     public static function get($array, $key = null, $default = null)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        if ( ! is_array($array) and !is_object($array) and ! $array instanceof \ArrayAccess)
         {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+            throw new \InvalidArgumentException('First parameter must be an array or object or ArrayAccess object.');
         }
 
         if (is_null($key))
@@ -53,6 +53,12 @@ class cls_arr
         }
 
         is_object($key) and $key = (string) $key;
+
+        // object of type stdClass must change to array
+        if (is_object($array)) 
+        {
+            $array = (array)$array;
+        }
 
         if (array_key_exists($key, $array))
         {
