@@ -38,13 +38,14 @@ class cls_filter
    
     /**
      * 过滤操作
-     * @param $val   变量值
-     * @param $type  当type为数字的时候，表示截取指定长度的字符
-     * @param $throw_error 是否抛出异常(只对邮箱、用户名、qq、手机类型有效)，如果不抛出异常，会对无效的数据设置为空
-     *                     (此值用户不直接使用，一般通过 req::$throw_error 进行设置)
-     * @return void
+     *
+     * @param mixed $val          变量值
+     * @param string $type        当type为数字的时候，表示截取指定长度的字符
+     * @param bool $throw_error   是否抛出异常(只对邮箱、用户名、qq、手机类型有效)，如果不抛出异常，会对无效的数据设置为空
+     *                            (此值用户不直接使用，一般通过 req::$throw_error 进行设置)
+     * @return mixed
      */
-    public static function filter( &$val, $type = null, $throw_error = false )
+    public static function filter(&$val, string $type = '', bool $throw_error = false)
     {
         // 没指定过滤类型，不处理
         if( $type == null )
@@ -67,24 +68,30 @@ class cls_filter
                 return $val;
             }
 
-            $type = strtolower( $type );
-            $val  = is_string($val) ? trim( $val ) : $val;
+            $type = strtolower($type);
+            $val  = is_string($val) ? trim($val) : $val;
             switch( $type )
             {
                 case 'int':
-                    $val = intval( $val );
-                    break;
-                case 'stripslashes':
-                    $val = $val && !is_object($val) ? stripslashes($val) : $val;
+                    $val = intval($val);
                     break;
                 case 'float':
-                    $val = floatval( $val );
+                    $val = floatval($val);
                     break;
                 case 'string':
                     $val = (string) $val;
                     break;
+                case 'bool':
+                    $val = (bool) $val;
+                    break;
                 case 'array':
                     $val = (array) $val;
+                    break;
+                case 'object':
+                    $val = (object) $val;
+                    break;
+                case 'stripslashes':
+                    $val = $val && !is_object($val) ? stripslashes($val) : $val;
                     break;
                 case 'htmlentities':
                     // 同时转义双,单引号
@@ -95,7 +102,7 @@ class cls_filter
                     {
                         if( strlen($val) > 0 && $throw_error ) 
                         {
-                            self::_throw_errmsg( "Email不合法" );
+                            self::_throw_errmsg("Email不合法");
                         } 
                         else 
                         {
@@ -108,7 +115,7 @@ class cls_filter
                     {
                         if( $throw_error ) 
                         {
-                            self::_throw_errmsg( "用户名不合法" );
+                            self::_throw_errmsg("用户名不合法");
                         } 
                         else 
                         {
@@ -122,7 +129,7 @@ class cls_filter
                     {
                         if( $val > 0 && $throw_error ) 
                         {
-                            self::_throw_errmsg( "QQ号码不合法" );
+                            self::_throw_errmsg("QQ号码不合法");
                         } 
                         else 
                         {
@@ -136,7 +143,7 @@ class cls_filter
                     {
                         if( $throw_error ) 
                         {
-                            self::_throw_errmsg( "手机号码不合法" );
+                            self::_throw_errmsg("手机号码不合法");
                         } 
                         else 
                         {
@@ -149,7 +156,7 @@ class cls_filter
                     {
                         if( $throw_error ) 
                         {
-                            self::_throw_errmsg( "IP地址不合法" );
+                            self::_throw_errmsg("IP地址不合法");
                         } 
                         else 
                         {
