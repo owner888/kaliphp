@@ -218,7 +218,7 @@ class db_connection
         {
             $instance_name = self::get_instance_name($name);
             //第一个为默认数据库
-            if( !self::$_instance_name || $default_instance )
+            if( !self::$_instance_name && $default_instance )
             {
                 self::$_default_name  = $name;
             }
@@ -604,14 +604,14 @@ class db_connection
         }
         catch (Exception $e)
         {
-            $errno = $e->getCode();
+            $errno  = $e->getCode();
             $errmsg = $e->getMessage();
-            log::error($sql.$errmsg, 'SQL Error');
+            log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $sql.'('.$this->_db_name.')'), 'SQL Error');
             
             // Mysql 等待超时,如果是开启了事务，不应该重试，因为重连可能导致事务id发生变化
             if ( empty($this->_atts['start']) && in_array($errno, [2013, 2006]) ) 
             {
-                log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $sql.'('.$this->_db_name.')'), 'SQL Error');
+                log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $sql.'('.$this->_db_name.')'), 'SQL Reconnect');
                 // 重新链接，$this 默认是default_w 的
                 //$this->reconnect();
                 $db_conn->reconnect();
@@ -1337,8 +1337,25 @@ class db_connection
 
     public function get_compiled_insert($reset = TRUE)
     {
+        $table = $this->table_prefix($this->_table);
         // Start an insertion query
-        $sql = 'INSERT '.(isset($this->_atts['ignore']) && $this->_atts['ignore'] ? ' IGNORE ' : '').'INTO '.$this->table_prefix($this->_table);
+        $sql = 'INSERT '.(isset($this->_atts['ignore']) && $this->_atts['ignore'] ? ' IGNORE ' : '').'INTO '.$table;
+
+        //因为json字段初始化不能为空，否则后面是没发更新的，必须给他一个默认值{}
+        if ( !empty(self::$config[$this->_db_name]['json_fields'][$table]) ) 
+        {
+            foreach (self::$config[$this->_db_name]['json_fields'][$table] as $field) 
+            {
+                if ( !in_array($field, $this->_columns) ) 
+                {
+                    $this->columns([$field]);
+                    $this->_values = array_map(function($item) use ($field) {
+                        $item[$field] = json_encode(new \stdClass);
+                        return $item;
+                    }, $this->_values);
+                }
+            }
+        }
 
         // Add the column names
         $sql .= ' ('.implode(', ', array_map(array($this, 'quote_identifier'), $this->_columns)).') ';
@@ -1350,7 +1367,6 @@ class db_connection
             $quote = array($this, 'quote_value');
 
             $groups = array();
-            //print_r($this->_values);    
             foreach ($this->_values as $group)
             {
                 foreach ($group as $i => $value)
@@ -1380,7 +1396,7 @@ class db_connection
                 //$groups[] = $val;
                 $groups[] = '('.implode(', ', array_map($quote, $group)).')';
             }
-
+   
             // Add the values
             $sql .= 'VALUES '.implode(', ', $groups);
         }
@@ -1844,8 +1860,23 @@ class db_connection
                 $value = $this->_parameters[$value];
             }
 
+            //json字段
+            if( 
+                !empty(self::$config[$this->_db_name]['json_fields'][$this->_table]) && 
+                in_array($column, self::$config[$this->_db_name]['json_fields'][$this->_table])
+            )
+            {
+                $tmp = [$column];
+                foreach($value as $f => $ff)
+                {
+                    $ff = is_array($ff) ? json_encode($ff) : $ff;
+                    $tmp[] = "'$.{$f}', '{$ff}'";
+                }
+
+                $value = 'JSON_SET('.implode(",", $tmp).')';
+            }
             //兼容`xxx`和values(`xxx`)
-            if( !preg_match('#values\s*\([^\)]+\)#i', $value) )
+            else if( !preg_match('#values\s*\([^\)]+\)#i', $value) )
             {
                 $value = $this->quote_value(array($value, $column));
             }
@@ -2369,6 +2400,31 @@ class db_connection
         ) 
         {
             $value = "AES_ENCRYPT('{$value}', '".self::$config[$this->_db_name]['crypt_key']."')";
+        }
+        //json字段
+        else if( 
+            !empty(self::$config[$this->_db_name]['json_fields'][$table]) && 
+            in_array($field, self::$config[$this->_db_name]['json_fields'][$table])
+        )
+        {
+            //更新
+            if ( $this->_type == db::UPDATE ) 
+            {
+                $tmp = [$field];
+                foreach($value as $f => $ff)
+                {
+                    $ff = is_array($ff) ? json_encode($ff) : $ff;
+                    $tmp[] = "'$.{$f}', '{$ff}'";
+                }
+
+                $value = 'JSON_SET('.implode(",", $tmp).')';
+            }
+            //插入
+            else
+            {
+                $value = is_array($value) ? json_encode($value) : $value;
+                $value = "'{$value}'";
+            }
         }
         else 
         {

@@ -22,5 +22,8 @@ return [
     'crypt_key' => 'key',
     'crypt_fields' => [
         //'kaliphp_member' => [ 'name', 'age', 'email', 'address' ],
-    ]
+    ],
+    // 'json_fields' => [
+    //     'lrs_test' => ['json_field']
+    // ]
 ];
