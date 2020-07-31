@@ -18,7 +18,7 @@ use kaliphp\lib\cls_redis;
  * 在redis上实现分布式锁
  * 参考：https://mp.weixin.qq.com/s/WS3jO4AKktbra7x_QDu4VA
  
-    // 遇锁立刻返回
+    // 互斥锁：遇锁立刻返回
     if (!cls_redis_lock::lock('test'))
     {
         show_error();
@@ -27,7 +27,7 @@ use kaliphp\lib\cls_redis;
     do_job();
     cls_redis_lock::unlock('test');
 
-    // 遇锁等待3秒
+    // 自旋锁：遇锁循环等待，不断的判断锁是否能够被成功获取，直到获取到锁才会退出循环，超时3秒
     if (cls_redis_lock::lock('test', 3))
     {
         do_job();

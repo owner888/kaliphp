@@ -14,8 +14,8 @@ namespace kaliphp\lib;
 use kaliphp\config;
 
 /**
- * Redis操作类 
- * 
+ * Redis操作类
+ *
  * @version 2.7.0
  */
 class cls_redis
@@ -277,6 +277,11 @@ class cls_redis
 
     public function scan($keyword)
     {
+        if (!$this->handler)
+        {
+            $this->connect();
+        }
+        
         $keys = [];
         if( !empty($this->connect['is_cluster']) )
         {
