@@ -30,7 +30,7 @@ class cls_arr
      * @param   string  $default  The default value
      * @return  mixed
      */
-    public static function get($array, $key = null, $default = null)
+    public static function get($array, $key = null, $default = null, $filter_type = '', bool $throw_error = false)
     {
         if ( ! is_array($array) and !is_object($array) and ! $array instanceof \ArrayAccess)
         {
@@ -47,13 +47,14 @@ class cls_arr
             $return = array();
             foreach ($key as $k)
             {
-                $return[$k] = static::get($array, $k, $default);
+                $return[$k] = static::get($array, $k, $default, $filter_type, $throw_error);
             }
             return $return;
         }
 
         is_object($key) and $key = (string) $key;
 
+        // 一层key，直接返回结果
         if (array_key_exists($key, $array))
         {
             // object of type stdClass must change to array
@@ -61,9 +62,12 @@ class cls_arr
             {
                 $array = (array)$array;
             }
-            return $array[$key];
+
+            $array = $array[$key];
+            return cls_filter::filter($array, $filter_type, $throw_error);
         }
 
+        // 多层key，一层一层的修改 $array 的值，最终得出最后那个key对应的值
         foreach (explode('.', $key) as $key_part)
         {
             // object of type stdClass must change to array
@@ -83,6 +87,7 @@ class cls_arr
             $array = $array[$key_part];
         }
 
+        $array = cls_filter::filter($array, $filter_type, $throw_error);
         return $array;
     }
 

@@ -492,7 +492,7 @@ class util
     public static function to_timezone($datetime = KALI_TIMESTAMP, $format = 'Y-m-d H:i:s', $from_timezone = null, $to_timezone = null) 
     {
         // 如果没有传时区，用国家代码从配置文件获取对应时区
-        $to_timezone   = empty($to_timezone)   ? config::instance('config')->get(COUNTRY, 'timezone')  : $to_timezone;
+        $to_timezone   = empty($to_timezone)   ? config::instance('timezone')->get(COUNTRY)  : $to_timezone;
         // 配置文件也没有找到时区，使用默认配置的时区
         $to_timezone   = empty($to_timezone)   ? config::instance('config')->get('to_timezone')  : $to_timezone;
         $from_timezone = empty($from_timezone) ? config::instance('config')->get('timezone_set') : $from_timezone;
@@ -567,7 +567,7 @@ class util
      * @param   int     $length  the number of characters
      * @return  string  the random string
      */
-    public static function random($type = 'alnum', $length = 32)
+    public static function random($type = 'alnum', $length = 16)
     {
         switch($type)
         {
@@ -625,8 +625,7 @@ class util
                 //$str = uniqid('',true);
                 //$str = md5(uniqid(mt_rand()));
                 //生成的唯一标识中没有重复
-                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(session_create_id()) : md5(uniqid(md5(microtime(true)),true));
-                $str = md5(getmypid().$str);
+                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(getmypid().session_create_id()) : md5(getmypid().uniqid(microtime(true),true));
                 if ( $length == 32 ) 
                 {
                     return $str;
@@ -1208,7 +1207,7 @@ class util
      * @param bool $process_scalar 是否处理标量
      * @return mixed
      */
-    public static function get_value($src, $key, $default = NULL, $mode = 0, $filter = NULL, $process_scalar = FALSE)
+    public static function get_value($src, $key, $default = NULL, $mode = 1, $filter = NULL, $process_scalar = FALSE)
     {
         $value = NULL;
         if ($process_scalar)

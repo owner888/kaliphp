@@ -259,7 +259,7 @@ class event
             'ac' => 'index',
         ];
         $forms = array_merge($forms, req::$forms);
-        log::info('request: '.json_encode($forms));
+        log::info('request: '.json_encode($forms), req::method());
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 
