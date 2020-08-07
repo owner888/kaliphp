@@ -11,7 +11,7 @@
     <link href="static/frame/css/bootstrap.min14ed.css" rel="stylesheet">
     <link href="static/frame/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
     <link href="static/frame/css/animate.min.css" rel="stylesheet">
-    <link href="static/frame/ui2/css/style.css" rel="stylesheet">
+    <link href="static/frame/ui/css/style.css" rel="stylesheet">
     <link href="static/frame/css/jquery.gritter.css" rel="stylesheet">
     <link href="static/frame/css/plugins/toastr/toastr.min.css" rel="stylesheet">
     <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
@@ -182,8 +182,8 @@
     <script src="static/frame/js/plugins/pace/pace.min.js"></script>
     <script src="static/frame/js/plugins/toastr/toastr.min.js"></script>
     <script src="static/frame/js/plugins/switch/switch.js"></script>
-    <script src="static/frame/ui2/js/hplus.min.js?v=4.1.0"></script>
-    <script src="static/frame/ui2/js/contabs.min.js"></script>
+    <script src="static/frame/ui/js/hplus.min.js?v=4.1.0"></script>
+    <script src="static/frame/ui/js/contabs.min.js"></script>
     <script src="static/frame/js/jquery.gritter.min.js"></script>
     <script src="static/frame/js/jquery.peity.min.js"></script>
     <script src="static/frame/js/interface.js"></script>

@@ -13,6 +13,7 @@
 namespace kaliphp;
 
 use kaliphp\config;
+use kaliphp\lib\cls_auth;
 use kaliphp\req;
 use kaliphp\session;
 use kaliphp\cache;
@@ -54,7 +55,7 @@ class kali
     /**
      * 权限类的实例
      *
-     * @var $auth
+     * @var $auth cls_auth
      */
     public static $auth = null;
 
