@@ -215,7 +215,7 @@ class mod_auth extends cls_auth
                 {
                     // 增加token，用于支持 app 登录
                     $session_id = util::random('web');
-                    static::set_token_uid( $session_id, $user['uid'], $user['session_expire'] );
+                    static::bind_token_uid( $session_id, $user['uid'], $user['session_expire'] );
                 }
 
                 // 更新缓存里面的信息
