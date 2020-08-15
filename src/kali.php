@@ -191,8 +191,21 @@ class kali
      * @parem $ac   动作
      * @return void
      */
-    public static function run()
+    public static function run(?array $req_data = null)
     {
+        // 存在需要转化为路由的数据
+        if ( $req_data ) 
+        {
+            // Websocket 方式，Workerman、Swoole 环境
+            if ( req::method() == 'CLI' ) 
+            {
+                // 清空上一个请求数据，避免数据污染
+                req::$forms = req::$gets = [];
+            }
+            // 把指定数据转化为路由数据
+            req::assign_values($req_data);
+        }
+
         // 获取当前控制器及action
         $ct = self::$ct = preg_replace("/[^0-9a-z_]/i", '', req::item('ct', 'index') );
         $ac = self::$ac = preg_replace("/[^0-9a-z_]/i", '', req::item('ac', 'index') );

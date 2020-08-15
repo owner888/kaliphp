@@ -1088,8 +1088,8 @@ class cls_arr
     /**
      * 通过表达式查询
      * 
-     * @param mixed $array      要查询的数组
-     * @param mixed $expression 查询表达式
+     * @param array $array          要查询的数组
+     * @param string $expression    查询表达式
      * @return void
      *
      * exp:
@@ -1103,7 +1103,7 @@ class cls_arr
        print_r( cls_arr::arr_search( $data , "name=='john'" ) );
        print_r( cls_arr::arr_search( $data , "age>25 and name=='john'" ) );
      */
-    public static function arr_search( array $array, string $expression ) 
+    public static function arr_search(array $array, string $expression) 
     {
         if ( !$array ) 
         {

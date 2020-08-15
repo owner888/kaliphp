@@ -822,33 +822,25 @@ class req
     /**
      * 把指定数据转化为路由数据
      *
-     * @param  $dfarr   默认数据列表 array( array(key, dfvalue)... )
-     * @param  $datas   数据列表
+     * @param  $data    数据列表 array( key => value, ... ) )
      * @param  $method  方法
      *
      * @return bool
      */
-    public static function assign_values(&$dfarr, &$datas = null, $method = 'GET')
+    public static function assign_values(array &$data, $method = 'GET')
     {
-        $method = strtoupper( $method );
-        foreach($dfarr as $k => $v)
+        foreach($data as $k => $v)
         {
-            if( isset($datas[$k]) )
-            {
-                req::$forms[ $v[0] ] = $datas[$k];
-            }
-            else 
-            {
-                req::$forms[ $v[0] ] = $v[1];
-            }
+            req::$forms[ $k ] = $v;
+
             //给值gets/posts
-            if( $method == 'GET' ) 
+            if( strtoupper( $method ) == 'GET' ) 
             {
-                req::$gets[ $v[0] ] = req::$forms[ $v[0] ];
+                req::$gets[ $k ] = $v;
             }
             else 
             {
-                req::$posts[ $v[0] ] = req::$forms[ $v[0] ];
+                req::$posts[ $k ] = $v;
             }
         }
     }

@@ -942,17 +942,14 @@ class util
      * 
      * @return void
      */
-    public static function response_data(int $code = 0, string $msg = 'successful', array $data)
+    public static function response_data(int $code = 0, ?string $msg = null, array $data)
     {
-        header('Content-type: application/json');
-
-        $json_str = self::json_encode([
-            'code' => $code,
-            'msg'  => $msg,
-            'data' => (object)$data,
+        return self::return_json([
+            'code'      => $code,
+            'msg'       => $msg ? $msg : 'successful',
+            'timestamp' => time(),
+            'data'      => (object)$data
         ]);
-
-        exit($json_str);
     }
 
     /**
@@ -966,15 +963,13 @@ class util
      */
     public static function response_error(int $code = -1, string $msg = 'failed', array $data = [])
     {
-        header('Content-type: application/json');
+        //错误响应如果传一个0过来，直接抛异常
+        if ( !$code ) 
+        {
+            throw new \Exception("Error Code", -1);
+        }
 
-        $json_str = self::json_encode([
-            'code' => $code,
-            'msg'  => $msg,
-            'data' => (object)$data,
-        ]);
-
-        exit($json_str);
+        return self::response_data($code, $msg, $data);
     }
 
     public static function return_json($array, $options = JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT )
@@ -1601,45 +1596,6 @@ class util
         {
             print_r($debug_backtrace[$i]); 
         }
-    }
-
-    /**
-     * 返回JSON格式的数据，并终止程序运行
-     * @param int $code 错误代码，0为无错误；非零为有错误
-     * @param string $msg 错误描述
-     * @param mixed $data 数据
-     */
-    public static function json($code, $msg, $data = [])
-    {
-        $data = (array) $data;
-        static::return_json([
-            'code'      => $code,
-            'msg'       => $msg,
-            'timestamp' => time(),
-            'data'      => (object) $data
-        ]);
-    }
-
-    /**
-     * 返回JSON格式的错误信息，并终止程序运行
-     * @param int $code 错误代码，0为无错误；非零为有错误
-     * @param string $msg 错误描述
-     * @param mixed $data 数据
-     */
-    public static function json_error($code, $msg, $data = [])
-    {
-        static::json($code, $msg, $data);
-    }
-    
-    /**
-     * 返回JSON格式的成功信息，并终止程序运行
-     * @param mixed $data 数据
-     * @param int $code 错误代码，0为无错误；非零为有错误
-     * @param string $msg 错误描述
-     */
-    public static function json_success($data, $code = 0, $msg = 'successful')
-    {
-        static::json($code, $msg, $data);
     }
 
     /**

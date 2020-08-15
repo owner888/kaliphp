@@ -1546,11 +1546,12 @@ class db_connection
 
         // Get all of the passed values
         $values = func_get_args();
-
         // And process them
         foreach ($values as $value)
         {
-            if (is_array(reset($value)))
+            $keys = array_keys($value);
+            //有可能第一个key是json中的,如果批量插入，key为数组
+            if ( is_array(reset($value)) && is_numeric(reset($keys)) )
             {
                 $this->_values = array_merge($this->_values, $value);
             }
@@ -1726,7 +1727,6 @@ class db_connection
 
                     // Split the condition
                     list($column, $op, $value) = $condition;
-
                     // Support db::expr() as where clause
                     if ($column instanceOf db_expression and $op === null and $value === null)
                     {
@@ -1750,7 +1750,6 @@ class db_connection
 
                         // Database operators are always uppercase
                         $op = strtoupper($op);
-
                         if (($op === 'BETWEEN' OR $op === 'NOT BETWEEN') AND is_array($value))
                         {
                             // BETWEEN always has exactly two arguments
@@ -1771,7 +1770,7 @@ class db_connection
                             // Quote the min and max value
                             $value = $this->quote($min).' AND '.$this->quote($max);
                         }
-                        elseif ($op === 'FIND_IN_SET')
+                        elseif ($op === 'FIND_IN_SET' || strstr($column, '->') )
                         {
                         }
                         else
@@ -1784,17 +1783,30 @@ class db_connection
 
                             // Quote the entire value normally
                             $value = $this->quote($value);
+                        
                         }
 
-                        // Append the statement to the query
-                        $column = $this->quote_field($column, false);
-                        if ($op === 'FIND_IN_SET') 
+                        //json字段查询
+                        if ( strstr($column, '->') ) 
                         {
-                            $sql .= $op."( '{$value}', {$column} )";
+                            $value = is_string($value) ? $this->quote($value) : $value;
+                            list($column, $json_field) = explode('->', $column, 2);
+
+                            $column = $this->quote_field($column, false);
+                            $sql .= $column.'->\'$.' . $json_field . '\' '.$op.' '.$value;
                         }
-                        else 
+                        else
                         {
-                            $sql .= $column.' '.$op.' '.$value;
+                            // Append the statement to the query
+                            $column = $this->quote_field($column, false);
+                            if ($op === 'FIND_IN_SET') 
+                            {
+                                $sql .= $op."( '{$value}', {$column} )";
+                            }
+                            else 
+                            {
+                                $sql .= $column.' '.$op.' '.$value;
+                            }
                         }
                     }
                 }
@@ -1850,18 +1862,21 @@ class db_connection
      *
      * @return  string
      */
-    protected function _compile_dups(array $values) {
+    protected function _compile_dups(array $values) 
+    {
         $dups = array();
         foreach ($values as $group) {
             // Split the dups
             list($column, $value) = $group;
-            if (is_string($value) AND array_key_exists($value, $this->_parameters)) {
+            if (is_string($value) AND array_key_exists($value, $this->_parameters)) 
+            {
                 // Use the parameter value
                 $value = $this->_parameters[$value];
             }
 
             //json字段
             if( 
+                is_array($value) &&
                 !empty(self::$config[$this->_db_name]['json_fields'][$this->_table]) && 
                 in_array($column, self::$config[$this->_db_name]['json_fields'][$this->_table])
             )
@@ -1869,8 +1884,10 @@ class db_connection
                 $tmp = [$column];
                 foreach($value as $f => $ff)
                 {
-                    $ff = is_array($ff) ? json_encode($ff) : $ff;
-                    $tmp[] = "'$.{$f}', '{$ff}'";
+                    $ff    = is_array($ff) ? json_encode($ff) : $ff;
+                    //string的才加‘’,否则不加
+                    $ff    = is_string($ff) ? "'{$ff}'" : $ff;
+                    $tmp[] = "'$.{$f}', {$ff}";
                 }
 
                 $value = 'JSON_SET('.implode(",", $tmp).')';
@@ -2408,13 +2425,15 @@ class db_connection
         )
         {
             //更新
-            if ( $this->_type == db::UPDATE ) 
+            if ( $this->_type == db::UPDATE && is_array($value) ) 
             {
                 $tmp = [$field];
                 foreach($value as $f => $ff)
                 {
-                    $ff = is_array($ff) ? json_encode($ff) : $ff;
-                    $tmp[] = "'$.{$f}', '{$ff}'";
+                    $ff    = is_array($ff) ? json_encode($ff) : $ff;
+                    //string的才加‘’,否则不加
+                    $ff    = is_string($ff) ? "'{$ff}'" : $ff;
+                    $tmp[] = "'$.{$f}', {$ff}";
                 }
 
                 $value = 'JSON_SET('.implode(",", $tmp).')';
