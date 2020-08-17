@@ -51,8 +51,6 @@ $rows_affected = db::delete('users')->where('email', 'like', '%@example.com')->e
 
 ## Documentation
 
-中文主页:[http://www.kaliphp.com](http://www.kaliphp.com)
-
 中文文档: [http://doc.kaliphp.com](http://doc.kaliphp.com)
 
 ## Other links with kaliphp
