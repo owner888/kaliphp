@@ -49,11 +49,14 @@ $rows_affected = db::update('user')
 $rows_affected = db::delete('users')->where('email', 'like', '%@example.com')->execute(); // (int) 7
 ```
 
+## Documentation
+
+中文主页:[http://www.kaliphp.com](http://www.kaliphp.com)
+
+中文文档: [http://doc.kaliphp.com](http://doc.kaliphp.com)
+
 ## Other links with kaliphp
 
-
-## Donate
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id="><img src="http://donate.workerman.net/img/donate.png"></a>
 
 ## LICENSE
 
