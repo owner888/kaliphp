@@ -53,9 +53,6 @@ $rows_affected = db::delete('users')->where('email', 'like', '%@example.com')->e
 
 [http://doc.kaliphp.com](http://doc.kaliphp.com)
 
-## Other links with kaliphp
-
-
 ## LICENSE
 
 KaliPHP is released under the [MIT license](https://github.com/owner888/kaliphp/blob/master/LICENSE).
