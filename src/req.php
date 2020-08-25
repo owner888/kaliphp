@@ -39,6 +39,9 @@ class req
     // $_COOKIE 变量
     public static $cookies = array();
 
+    // $_SESSION 变量
+    public static $sessions = array();
+
     // Returns all of the GET, POST, PUT, PATCH or DELETE array's，like $_REQUEST
     public static $forms = array();
 
@@ -417,7 +420,7 @@ class req
     public static function url($uri = '', $protocol = null)
     {
         $protocol = $protocol ? $protocol : self::server('REQUEST_SCHEME');
-        return $protocol.'://'.self::server('SERVER_NAME').$uri;    
+        return $protocol.'://'.self::server('SERVER_NAME').$uri;
     }
 
     /**
@@ -436,8 +439,8 @@ class req
     }
 
     /**
-     * 获得当前请求路径
-     * new name path
+     * 获得当前路径
+     * /index.php?ct=test&ac=demo&id=10
      */
     public static function cururl()
     {
@@ -496,7 +499,7 @@ class req
     }
 
     /**
-     * 客户端请求的编码是否 JSON 内容 
+     * 客户端是否请求JSON编码内容 
      * Accept 属于请求头，表示客户端希望接收到的数据内容
      * Content-Type 属于实体头，表示客户端发送到服务端的数据内容
      * 
@@ -594,19 +597,6 @@ class req
     }
 
     /**
-     * 前页
-     * 
-     * @param string $gourl
-     *
-     * @return string
-     */
-    public static function forword($gourl = '')
-    {
-        $gourl = empty(self::server('HTTP_REFERER')) ? $gourl : self::server('HTTP_REFERER');
-        return $gourl;
-    }
-
-    /**
      * 设置跳转页
      * 
      * @param string $gourl
@@ -620,7 +610,7 @@ class req
     }
 
     /**
-     * 跳转页
+     * 获取跳转页
      * 
      * @param string $gourl
      *

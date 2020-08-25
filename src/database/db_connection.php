@@ -1526,7 +1526,6 @@ class db_connection
     public function columns(array $columns)
     {
         $this->_columns = array_merge($this->_columns, $columns);
-
         return $this;
     }
 
@@ -1551,8 +1550,9 @@ class db_connection
         {
             $keys = array_keys($value);
             //有可能第一个key是json中的,如果批量插入，key为数组
-            if ( is_array(reset($value)) && is_numeric(reset($keys)) )
+            if ( is_array(reset($value)) && !$this->_check_json_field(reset($keys)) )
             {
+
                 $this->_values = array_merge($this->_values, $value);
             }
             else
@@ -1560,7 +1560,7 @@ class db_connection
                 $this->_values[] = $value;
             }
         }
-
+ 
         return $this;
     }
 
@@ -1875,11 +1875,7 @@ class db_connection
             }
 
             //json字段
-            if( 
-                is_array($value) &&
-                !empty(self::$config[$this->_db_name]['json_fields'][$this->_table]) && 
-                in_array($column, self::$config[$this->_db_name]['json_fields'][$this->_table])
-            )
+            if( is_array($value) && false != $this->_check_json_field($column) )
             {
                 $tmp = [$column];
                 foreach($value as $f => $ff)
@@ -1904,6 +1900,25 @@ class db_connection
         }
 
         return implode(', ', $dups);
+    }
+
+    /**
+     * 检查某个字段是否在json中
+     * @Author han
+     * @param  string $column 
+     * @return bool   true/false
+     */
+    private function _check_json_field(string $column) : bool
+    {
+        if (      
+            !empty(self::$config[$this->_db_name]['json_fields'][$this->_table]) && 
+            in_array($column, self::$config[$this->_db_name]['json_fields'][$this->_table])
+        ) 
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -2159,7 +2174,8 @@ class db_connection
         elseif (is_float($value))
         {
             // Convert to non-locale aware float to prevent possible commas
-            return sprintf('%F', $value);
+            //return sprintf('%F', $value);
+            return $value;
         }
 
         return $this->escape($value);
