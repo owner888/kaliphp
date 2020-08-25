@@ -51,7 +51,7 @@ $rows_affected = db::delete('users')->where('email', 'like', '%@example.com')->e
 
 ## Documentation
 
-[http://doc.kaliphp.com](http://doc.kaliphp.com){target="_blank"}
+[http://doc.kaliphp.com](http://doc.kaliphp.com "title" target="_blank")
 
 ## LICENSE
 
