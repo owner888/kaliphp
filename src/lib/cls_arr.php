@@ -58,12 +58,17 @@ class cls_arr
         if (array_key_exists($key, $array))
         {
             // object of type stdClass must change to array
-            if (is_object($array)) 
-            {
-                $array = (array)$array;
-            }
+            //if (is_object($array)) 
+            //{
+                //$array = (array)$array;
+            //}
 
-            $array = $array[$key];
+            //$array = $array[$key];
+
+            // 不强制转化，性能更好
+            $array = (is_object($array) and ! ($array instanceof \ArrayAccess)) ? $array->{$key} :
+                $array[$key];
+
             return cls_filter::filter($array, $filter_type, $throw_error);
         }
 
@@ -135,6 +140,67 @@ class cls_arr
     }
 
     /**
+     * Unsets dot-notated key from an array
+     *
+     * @param   array   $array    The search array
+     * @param   mixed   $key      The dot-notated key or array of keys
+     * @return  mixed
+     */
+    public static function del(&$array, $key)
+    {
+        if (is_null($key))
+        {
+            return false;
+        }
+
+        if (is_array($key))
+        {
+            $return = array();
+            foreach ($key as $k)
+            {
+                $return[$k] = static::del($array, $k);
+            }
+            return $return;
+        }
+
+        $key_parts = explode('.', $key);
+
+        if ( ! is_array($array) or ! array_key_exists($key_parts[0], $array))
+        {
+            return false;
+        }
+
+        $this_key = array_shift($key_parts);
+
+        if ( ! empty($key_parts))
+        {
+            $key = implode('.', $key_parts);
+            return static::del($array[$this_key], $key);
+        }
+        else
+        {
+            unset($array[$this_key]);
+        }
+
+        return true;
+    }
+
+    //使用array_keys搜索指定的值再循环unset）
+    public static function del_by_value(&$array, $value)
+    {
+        $keys = array_keys($array, $value);
+        if(!empty($keys))
+        {
+            foreach ($keys as $key) 
+            {
+                unset($array[$key]);
+            }
+        }
+
+        return true;
+    }    
+
+    /**
      * Pluck an array of values from an array.
      *
      * @param  array   $array  collection of arrays to pluck from
@@ -166,6 +232,16 @@ class cls_arr
         }
 
         return $return;
+    }
+
+    public static function rand($array, int $num = 1)
+    {
+        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+        {
+            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+        }
+
+        return array_rand($array);
     }
 
     /**
@@ -205,52 +281,6 @@ class cls_arr
             }
 
             $array = $array[$key_part];
-        }
-
-        return true;
-    }
-
-    /**
-     * Unsets dot-notated key from an array
-     *
-     * @param   array   $array    The search array
-     * @param   mixed   $key      The dot-notated key or array of keys
-     * @return  mixed
-     */
-    public static function delete(&$array, $key)
-    {
-        if (is_null($key))
-        {
-            return false;
-        }
-
-        if (is_array($key))
-        {
-            $return = array();
-            foreach ($key as $k)
-            {
-                $return[$k] = static::delete($array, $k);
-            }
-            return $return;
-        }
-
-        $key_parts = explode('.', $key);
-
-        if ( ! is_array($array) or ! array_key_exists($key_parts[0], $array))
-        {
-            return false;
-        }
-
-        $this_key = array_shift($key_parts);
-
-        if ( ! empty($key_parts))
-        {
-            $key = implode('.', $key_parts);
-            return static::delete($array[$this_key], $key);
-        }
-        else
-        {
-            unset($array[$this_key]);
         }
 
         return true;
@@ -1194,7 +1224,7 @@ class cls_arr
      *
      * @return  mixed  the value in the array, null if there is no previous value, or false if the key doesn't exist
      */
-    public static function previous_by_key($array, $key, $get_value = false, $strict = false)
+    public static function prev_by_key($array, $key, $get_value = false, $strict = false)
     {
         if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
@@ -1270,7 +1300,7 @@ class cls_arr
      *
      * @return  mixed  the value in the array, null if there is no previous value, or false if the key doesn't exist
      */
-    public static function previous_by_value($array, $value, $get_value = true, $strict = false)
+    public static function prev_by_value($array, $value, $get_value = true, $strict = false)
     {
         if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
         {
@@ -1366,7 +1396,7 @@ class cls_arr
      * @param mixed $key
      * @return array
      */
-    public static function array_unset_tt( array $arr, $key )
+    public static function array_unset_repeat( array $arr, $key )
     {
         // 建立一个目标数组
         $res = array();
