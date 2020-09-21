@@ -224,17 +224,58 @@ class kali
         //禁止 _ 开头的方法
         if( $ac[0]=='_' )
         {
-            throw new Exception(serialize([$ac, $ctl]), 2002);
+            if ( req::method() != 'CLI' ) 
+            {
+                throw new \Exception('', 2004);
+            } 
+            else 
+            {
+                log::warning(errorhandler::fmt_code(2004));
+                return false;
+            }
         }
 
-        // 验证token
-        cls_security::csrf_verify();
+        // 验证token，Websocket 方式，Workerman、Swoole 环境排除
+        if ( req::method() != 'CLI' ) 
+        {
+            cls_security::csrf_verify();
+        }
 
         event::trigger(beforeAction);
         cls_benchmark::mark('controller_execution_time_( '.$ct.' / '.$ac.' )_start');
+
         $controller = "control\\".$ctl;
+
+        if ( !class_exists($controller) )
+        {
+            if ( req::method() != 'CLI' ) 
+            {
+                throw new \Exception($ctl, 2001);
+            } 
+            else 
+            {
+                log::warning(errorhandler::fmt_code(2001, $ctl));
+                return false;
+            }
+        } 
+
         $instance = new $controller();
+
+        if ( !method_exists($instance, $ac) )
+        {
+            if ( req::method() != 'CLI' ) 
+            {
+                throw new \Exception(serialize([$ac, $ctl]), 2002);
+            } 
+            else 
+            {
+                log::warning(errorhandler::fmt_code(2002, serialize([$ac, $ctl])));
+                return false;
+            }
+        }    
+
         $instance->$ac();
+
         cls_benchmark::mark('controller_execution_time_( '.$ct.' / '.$ac.' )_end');
         event::trigger(afterAction);
     }
