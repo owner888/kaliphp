@@ -45,7 +45,7 @@ class cls_filter
      *                            (此值用户不直接使用，一般通过 req::$throw_error 进行设置)
      * @return mixed
      */
-    public static function filter(&$val, string $type = '', bool $throw_error = false)
+    public static function filter($val, string $type = '', bool $throw_error = false)
     {
         // 没指定过滤类型，不处理
         if( $type == null )
@@ -204,17 +204,18 @@ class cls_filter
      * _config_         配置是否过滤空值
      *
      * cls_filter::data([
-     *     'bill_id' => ['type' => 'int', 'default' => util::make_bill_id(), 'callback' => 'abs', 'max' => 19],
-     *     'amount' => ['type' => 'float', 'default' => '0.01', 'callback' => 'abs', '_config_' => ['filter_null' => true]],
-     *     'currency_code' => 'text'
+     *     'bill_id'  => ['type' => 'int',   'default' => util::make_bill_id(), 'callback' => 'abs', 'max' => 19],
+     *     'amount'   => ['type' => 'float', 'default' => 0.01,                 'callback' => 'abs'], 
+     *     '_config_' => ['filter_null' => true]
      * ], $data);
      *
-     * @param    array
-     * @param    array
-     * @param    boolean
-     * @return   array
+     * @param  array $filter        过滤条件
+     * @param  array $data          过滤数据
+     * @param  bool  $magic_slashes 去掉魔法引号
+     *
+     * @return array $ret 过滤后结果
      */
-    public static function data( array $filter, array $data, bool $magic_slashes = true )
+    public static function data(array $filter, array $data, bool $magic_slashes = true)
     {
         // 去掉魔法引号
         if ( $magic_slashes )
@@ -222,7 +223,7 @@ class cls_filter
             $data = self::filter( $data, 'stripslashes');
         }
         
-        //用于配置过滤空值
+        // 用于配置过滤空值
         if (!empty($filter['_config_']))
         {
             $ext_config = $filter['_config_'];
@@ -232,12 +233,13 @@ class cls_filter
         $ret = array();
         foreach ($filter as $field => $config)
         {
-            $default = null;
+            $default  = null;
             $is_array = false;
             if (is_array($config))
             {
                 $is_array = true;
-                if (!empty($config['required']))
+                $required = cls_arr::get($config, 'require', false);
+                if ($required)
                 {
                     if (!isset($data[$field]))
                     {
@@ -245,14 +247,14 @@ class cls_filter
                     }
                 }
 
-                //来源映射
+                // 来源映射
                 if( !empty($config['input_field']) )
                 {
                     $config['map_field'] = $field;
                     $field = $config['input_field'];
                 }
 
-                //递归
+                // 递归
                 if (!empty($config['filter']))
                 {
                     $ret[$field] = isset($data[$field]) ?
@@ -260,7 +262,7 @@ class cls_filter
                     continue;
                 }
 
-                $type = isset($config['type']) ? $config['type'] : 'text';
+                $type = $config['type'] ?? 'text';
 
                 if (isset($config['default']))
                 {
@@ -273,26 +275,26 @@ class cls_filter
                 $config = array();
             }
 
-            //过滤空项
+            // 过滤空项
             if (
-                //去掉为null的值
+                // 去掉为null的值
                 (
                     !empty($ext_config['filter_null']) &&
                     null === $default && (!isset($data[$field]))
                 ) ||
-                //去掉非0空值
+                // 去掉非0空值
                 (
                     !empty($ext_config['filter_empty']) &&
                     null === $default &&
                     (!isset($data[$field]) || (isset($data[$field]) && $data[$field] !== 0 && empty($data[$field])))
                 ) ||
-                //去掉指定字段空值
+                // 去掉指定字段空值
                 (
                     !empty($ext_config['filter_fields']) && in_array($field, (array)$ext_config['filter_fields']) && empty($data[$field])
                 )
             )
             {
-                //存在忽略字段
+                // 存在忽略字段
                 if (
                     !isset($ext_config['exclude_fields']) ||
                     (isset($ext_config['exclude_fields']) && !in_array($field, (array)$ext_config['exclude_fields']))
@@ -340,7 +342,7 @@ class cls_filter
 
             case 'mixed':
             case 'html':
-                $ret[$field] = isset($data[$field]) ? $data[$field] : $default;
+                $ret[$field] = $data[$field] ?? $default;
                 break;
 
             case 'json':
@@ -356,19 +358,18 @@ class cls_filter
             case 'regex':
                 if (!isset($config['regex']))
                 {
-                    $ret[$field] = isset($data[$field]) ? $data[$field] : $default;
+                    $ret[$field] = $data[$field] ?? $default;
                     break;
                 }
 
-                $replace = isset($config['replace']) ? $config['replace'] : '';
-                $ret[$field] = isset($data[$field]) ?
-                    preg_replace($config['regex'], $replace, $data[$field]) : $default;
+                $replace = $config['replace'] ?? '';
+                $ret[$field] = isset($data[$field]) ? preg_replace($config['regex'], $replace, $data[$field]) : $default;
                 break;
 
             case 'callback':
                 if (
                     isset($data[$field]) &&
-                    !empty($config['callback']) && is_callable($config['callback'])
+                    isset($config['callback']) && is_callable($config['callback'])
                 )
                 {
                     $ret[$field] = call_user_func($config['callback'], $data[$field]);
@@ -393,9 +394,9 @@ class cls_filter
                 if (!is_array($ret[$field]))
                 {
                     $ret[$field] = trim($ret[$field]);
-                    $charset = !empty($config['charset']) ? $config['charset'] : 'utf-8';
+                    $charset = $config['charset'] ?? 'utf-8';
                     if (
-                        !empty($config['from_charset']) &&
+                        isset($config['from_charset']) &&
                         !mb_check_encoding($ret[$field], $charset) &&
                         $to = mb_detect_encoding($ret[$field], $config['from_charset'])
                     )
@@ -403,7 +404,7 @@ class cls_filter
                         $ret[$field] = mb_convert_encoding($ret[$field], $charset, $to);
                     }
 
-                    if (!empty($config['length']))
+                    if (isset($config['length']))
                     {
                         $ret[$field] = mb_substr(
                             $ret[$field],
@@ -416,8 +417,9 @@ class cls_filter
                 break;
             }
 
-            //过滤后回调
-            if (!empty($ret[$field]) && !empty($config['callback']) && is_callable($config['callback']))
+            // 过滤后回调
+            if (!empty($ret[$field]) && 
+                isset($config['callback']) && is_callable($config['callback']))
             {
                 if (is_array($ret[$field]))
                 {
@@ -429,7 +431,7 @@ class cls_filter
                 }
             }
 
-            //添加映射字段
+            // 添加映射字段
             if( !empty($config['map_field']) )
             {
                 $ret[$config['map_field']] = $ret[$field];
@@ -442,7 +444,9 @@ class cls_filter
 
     /**
      * 检测用户名
+     *
      * @param string $user_name
+     *
      * @return bool
      */
     private static function _test_user_name($user_name)

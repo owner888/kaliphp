@@ -21,15 +21,13 @@ use kaliphp\config;
 class cls_redis
 {
     public static $config = [];
+    private static $_instances = [];
 
     /**
-     * @var \Redis
+     * @var resource
      */
     private $handler;
     private $connect;
-
-
-    private static $_instances = [];
 
     public static function _init()
     {

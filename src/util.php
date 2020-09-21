@@ -942,7 +942,7 @@ class util
      * 
      * @return void
      */
-    public static function response_data(int $code = 0, ?string $msg = null, array $data)
+    public static function response_data(int $code = 0, ?string $msg = null, array $data = [])
     {
         return self::return_json([
             'code'      => $code,
@@ -961,7 +961,7 @@ class util
      * 
      * @return void
      */
-    public static function response_error(int $code = -1, string $msg = 'failed', array $data = [])
+    public static function response_error(int $code = -1, string $msg = 'fail', array $data = [])
     {
         //错误响应如果传一个0过来，直接抛异常
         if ( !$code ) 
@@ -1108,6 +1108,9 @@ class util
         header("Content-Disposition: attachment; filename=" . $outFile);
         header("Accept-Ranges: bytes");
         $size = filesize($sourceFile);
+
+        $start = 0; // 开始下载位置
+        $end   = $size - 1; // 结束下载位置
         //如果有$_SERVER['HTTP_RANGE']参数
         if (isset ($_SERVER['HTTP_RANGE'])) {
             /*Range头域 　　Range头域可以请求实体的一个或者多个子范围。
@@ -1123,23 +1126,30 @@ class util
             // 断点后再次连接 $_SERVER['HTTP_RANGE'] 的值 bytes=4390912-
             list ($a, $range) = explode("=", $_SERVER['HTTP_RANGE']);
             //if yes, download missing part
-            str_replace($range, "-", $range); //这句干什么的呢。。。。
-            $size2 = $size - 1; //文件总字节数
-            $new_length = $size2 - $range; //获取下次下载的长度
+            $range  = explode('-', $range);
+            $start = $range[0];
+            $end = (isset($range[1]) && is_numeric($range[1])) ? $range[1] : $end;
+            if ($start >= $end || $end > ($size - 1))
+            {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                header("Content-Range: bytes $start-$end/$size");
+                exit;
+            }
+            $length = $end - $start + 1;
             header("HTTP/1.1 206 Partial Content");
-            header("Content-Length: $new_length"); //输入总长
-            header("Content-Range: bytes $range$size2/$size"); //Content-Range: bytes 4908618-4988927/4988928   95%的时候
+            header("Content-Length: $length"); //输入总长
+            header("Content-Range: bytes $start-$end/$size"); //Content-Range: bytes 4908618-4988927/4988928   95%的时候
         } else {
             //第一次连接
-            $size2 = $size - 1;
-            header("Content-Range: bytes 0-$size2/$size"); //Content-Range: bytes 0-4988927/4988928
+            $end = $size - 1;
+            header("Content-Range: bytes $start-$end/$size"); //Content-Range: bytes 0-4988927/4988928
             header("Content-Length: " . $size); //输出总长
         }
         //打开文件
         $fp = fopen("$sourceFile", "rb");
         file_put_contents("/tmp/download.log","step1\n",FILE_APPEND);
         //设置指针位置
-        fseek($fp, $range);
+        fseek($fp, $length);
         //虚幻输出
         while (!feof($fp)) {
             file_put_contents("/tmp/download.log","step2\n",FILE_APPEND);

@@ -190,6 +190,12 @@ class log
         return static::write(WARNING, $msg, $context);
     }
 
+    public static function warn($msg, $context = null)
+    {
+        return static::warning($msg, $context);
+    }
+
+
     /**
      * Logs a message with the Info Log Level
      *
@@ -224,6 +230,18 @@ class log
     public static function debug($msg, $context = null)
     {
         return static::write(DEBUG, $msg, $context);
+    }
+
+    // apache log4j
+    public static function trace($msg, $context = null)
+    {
+        return static::write(TRACE, $msg, $context);
+    }
+
+    // apache log4j
+    public static function fatal($msg, $context = null)
+    {
+        return static::write(FATAL, $msg, $context);
     }
 
     /**

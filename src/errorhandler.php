@@ -112,16 +112,18 @@ class errorhandler
         // 反正是长链，缓存不要关了，否则session_regenerate_id会出问题
         //if( !session_id() || $sess_config['type'] != 'cache' ) 
         //{
-        //cache::free();
+            //cache::free();
         //}
     }
 
 
     /**
      * 错误接管函数
+     *
      * trigger_error 直接到这里来
      * throw new Exception 先到 exception_handler，再到这里来
-     * trigger_error 不会中断程序，只是警告，excetion会中断程序
+     * trigger_error 不会中断程序，只是警告；Exception 会中断程序
+     *
      */
     public static function error_handler($errno, $errstr, $errfile, $errline, $errcontext)
     {
@@ -178,12 +180,10 @@ class errorhandler
         {
             if( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
             {
+                // API接口不需要返回那么详细的html内容
                 if ( req::is_json() ) 
                 {
-                    util::return_json([
-                        'code' => -1,
-                        'msg'  => self::strip_tags(self::$_debug_error_msg)."\n性能追踪：".self::strip_tags(self::$_debug_mt_info)
-                    ]);
+                    util::response_error(-1, self::$_debug_error_msg);
                 }
                 else 
                 {
@@ -211,7 +211,7 @@ class errorhandler
     /**
      * 格式化错误信息
      */
-    public static function format_errstr( $errno, $errstr, $errfile, $errline, $errcontext )
+    public static function format_errstr($errno, $errstr, $errfile, $errline, $errcontext)
     {
         $user_errors = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE ];
 
@@ -235,7 +235,7 @@ class errorhandler
         //$not_save_error = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_NOTICE, E_USER_WARNING, E_WARNING ];
         //if( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
         //{
-        //return '@';
+        //    return '@';
         //}
 
         // 错误文件不存在
@@ -266,14 +266,19 @@ class errorhandler
             return '@';
         }
 
-        $err = "<div style='font-size:14px;line-height:160%;border-bottom:1px dashed #ccc;margin-top:8px;'>\n";
+        // API接口不需要返回那么详细的html内容
+        if ( req::is_json() ) 
+        {
+            return $errstr;
+        }
 
         // 错误类型不存在
-        if( !isset(self::$_debug_errortype[$errno]) || !self::$_debug_errortype[$errno] )
+        if( !isset(self::$_debug_errortype[$errno]) )
         {
             self::$_debug_errortype[$errno] = "<font color='#466820'>手动抛出</font>";
         }
 
+        $err = "<div style='font-size:14px;line-height:160%;border-bottom:1px dashed #ccc;margin-top:8px;'>\n";
         $err .= "发生环境：" . date("Y-m-d H:i:s", time()) . '::' . req::cururl() . "<br />\n";
         $err .= "错误类型：" . self::$_debug_errortype[$errno] . "<br />\n";
         $err .= "出错原因：<font color='#3F7640'>" . $errstr . "</font><br />\n";
@@ -301,6 +306,13 @@ class errorhandler
         return $err;
     }
 
+    /**
+     * 过滤掉html标签，记录日志只需要干净的文本即可 
+     * 
+     * @param mixed $errstr 错误信息 
+     * 
+     * @return string
+     */
     public static function strip_tags($errstr)
     {
         //$errstr = str_replace(array("<font color='#3F7640'>","</font>"), array("\033[33;1m","\033[0m"), $errstr);
@@ -315,8 +327,10 @@ class errorhandler
 
     /**
      * 格式化代码为字符串
+     *
      * @param int $code
      * @param array $params
+     *
      * @return string
      */
     public static function fmt_code($errno, $errstr)
@@ -338,11 +352,13 @@ class errorhandler
     }
 
     /**
-     * 手动指定内存占用测试函数
-     * @parem $optmsg
-     * return void
+     * 手动指定内存占用测试函数 
+     * 
+     * @param mixed $optmsg optmsg 
+     * 
+     * @return void
      */
-    public static function test_debug_mt( $optmsg )
+    public static function test_debug_mt($optmsg)
     {
         if( SYS_DEBUG === true || self::$_debug_safe_ip )
         {

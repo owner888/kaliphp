@@ -186,16 +186,22 @@ class cls_arr
     }
 
     //使用array_keys搜索指定的值再循环unset）
-    public static function del_by_value(&$array, $value)
+    public static function del_by_value(array &$array, $value)
     {
-        $keys = array_keys($array, $value);
-        if(!empty($keys))
+        $values = is_array($value) ? $value : (array)$value;
+        foreach ($values as $value) 
         {
-            foreach ($keys as $key) 
+            $keys = array_keys($array, $value);
+            if(!empty($keys))
             {
-                unset($array[$key]);
+                foreach ($keys as $key) 
+                {
+                    unset($array[$key]);
+                }
             }
         }
+
+        sort($array);
 
         return true;
     }    
@@ -234,18 +240,32 @@ class cls_arr
         return $return;
     }
 
-    public static function rand($array, int $num = 1)
+    /**
+     * 随机返回数组的键 
+     * 
+     * @param array $array The search array 
+     * 
+     * @return mixed
+     */
+    public static function rand_key(array $array)
     {
-        if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
-        {
-            throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
-        }
-
         return array_rand($array);
     }
 
     /**
-     * cls_array_key_exists with a dot-notated key from an array.
+     * 随机返回数组的值 
+     * 
+     * @param array $array The search array 
+     * 
+     * @return mixed
+     */
+    public static function rand_value(array $array)
+    {
+        return $array[array_rand($array)];
+    }
+
+    /**
+     * array_key_exists with a dot-notated key from an array.
      *
      * @param   array   $array    The search array
      * @param   mixed   $key      The dot-notated key or array of keys

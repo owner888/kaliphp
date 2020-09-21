@@ -31,11 +31,6 @@ class req
 {
     public static $config = [];
 
-    /**
-     * @var  string  $raw  raw PHP input
-     */
-    protected static $raw_input = null;
-
     // $_COOKIE 变量
     public static $cookies = array();
 
@@ -95,9 +90,6 @@ class req
     {
         self::$config = config::instance('config')->get('request');
 
-		// get php raw input
-        self::$raw_input = file_get_contents('php://input');
-
         // fetch global input data
         self::hydrate();
 
@@ -139,7 +131,8 @@ class req
 	 */
 	public static function raw()
 	{
-		return self::$raw_input;
+		// get php raw input
+        return file_get_contents('php://input');
 	}
 
 	/**
