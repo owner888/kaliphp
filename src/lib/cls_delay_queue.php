@@ -79,7 +79,7 @@ class cls_delay_queue
 
     public static function _init()
     {
-        //self::$config = config::instance('delay_queue')->get();
+        self::$config = config::instance('cache')->get('delay_queue');
     }
 
     /**
@@ -205,17 +205,19 @@ class cls_delay_queue
             $delay -= $priority/10;
         }
 
+        $queue_data = $this->_data(array_merge([
+            'payload' => $data,
+            'delay'   => $_delay
+        ], $options));
+
         //以时间作为score，对任务队列按时间从小到大排序
         $status = $this->_handler()->zadd(
             $this->get_current_tube(),
             $delay,
-            $this->_data(array_merge([
-                'payload' => $data,
-                'delay'   => $_delay
-            ], $options))
+            $queue_data
         );
 
-        return $status;
+        return $status > 0 ? $queue_data['job_id'] : false;
     }
 
     /**
@@ -385,8 +387,12 @@ class cls_delay_queue
      */
     public function block($millisecond = null)
     {
-        $millisecond = $millisecond ? $millisecond : 10000;
-        if ( $millisecond < 100 ) 
+        $millisecond = $millisecond ? $millisecond : 0;
+        if ( !$millisecond )  
+        {
+            return $this;
+        }
+        else if ( $millisecond < 0 ) 
         {
             throw new \Exception("Error millisecond value");
         }
@@ -467,6 +473,16 @@ class cls_delay_queue
         return $this->_atts['current'][$tube_type];
     }
 
+    public function stats()
+    {
+        $ret = [
+            'tube_name' => $this->get_current_tube('tube'),
+            'total'     => $this->_handler()->zCard($this->get_current_tube('tube')),
+        ];
+
+        return $ret;
+    }
+
     /**
      * 获取当前的job
      * @param  [type] $job [description]
@@ -483,5 +499,3 @@ class cls_delay_queue
         unset($this->_atts);
     }
 }
-
-
