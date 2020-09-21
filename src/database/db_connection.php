@@ -1880,10 +1880,10 @@ class db_connection
                 $tmp = [$column];
                 foreach($value as $f => $ff)
                 {
-                    $ff    = is_array($ff) ? json_encode($ff) : $ff;
+                    $ff    = is_array($ff) ? json_encode($ff, JSON_UNESCAPED_UNICODE) : $ff;
                     //string的才加‘’,否则不加
                     $ff    = is_string($ff) ? "'{$ff}'" : $ff;
-                    $tmp[] = "'$.{$f}', {$ff}";
+                    $tmp[] = "'$.\"{$f}\"', {$ff}";
                 }
 
                 $value = 'JSON_SET('.implode(",", $tmp).')';
@@ -2446,10 +2446,10 @@ class db_connection
                 $tmp = [$field];
                 foreach($value as $f => $ff)
                 {
-                    $ff    = is_array($ff) ? json_encode($ff) : $ff;
+                    $ff    = is_array($ff) ? json_encode($ff, JSON_UNESCAPED_UNICODE) : $ff;
                     //string的才加‘’,否则不加
                     $ff    = is_string($ff) ? "'{$ff}'" : $ff;
-                    $tmp[] = "'$.{$f}', {$ff}";
+                    $tmp[] = "'$.\"{$f}\"', {$ff}";
                 }
 
                 $value = 'JSON_SET('.implode(",", $tmp).')';
@@ -2457,7 +2457,7 @@ class db_connection
             //插入
             else
             {
-                $value = is_array($value) ? json_encode($value) : $value;
+                $value = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
                 $value = "'{$value}'";
             }
         }
