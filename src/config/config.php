@@ -22,14 +22,14 @@ return [
 
     // 访问权限设置
     'purview' => [
-        // 验证类型: session、token
-        'auttype'    => 'session',
         // 未登录跳转地址
         'login_url'  => '?ct=index&ac=login',
         // 手工指定登录后跳转到的地址
         'return_url' => '?ct=index&ac=index',
         // 公开的控制器，不需登录就能访问
+        //'public'   => [*], // 所有接口完全开放
         'public'     => [
+            //'index' => [*], // index控制器接口完全开放
             'index' => [
                 'document', 'login', 'logout', 'validate_image', 'reset_pwd'
             ]
@@ -59,8 +59,9 @@ return [
         ],
         'csrf_exclude_uris' => [                    // csrf URL白名单
         ],   
-        // 约定 user_ip 字段 X_REAL_IP
-        'user_ip' => '',
+        // 约定获取用户IP字段 X_REAL_IP | X-Forwarded-For
+        'user_ip'              => 'X_REAL_IP',
+        'use_rewrite'          => false,
         'global_xss_filtering' => true,
     ],
 

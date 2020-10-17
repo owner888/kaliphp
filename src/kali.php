@@ -13,13 +13,13 @@
 namespace kaliphp;
 
 use kaliphp\config;
-use kaliphp\lib\cls_auth;
 use kaliphp\req;
 use kaliphp\session;
 use kaliphp\cache;
 use kaliphp\event;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
+use kaliphp\lib\cls_auth;
 use extend\pub_define;
 
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);
@@ -55,7 +55,7 @@ class kali
     /**
      * 权限类的实例
      *
-     * @var $auth cls_auth
+     * @var $auth cls_auth 用于IDE跳转代码
      */
     public static $auth = null;
 
@@ -102,6 +102,16 @@ class kali
         autoloader::set_root_path(APPPATH);
         pub_define::init();
         self::define();
+
+        if ( PHP_SAPI != 'cli' && !empty(self::$config['session_start']) ) 
+        {
+            $token = $_SERVER['HTTP_TOKEN'] ?? $_REQUEST['token'] ?? '';
+            $token && session_id($token);
+            // session接管
+            session::handle();
+            session_start();
+        }
+
         self::init();
     }
 
@@ -172,13 +182,6 @@ class kali
 
             // 触发过滤事件，可对IP，访问国家进行过滤处理
             event::trigger(onFilter);
-
-            if ( isset(self::$config['session_start']) && self::$config['session_start'] ) 
-            {
-                // session接管
-                session::handle();
-                session_start();
-            }
         }
 
         // 启动计时器。。。嘀嗒嘀嗒。。。
@@ -214,10 +217,10 @@ class kali
         // 触发请求事件
         event::trigger(onRequest);
 
-        // 检查权限 
-        if( isset(self::$config['check_purview_handle']) )
+        // 检查权限，Workerman环境先自己检查，后面再实现 
+        if( req::method() != 'CLI' && isset(self::$config['check_purview_handle']) )
         {
-            kali::$auth = call_user_func_array(self::$config['check_purview_handle'], [$ct, $ac]); 
+            kali::$auth = call_user_func_array(self::$config['check_purview_handle'], [$ct, $ac]);
         }
 
         $ctl  = 'ctl_'.$ct;

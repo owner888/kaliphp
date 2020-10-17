@@ -324,6 +324,11 @@ class util
         }
     }
 
+    public static function is_cli()
+    {
+        return PHP_SAPI == 'cli';
+    }
+
     /**
      * Check if a string is json encoded
      *
@@ -492,10 +497,10 @@ class util
     public static function to_timezone($datetime = KALI_TIMESTAMP, $format = 'Y-m-d H:i:s', $from_timezone = null, $to_timezone = null) 
     {
         // 如果没有传时区，用国家代码从配置文件获取对应时区
-        $to_timezone   = empty($to_timezone)   ? config::instance('timezone')->get(COUNTRY)  : $to_timezone;
+        $to_timezone   = $to_timezone   ?: config::instance('timezone')->get(COUNTRY);
         // 配置文件也没有找到时区，使用默认配置的时区
-        $to_timezone   = empty($to_timezone)   ? config::instance('config')->get('to_timezone')  : $to_timezone;
-        $from_timezone = empty($from_timezone) ? config::instance('config')->get('timezone_set') : $from_timezone;
+        $to_timezone   = $to_timezone   ?: config::instance('config')->get('to_timezone');
+        $from_timezone = $from_timezone ?: config::instance('config')->get('timezone_set');
         // 支持时间戳和时间格式
         $datetime      = is_numeric($datetime) ? '@'.$datetime : $datetime;
 
@@ -625,7 +630,8 @@ class util
                 //$str = uniqid('',true);
                 //$str = md5(uniqid(mt_rand()));
                 //生成的唯一标识中没有重复
-                $str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(getmypid().session_create_id()) : md5(getmypid().uniqid(microtime(true),true));
+                //$str = version_compare(PHP_VERSION,'7.1.0','ge') ? md5(getmypid().session_create_id()) : md5(getmypid().uniqid(microtime(true),true));
+                $str = md5(getmypid().uniqid(microtime(true),true));
                 if ( $length == 32 ) 
                 {
                     return $str;
@@ -1180,7 +1186,6 @@ class util
             call_user_func_array($func, $params);
             return;
         }
-
         static $stack = array();
 
         if( $func )
@@ -1577,13 +1582,15 @@ class util
 
     /**
      * 统一返回图片地址
-     * @param  mix    $img_url，支持数组
-     * @param string  没后缀的自动加上，为空不检查
-     * @return mix    返回可用图片地址
+     *
+     * @param mixed   $img_url，支持数组
+     * @param string  $suffix   图片后缀，没后缀的自动加上，为空不检查
+     *
+     * @return mixed  返回可用图片地址
      */
     public static function get_img_url($img_url, $suffix = '')
     {
-        $filelink =  config::instance('upload')->get('filelink');
+        $filelink = config::instance('upload')->get('filelink');
         if ( is_array($img_url) ) 
         {
             $img_url = array_map(function($v) {

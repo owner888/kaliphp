@@ -21,7 +21,7 @@ use kaliphp\lib\cls_ip2location;
 /**
  * 处理外部请求变量的类
  *
- * 禁止此文件以外的文件出现 $_POST、$_GET、$_FILES变量及eval函数(用 req::myeval )
+ * 禁止此文件以外的文件出现 $_POST、$_GET、$_FILES变量 以及 eval函数(用 req::myeval )
  * 以便于对主要黑客攻击进行防范
  *
  * @author seatle<seatle@foxmail.com>
@@ -64,13 +64,7 @@ class req
     // 文件变量
     public static $files = array();
 
-    // 这个可以强制设置
-    public static $is_force_ajax = false;
-
-    // url_rewrite
-    public static $url_rewrite = false;
-
-    // 严禁保存的文件名
+    // 不允许保存的文件
     public static $filter_filename = '/\.(php|pl|sh|js)$/i';
 
     /**
@@ -84,22 +78,25 @@ class req
      * 初始化用户请求
      * 对于 post、get 的数据，会转到 selfforms 数组， 并删除原来数组
      * 对于 cookie 的数据，会转到 cookies 数组，但不删除原来数组
-     * 本方法内不允许抛出异常，因为errorhandler.php里面调用了当前类，会进入死循环
+     * 对于 session 的数据，只做XSS过滤处理
+     * 本方法内不允许抛出异常，因为 errorhandler.php 里面调用了当前类，会进入死循环
      */
     public static function _init()
     {
         self::$config = config::instance('config')->get('request');
 
-        // fetch global input data
+        // 匹配全局输入数据 $_SESSION、$_COOKIE、$_POST、$_GET ...
         self::hydrate();
-
-        //默认ac和ct
-        self::$forms['ct'] = isset(self::$forms['ct']) ? self::$forms['ct'] : 'index';
-        self::$forms['ac'] = isset(self::$forms['ac']) ? self::$forms['ac'] : 'index';
     }
 
-    //强制要求对gpc变量进行转义处理
-    public static function add_s( $str )
+    /**
+     * 对gpc变量进行转义处理
+     * 
+     * @param mixed $str str 
+     * 
+     * @return string|array
+     */
+    public static function add_s($str)
     {
         // Is the string an array?
         if (is_array($str))
@@ -299,8 +296,8 @@ class req
 					$headers[$key] = $value;
 				}
 
-				$value = static::server('Content_Type', static::server('Content-Type')) and $headers['Content-Type'] = $value;
-				$value = static::server('Content_Length', static::server('Content-Length')) and $headers['Content-Length'] = $value;
+				$value = static::server('Content_Type') and $headers['Content-Type'] = $value;
+				$value = static::server('Content_Length') and $headers['Content-Length'] = $value;
 			}
 			else
 			{
@@ -524,12 +521,6 @@ class req
      */
     public static function is_ajax()
     {
-        // 如果强制设置为true，一般用于接口
-        if (self::$is_force_ajax === true) 
-        {
-            return true;
-        }
-
         return (static::server('HTTP_X_REQUESTED_WITH') !== null) and strtolower(static::server('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest';
     }
 
@@ -644,16 +635,25 @@ class req
                 if( $item === '' ) 
                 {
                     if( PHP_OS == 'WINNT')
+                    {
                         return copy(self::$files[$formname]['tmp_name'], $filename);
+                    }
                     else
+                    {
                         return move_uploaded_file(self::$files[$formname]['tmp_name'], $filename);
+                    }
                 }
                 else 
                 {
                     if( PHP_OS == 'WINNT')
+                    {
+
                         return copy(self::$files[$formname]['tmp_name'][$item], $filename);
+                    }
                     else 
+                    {
                         return move_uploaded_file(self::$files[$formname]['tmp_name'][$item], $filename);
+                    }
                 }
             }
         }
@@ -793,9 +793,9 @@ class req
      *
      * @return bool
      */
-    public static function check_subfix($formname, $subfix = array('csv'), $item= '')
+    public static function check_subfix($formname, $subfix = array('csv'), $item = '')
     {
-        if( !in_array(self::get_shortname( $formname, $item ), $subfix) )
+        if( !in_array(self::get_shortname($formname, $item), $subfix))
         {
             return false;
         }
@@ -814,16 +814,16 @@ class req
     {
         foreach($data as $k => $v)
         {
-            req::$forms[ $k ] = $v;
+            self::$forms[$k] = $v;
 
             //给值gets/posts
-            if( strtoupper( $method ) == 'GET' ) 
+            if( strtoupper($method) == 'GET' ) 
             {
-                req::$gets[ $k ] = $v;
+                self::$gets[$k] = $v;
             }
             else 
             {
-                req::$posts[ $k ] = $v;
+                self::$posts[$k] = $v;
             }
         }
     }
@@ -971,7 +971,7 @@ class req
             self::$posts = $_POST;
         }
 
-        //处理cookie
+        // 处理cookie
         if( count($_COOKIE) > 0 )
         {
             if( !$magic_quotes_gpc ) $_COOKIE = self::add_s( $_COOKIE );
@@ -1005,11 +1005,9 @@ class req
         }
 
         //// 是否启用rewrite(保留参数)
-        //self::$url_rewrite = isset($GLOBALS['config']['use_rewrite']) ? $GLOBALS['config']['use_rewrite'] : false;
-        //self::$url_rewrite = false;
-
-        ////处理url_rewrite(暂时不实现)
-        //if( self::$url_rewrite )
+        //$url_rewrite = self::$config['use_rewrite'] ?? false;
+        //// 处理url_rewrite(暂时不实现)
+        //if( $url_rewrite )
         //{
             //$gstr = self::server('QUERY_STRING');
 

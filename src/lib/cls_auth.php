@@ -18,28 +18,17 @@ use kaliphp\req;
 use kaliphp\util;
 use kaliphp\config;
 use kaliphp\session;
-use kaliphp\lib\cls_crypt;
-use kaliphp\lib\cls_redis;
+
+use Exception;
 
 class cls_auth 
 {
-    // 用户ID
-    public $uid = 0;
-    // 用户信息
-    public $user = [];
-
-    // 当前实例
-    public static $_instances = [];
-    // 配置信息
-    public static $config = [];
     // 缓存前缀
     protected static $_cache_prefix = 'auth_user';
     // 验证句柄
     public static $auth_hand = 'auth_hand';
-    //token失效时间（默认3个月）
-    public static $token_expire = 7776000;
-    //token命名规则
-    public static $token_key = 'token:%s:%s';
+    // 登录错误次数
+    public static $login_error_num = 3;
     // 用户表
     public static $table_config = [
         'user'          => '#PB#_admin',            // 用户表
@@ -57,11 +46,20 @@ class cls_auth
         'realname',
         'avatar',
         'email',
-        'roommaster',
         'session_id',
         'session_expire',
-        'status' 
+        'status'
     ];
+
+    // 当前实例
+    public static $_instances = [];
+    // 配置信息
+    public static $config = [];
+
+    // 用户ID
+    public $uid = 0;
+    // 用户信息
+    public $user = [];
 
     public static function _init()
     {
@@ -72,11 +70,12 @@ class cls_auth
     /**
      * 创建实例
      *
-     * @param   string    $name    Identifier for this mod_auth
-     * @param   array     $config  Configuration array
-     * @return  cls_validate
+     * @param   string $name    实例名
+     * @param   array  $config  实例配置
+     *
+     * @return  cls_auth
      */
-    public static function instance( $uid = 0 )
+    public static function instance($uid = 0)
     {
         if ( isset(static::$_instances[$uid]) )
         {
@@ -88,28 +87,177 @@ class cls_auth
     }
 
     /**
-     * 验证类必须扩展这个函数
-     * 
-     * @param string $ct    要验证的控制器
-     * @param string $ac    要验证的控制器方法
-     * @return void
+     * 检测用户登录
+     * 登录接口才会到这里来
+     *
+     * @param string $account    登录账号：会员名、邮箱、手机
+     * @param string $loginpwd   登录密码
+     * @param int    $remember   记住登录
+     *
+     * @return array $userinfo   登录正常返回用户信息，否则抛异常
      */
-    public static function auth( string $ct, string $ac )
-    {
+    public function check_user(string $account, string $loginpwd, int $remember = 0)
+    { 
+        if( $account == '' || $loginpwd == '' )
+        {
+            throw new Exception('请输入会员名密码');
+        }
 
+        $user = [];
+
+        // 存在登录表，一般用于前端接口，登录表和用户信息表分开
+        if ( isset(static::$table_config['user_account'])) 
+        {
+            $uid = db::select('uid')
+                ->from(static::$table_config['user_account'])
+                ->where('account', $account)
+                ->as_field()
+                ->execute(true);
+
+            if( !$uid || false == ($user = $this->get_user($uid, 'uid', false)) )
+            {
+                throw new Exception("输入的账号信息有误", -1);
+            }
+        }
+        else 
+        {
+            // 检测用户名合法性.
+            $ftype = 'username';
+            if( cls_validate::instance()->email($account) )
+            {
+                $ftype = 'email';
+            }
+            else if( !cls_validate::instance()->username($account) )
+            {
+                throw new Exception('会员名格式不合法！');
+            }
+
+            if( false == ($user = $this->get_user($account, $ftype, false)) )
+            {
+                throw new Exception("输入的账号信息有误", -1);
+            }
+        }
+
+        // 同一IP使用某帐号连续错误次数检测
+        if ( $this->get_login_error24($account) )
+        {
+            throw new Exception('连续登录失败超过3次，暂时禁止登录！');
+        }
+        //用户被禁用
+        else if ( !$user['status'] ) 
+        {
+            throw new Exception ('用户禁用！');
+        }
+        // 正常密码，正确生成会话信息
+        else if ( 
+            false == static::check_password($loginpwd, $user['password']) ||
+            false == ($user = $this->auth_user($user, $remember))
+        )
+        {
+            // 失败直接把form表单过来的赋值，因为 $user 为空
+            $user['username'] = $account;
+            $this->save_login_history($user, 0);
+            throw new Exception('用户名或密码无效');
+        }
+
+        return $user;
     }
 
     /**
-     * 检测用户登录
+     * 验证登录成功后对用户进行授权
+     * 登录接口才会到这里来
      *
-     * @param string $account   登录账号：会员名、邮箱、手机
-     * @param string $loginpwd  登录密码
-     * @param int $remember     记住登录
-     * @return array $userinfo  登录正常返回用户信息，否则抛异常
+     * @param array $user   用户信息 
+     * @param int $remember 是否自动登陆 
+     * @param int $seclogin 是否私密登陆 
+     * 
+     * @return mixed array|false
      */
-    public function check_user( string $account, string $loginpwd, int $remember = 0 )
+    public function auth_user(array $user, $remember = 0, $seclogin = 0): array
     {
+        $user['remember'] = $remember;
+        $user['seclogin'] = $seclogin;
 
+        // 干掉敏感字段
+        unset($user['password']);
+
+        // 重新生成一下SESSION ID，这样可以保证每次登陆的SESSION ID都不同
+        session_regenerate_id();
+
+        $this->store_client_uid($user['uid']);
+        $this->set_cache($user, $user['uid']);
+        $this->save_login_history($user, 1);
+
+        // 返回即可，不需要更新到用户缓存，否则每个端登录都会替换缓存的数据，没有意义
+        $user['session_id'] = session_id();
+        return $user;
+    }
+
+    /**
+     * 验证用户是否有控制器和方法访问权限
+     * 非登录接口统一验证权限用
+     * 
+     * @param string $ct       要验证的控制器
+     * @param string $ac       要验证的控制器方法
+     *
+     * @return cls_auth $auth  当前类
+     */
+    public static function auth(string $ct, string $ac)
+    {
+        $uid = cls_arr::get($_SESSION, static::$auth_hand.'_uid', 0);
+
+        /** @var cls_auth $auth */
+        $auth = static::instance($uid);
+        $auth->check_purview($ct, $ac);
+
+        if ( !in_array($ac, ['logout', 'login', 'authentication']) ) 
+        {
+            $auth->uid  = $uid;
+            $auth->user = $auth->get_user();
+
+            // 登陆IP不在白名单，禁止操作
+            if(  
+                PHP_SAPI != 'cli' && 
+                !empty($auth->user['safe_ips']) && 
+                !in_array(IP, explode(',', str_replace('，', ',', $auth->user['safe_ips']))) 
+            ) 
+            {
+                $msg = "IP不在白名单内，无法操作";
+                if ( req::is_json() ) 
+                {
+                    util::response_error(-1, $msg);
+                }
+                else 
+                {
+                    cls_msgbox::show('用户权限限制', $msg, '');
+                }
+            }
+        }
+
+        return $auth;
+    }
+
+    /**
+     * 保存用户ID到COOKIE和SESSION
+     *
+     * @param $uid  用户ID
+     * @param $keeptime 登录状态保存时间
+     *
+     * @return bool
+     */
+    public function store_client_uid( $uid, $keeptime = null )
+    {
+        if( empty($uid) )
+        {
+            return false;
+        }
+
+        $keeptime = $keeptime ?? static::$config['cookie']['expire'];
+        // 不管是web session 还是 api token，都保存到session
+        $_SESSION[static::$auth_hand.'_uid'] = $uid;
+        static::set_cookie('uid', $uid, $keeptime);
+
+        return true;
     }
 
     /**
@@ -119,6 +267,90 @@ class cls_auth
      */
     public function get_user( string $account = null, string $ftype = 'uid', bool $use_cache = true )
     {
+        if ( $account === null )
+        {
+            $account = $this->uid;
+            $ftype   = 'uid';
+        }
+
+        if ( $ftype != 'uid' )
+        {
+            // 获取用户ID
+            $uid = db::select('uid')
+                ->from(static::$table_config['user'])
+                ->where($ftype, '=', $account)
+                ->as_field()
+                ->execute();
+        }
+        else
+        {
+            $uid = $account;
+        }
+
+        $user = false;
+        if ( $use_cache )
+        {
+            // 缓存读取
+            $user = $this->get_cache($uid);
+        }
+
+        // 源数据
+        if( $uid && !$user )
+        {
+            // 读取用户数据
+            $user = db::select(static::$table_fields)
+                ->from(static::$table_config['user'])
+                ->where('uid', '=', $uid)
+                ->as_row()
+                ->execute();
+            // 用户存在
+            if ( $user )
+            {
+                $this->set_cache($user, $uid);
+            }
+        }
+
+        //统一在get_user处理，其他地方不需要处理
+        if ( isset($user['avatar']) && $user['avatar']) 
+        {
+            $user['avatar'] = self::get_user_avatar($user['avatar']);
+        }
+        return $user;
+    }
+
+    // 获取用户头像
+    public static function get_user_avatar($avatar_url)
+    {
+        if(cls_validate::instance()->url($avatar_url))
+        {
+            return $avatar_url;
+        }
+
+        return util::get_img_url($avatar_url, 'jpg');
+    }
+
+    /**
+     * 获取随机头像
+
+     * @param  string  $uid        唯一ID
+     * @param  integer $width      宽度
+     * @param  integer $height     高度
+     * @param  string  $avatar_dir 保存目录
+     *
+     * @return string  返回相对upload的头像         
+     */
+    public static function get_random_avatar($uid, $width = 200, $height = 200, $avatar_dir = 'avatar')
+    {
+        $filepath = config::instance('upload')->get('filepath');
+        $avatar_path = $filepath . '/' . $avatar_dir;
+        util::path_exists($avatar_path);
+
+        //获取随机头像
+        $avatar  = $avatar_dir .'/' . md5($uid) . '.jpg';
+        $imgdata = file_get_contents("https://picsum.photos/{$width}/{$height}?random=1&?blur");
+        file_put_contents($filepath. '/' . $avatar, $imgdata);
+
+        return $avatar;
     }
 
     /**
@@ -129,14 +361,14 @@ class cls_auth
      */
     public function save_user( $data )
     {
-        //明文加密字段
+        // 明文加密字段
         foreach(['password', 'fake_password', 'onetime_password'] as $f)
         {
            if( isset($data[$f]) ) $data[$f] = static::password_hash($data[$f]);
         }
 
         $dups = $data;
-        //不可以修改的字段
+        // 不可以修改的字段
         foreach(['uid', 'regtime', 'regip'] as $f)
         {
            if( isset($dups[$f]) ) unset($dups[$f]);
@@ -154,14 +386,14 @@ class cls_auth
     /**
      * 检测权限
      * 
-     * @param string $mod
-     * @param string $action
-     * @param int $backtype     返回类型， 1--是由权限控制程序直接处理
+     * @param $ct      控制器
+     * @param $ac      控制器方法
+     * @param backtype 返回类型，1--是由权限控制程序直接处理 2--返回检查结果
+     *
      * @return mixed            对于没权限的用户会提示或跳转到 ct=index&ac=login
      */
-    public function check_purview( string $mod, string $action, int $backtype = 1 )
+    public function check_purview( string $ct, string $ac, int $backtype = 1 )
     {
-
     }
 
     /**
@@ -185,160 +417,10 @@ class cls_auth
     }
 
     /**
-     * 记录一下用户ID到session和cookie，用户ID和用户数据已经在上一步保存了
-     * @parem $rows  用户信息
-     * @parem $keeptime 登录状态保存时间
-     * @return bool
-     */
-    public function set_logininfo( $row )
-    {
-        if( !is_array( $row ) || !isset($row['uid']) )
-        {
-            return false;
-        }
-
-        if( static::$config['auttype'] == 'session' )
-        {
-            $_SESSION[static::$auth_hand.'_uid'] = $row['uid'];
-            static::set_cookie('uid', $row['uid'], static::$config['cookie']['expire']);
-        }
-
-        $this->uid = $row['uid'];
-        return true;
-    }
-
-    /**
-     * 销毁登陆信息
-     * @param mixed $uid
-     * @return void
-     */
-    public function del_logininfo( $uid = null )
-    {
-        $uid = $uid == null ? $this->uid : $uid;
-        $token = (array) req::item('token', null);
-
-        $session_id = db::select('session_id')
-            ->from(static::$table_config['user'])
-            ->where('uid', $uid)
-            ->as_field()
-            ->execute();
-
-        // 删除服务器上session数据
-        session::del( $session_id );
-        // 删除用户缓存数据
-        $this->del_cache( $uid );
-
-        $token = $token ? (array) $token : static::get_token_by_uid($uid);
-        // 删除TOKEN缓存信息
-        foreach ($token as $tk) 
-        {
-            $token = static::unbind_token_uid( $tk, $uid );
-        }
-
-        // 删除 session_id 值
-        db::update(static::$table_config['user'])
-            ->set([
-                'session_id' => '',
-            ])
-            ->where('uid', $uid)
-            ->execute();
-    }
-
-    /**
-     * 获取token相关redis key
-     * @param  string $id   键
-     * @param  string $type 类型
-     * @return string 返回key
-     */
-    private static function _get_token_key($id, $type = 'uid_token')
-    {
-        return sprintf(self::$token_key, $type, $id);
-    }
-
-    /**
-     * 绑定token到uid
-     * @param  string  $token  32位token
-     * @param  string  $uid    用户UID
-     * @param  integer $expire token失效时间 0表示永久
-     * @return bool            true表示绑定成功 false绑定失败
-     */
-    public static function bind_token_uid(string $token, string $uid, $expire = 0)
-    {
-        $expire = $expire ? $expire : static::$token_expire;
-        $token_key = static::_get_token_key($uid);
-        //redis hash如果key存在返回0，不存在返回1 失败返回false
-        if( false !== cls_redis::instance()->hSet($token_key, $token, time()+$expire))
-        {
-            cls_redis::instance()->set(static::_get_token_key($token, 'token_uid'), $uid, $expire);
-            $expire > 0 && cls_redis::instance()->expire($token_key, $expire);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * 解绑某个token
-     * @param  string      $token 32位token
-     * @param  string|null $uid   用户UID 不填会尝试获取
-     * @return bool            true表示解绑成功 false解绑失败
-     */
-    public static function unbind_token_uid(string $token, string $uid = null)
-    {
-        $uid = $uid ? $uid : static::get_uid_by_token($token);
-        $toekn_key = static::_get_token_key($uid);
-
-        cls_redis::instance()->del(static::_get_token_key($token, 'token_uid'), $token);
-        return cls_redis::instance()->hDel(static::_get_token_key($uid), $token);
-    }
-
-    /**
-     * 通过uid获取绑定在uid上的所有token
-     * @param  string      $token 32位token
-     * @param  string|null $uid   用户UID 不填会尝试获取
-     * @return array       绑定在uid上的所有token
-     */
-    public static function get_token_by_uid(string $uid)
-    {
-        $token_arr = (array) cls_redis::instance()->hGetAll(static::_get_token_key($uid));
-        foreach($token_arr as $key => $val)
-        {
-            if ( $val < time() )
-            {
-                unset($token_arr[$key]);
-            }
-        }
-
-        return $token_arr;
-    }
-
-    /**
-     * 通过token获取UID
-     * @param  string      $token 32位token
-     * @return string      返回token绑定的uid
-     */
-    public static function get_uid_by_token(string $token = null)
-    {
-        if ( !$token ) 
-        {
-            return null;
-        }
-
-        if( false != ($uid = cls_redis::instance()->get(static::_get_token_key($token, 'token_uid'))))
-        {
-            //刷新token相关缓存
-            cls_redis::instance()->expire(static::_get_token_key($token, 'token_uid'), static::$token_expire);
-            cls_redis::instance()->expire(static::_get_token_key($uid), static::$token_expire);
-        }
-
-        return $uid;
-    }
-
-    /**
      * 保存一个cookie值
      * $key, $value, $keeptime
      */
-    public static function set_cookie( $key, $value, $keeptime = 0, $encode = true )
+    public static function set_cookie($key, $value, $keeptime = 0, $encode = true)
     {
         $keeptime = $keeptime==0 ? null : time()+$keeptime;
         $key = static::$auth_hand.'_'.$key;
@@ -355,9 +437,9 @@ class cls_auth
     /**
      * 删除cookie值
      *
-     * @parem $key
+     * @param $key
      */
-    public static function del_cookie( $key, $encode = true )
+    public static function del_cookie($key, $encode = true)
     {
         $key = static::$auth_hand.'_'.$key;
         setcookie($key, '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain']);
@@ -370,9 +452,9 @@ class cls_auth
     /**
      * 获得经过加密对比的cookie值
      *
-     * @parem $key
+     * @param $key
      */
-    public static function get_cookie( $key, $encode = true )
+    public static function get_cookie($key, $encode = true)
     {
         $key = static::$auth_hand.'_'.$key;
         if( !isset($_COOKIE[$key]) ) { return ''; }
@@ -396,9 +478,9 @@ class cls_auth
      *
      * @return bool
      */
-    public function get_cache( $uid = null )
+    public function get_cache($uid = null)
     {
-        $uid = $uid == null ? $this->uid : $uid;
+        $uid = $uid ?? $this->uid;
         return cache::get(static::$_cache_prefix.'-'.$uid);
     }
 
@@ -407,9 +489,9 @@ class cls_auth
      *
      * @return bool
      */
-    public function set_cache( $user, $uid = null )
+    public function set_cache($user, $uid = null)
     {
-        $uid = $uid == null ? $this->uid : $uid;
+        $uid = $uid ?? $this->uid;
         $user['lastip'] = IP;
         $user['lasttime'] = time();
         cache::set(static::$_cache_prefix.'-'.$uid, $user);
@@ -420,9 +502,9 @@ class cls_auth
      *
      * @return bool
      */
-    public function del_cache( $uid = null )
+    public function del_cache($uid = null)
     {
-        $uid = $uid == null ? $this->uid : $uid;
+        $uid = $uid ?? $this->uid;
         // 删除用户缓存信息
         cache::del(static::$_cache_prefix.'-'.$uid);
         // 删除用户权限信息
@@ -434,23 +516,214 @@ class cls_auth
      */
     public function logout()
     {
-        // 销毁登陆信息
-        $this->del_logininfo();
-
-        if ( static::$config['auttype'] == 'session' )
+        // 清空SESSION
+        if( !empty($_SESSION[static::$auth_hand.'_uid']) ) 
         {
-            // 清空SESSION
-            if( !empty($_SESSION[static::$auth_hand.'_uid']) ) 
+            $_SESSION[static::$auth_hand.'_uid'] = '';
+            session_destroy();
+        }
+        // 删除COOKIE中的uid
+        static::del_cookie('uid');
+        // 删除用户缓存数据
+        $this->del_cache($this->uid);
+
+        return true;
+    }
+
+    /**
+     * 保存历史登录记录 
+     * 
+     * @param array $user   用户信息 
+     * @param int $loginsta 登录状态：0--失败 1--成功 
+     * 
+     * @return void
+     */
+    public function save_login_history(array $user, int $loginsta = 0)
+    {
+        $ltime       = time();
+        $loginip     = req::ip();
+        $cli_hash    = md5($user['username'].'-'.$loginip);
+        $user['uid'] = $user['uid'] ?? 0;
+
+        if ( $loginsta == 1 ) 
+        {
+            db::update(static::$table_config['user'])
+                ->set([
+                    'logintime'  => $ltime,
+                    'loginip'    => $loginip,
+                ])
+                ->where('uid', $user['uid'])
+                ->execute();
+        }
+
+        // 成功失败都需要记录，用于判断是否连续3次登录错误
+        db::insert(static::$table_config['user_login'])
+            ->set([
+                'uid'          => $user['uid'],
+                'username'     => $user['username'],
+                'agent'        => req::user_agent(),
+                'logintime'    => $ltime,
+                'loginip'      => $loginip,
+                'loginsta'     => $loginsta,
+                'cli_hash'     => $cli_hash,
+            ])
+            ->execute();
+
+        return true;
+    }
+
+    /**
+     * 检测用户24小时内连续输错密码次数是否已经超过
+     * 
+     * @param string $username  用户名 
+     * @param string $logintype 登录类型 
+     * 
+     * @return bool 超过返回true, 正常状态返回false
+     */
+    public function get_login_error24(string $username, string $logintype = 'cli_hash')
+    {
+        $starttime = strtotime( date('Y-m-d 00:00:00', time()) );
+        if ( $logintype == 'cli_hash' ) 
+        {
+            $loginip  = req::ip();
+            $loginval = md5($username.'-'.$loginip);
+        }
+        else 
+        {
+            $loginval = $username;
+        }
+        $rows = db::select('loginsta')
+            ->from(static::$table_config['user_login'])
+            ->where($logintype,  '=', $loginval)
+            ->where('logintime', '>', $starttime)
+            ->order_by('logintime', 'DESC')
+            ->limit(static::$login_error_num)
+            ->execute();
+
+        if( $rows === null || count($rows) < static::$login_error_num )
+        {
+            return false;
+        }
+        foreach ($rows as $row) 
+        {
+            // 最近3条有一条登录成功就不属于禁用账号
+            if( $row['loginsta'] > 0 ) 
             {
-                $_SESSION[static::$auth_hand.'_uid'] = '';
-                session_destroy();
+                return false;
             }
-            // 删除COOKIE中的uid
-            static::del_cookie('uid');
+        }
+        return true;
+    }
+
+    /**
+     * 删除用户24小时内连续输错密码日志 
+     * 
+     * @return void
+     */
+    public function del_login_error24()
+    {
+        $starttime = strtotime( date('Y-m-d 00:00:00', time()) );
+        $rows = db::select('id, loginsta')
+            ->from(static::$table_config['user_login'])
+            ->where('uid',       '=', $this->uid)
+            ->where('logintime', '>', $starttime)
+            ->order_by('logintime', 'DESC')
+            ->limit(static::$login_error_num)
+            ->execute();
+
+        if( $rows === null || count($rows) < static::$login_error_num )
+        {
+            return false;
+        }
+
+        foreach ($rows as $row) 
+        {
+            // 最近3条有一条登录成功就不属于禁用账号
+            if( $row['loginsta'] > 0 ) 
+            {
+                return false;
+            }
+        }
+
+        foreach ($rows as $row) 
+        {
+            $id = $row['id'];
+            db::delete(static::$table_config['user_login'])
+                ->where('id', '=', $id)
+                ->execute();
         }
 
         return true;
     }
 
+    /**
+     * 获得用户上次登录时间和ip
+     *
+     * @return array
+     */
+    public function get_last_login()
+    {
+        $datas = db::select("loginip, logincountry, logintime")
+            ->from(static::$table_config['user_login'])
+            ->where('uid', $this->uid)
+            ->and_where('loginsta', 1)
+            ->order_by('logintime', 'desc')
+            ->limit(2)
+            ->offset(0)
+            ->execute();
+        if( isset($datas[1]) )
+        {
+            return $datas[1];
+        } 
+        else 
+        {
+            return [
+                'loginip'      => '', 
+                'logincountry' => '-', 
+                'logintime'    => 0
+            ];
+        }
+    }
 
+    /**
+     *  保存管理日志
+     *
+     *  @param $msg 具体消息（如有引号，无需自行转义）
+     *
+     *  @return bool
+     */
+    public function save_admin_log($msg)
+    {
+        $url = '?ct='.req::item('ct').'&ac='.req::item('ac');
+        foreach(req::$forms as $k => $v)
+        {
+            if( preg_match('/pwd|password|sign|cert/', $k) || $k=='ct' || $k=='ac' ) 
+            {
+                continue;
+            }
+            $nstr = "&{$k}=".(is_array($v) ? 'array()' : $v);
+            if( strlen($url.$nstr) < 100 ) 
+            {
+                $url .= $nstr;
+            } 
+            else 
+            {
+                break;
+            }
+        }
+
+        $user = $this->get_user();
+        db::insert(static::$table_config['user_oplog'])
+            ->set([
+                'session_id' => session_id(),
+                'uid'        => $user['uid'],
+                'username'   => $user['username'],
+                'msg'        => addslashes($msg),
+                'do_ip'      => req::ip(),
+                'do_country' => req::country(),
+                'do_time'    => time(),
+                'do_url'     => addslashes($url),
+            ])
+            ->execute();
+    }
 }

@@ -64,7 +64,7 @@ return [
         //'options' => GEARMAN_CLIENT_NON_BLOCKING | GEARMAN_CLIENT_FREE_TASKS | GEARMAN_CLIENT_UNBUFFERED_RESULT,
     ],
     'session' => [
-        'type'   => 'cache',      // session类型 default || cache || mysql
+        'type'   => 'cache',      // session类型 default || cache
         'expire' => 1440,         // session 回收时间 默认24分钟:1440、一天:86400
     ]
 ];

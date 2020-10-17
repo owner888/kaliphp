@@ -16,15 +16,20 @@ use Exception;
 
 /**
  * 数据过滤类(这个类只对不符合类型的字符进行过滤，数据验证使用cls_validate.php类)
+ *
  * @author seatle<seatle@foxmail.com>
  * @version 1.0
  */
 class cls_filter
 { 
     
-    //过滤类型
+    // 过滤类型
     protected $_filter_types = array('int',         // 0-12位的数字(可包含-)
                                      'float',       // 小数
+                                     'string',      // 字符串
+                                     'bool',        // 布尔类型
+                                     'array',       // 数组
+                                     'object',      // 对象
                                      'email',       // 邮箱
                                      'username',    // 用户名 \w 类型英文及任意中文字符
                                      'qq',          // 5-12位数字 (不匹配返回0)
@@ -53,6 +58,7 @@ class cls_filter
             return $val;
         }
 
+        // 值为数组类型，递归过滤
         if ( is_array($val) ) 
         {
             foreach ($val as $k => $v ) 
@@ -62,6 +68,7 @@ class cls_filter
         }
         else 
         {
+            // type为array，说明是 [$class, $method] 这种处理方式
             if ( is_array($type)) 
             {
                 $val = call_user_func($type, $val);
@@ -79,7 +86,7 @@ class cls_filter
                     $val = floatval($val);
                     break;
                 case 'string':
-                    $val = (string) $val;
+                    $val = htmlspecialchars(trim((string) $val), ENT_QUOTES);
                     break;
                 case 'bool':
                     $val = (bool) $val;
@@ -238,7 +245,7 @@ class cls_filter
             if (is_array($config))
             {
                 $is_array = true;
-                $required = cls_arr::get($config, 'require', false);
+                $required = cls_arr::get($config, 'required', false);
                 if ($required)
                 {
                     if (!isset($data[$field]))
@@ -391,7 +398,7 @@ class cls_filter
             case 'text':
             default:
                 $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'htmlentities') : $default;
-                if (!is_array($ret[$field]))
+                if ( !is_array($ret[$field]))
                 {
                     $ret[$field] = trim($ret[$field]);
                     $charset = $config['charset'] ?? 'utf-8';
@@ -404,7 +411,7 @@ class cls_filter
                         $ret[$field] = mb_convert_encoding($ret[$field], $charset, $to);
                     }
 
-                    if (isset($config['length']))
+                    if ( isset($config['length']))
                     {
                         $ret[$field] = mb_substr(
                             $ret[$field],
@@ -415,6 +422,12 @@ class cls_filter
                 }
 
                 break;
+            }
+
+            //空值直接返回当前字段
+            if ( empty($config['required']) && !empty($config['not_empty']) && empty($ret[$field]) ) 
+            {
+                return $field;
             }
 
             // 过滤后回调

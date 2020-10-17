@@ -18,7 +18,12 @@ use kaliphp\log;
 
 /** 
  * Socket client 
- *
+ * exp:
+ $resp = cls_socket::instance()->send([
+     'cmd' => 'type',
+     'msg' => 'hello',
+ ]);
+ var_dump($resp); 
  * @version $Id$  
  */
 class cls_socket

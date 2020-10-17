@@ -138,15 +138,10 @@ class config
             $configs = [];
             while( $row = db::fetch($rsid) )
             {
-                $configs[$row['group']][$row['name']] = $row['value'];
+                $configs[$row['name']] = $row['value'];
             }
 
             cache::set($cache_key, $configs, 0);
-        }
-
-        if( !empty($this->_module) )
-        {
-            $configs = isset($configs[$this->_module]) ? $configs[$this->_module] : [];
         }
 
         return $configs;

@@ -153,7 +153,9 @@ class cache
 
     /**
      * 删除缓存
+     *
      * @param string $key  键
+     *
      * @return int  0|1
      */               
     public static function del( $key )
@@ -172,7 +174,8 @@ class cache
      * 读取缓存
      *
      * @param $key  键
-     * @return bool | string | array
+     *
+     * @return bool|string|array
      */               
     public static function get( $key )
     {
@@ -195,9 +198,10 @@ class cache
      * 读取缓存过期时间
      * 
      * @param string $key
+     *
      * @return int
      */
-    public static function ttl( $key )
+    public static function ttl( $key ): int
     {
         //全局禁用cache(调试使用的情况)
         if( ! self::$config['enable'] ) 
@@ -224,6 +228,7 @@ class cache
      * 缓存是否存在
      * 
      * @param string $key
+     *
      * @return bool
      */
     public static function has( $key )
@@ -236,6 +241,7 @@ class cache
      *
      * @param  string $key 缓存变量名
      * @param  int    $step 步长
+     *
      * @return false|int
      */
     public static function inc( $key, int $step = 1 )
@@ -265,6 +271,7 @@ class cache
      *
      * @param  string $name 缓存变量名
      * @param  int    $step 步长
+     *
      * @return false|int
      */
     public static function dec( $key, int $step = 1 )

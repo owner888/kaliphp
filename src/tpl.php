@@ -104,6 +104,12 @@ class tpl
     // 这个方法应该去掉，否则不在kali框架下面会有问题
     public static function output ()
     {
+        if ( req::is_json()) 
+        {
+            echo self::$output;
+            return;
+        }
+
         $elapsed = cls_benchmark::elapsed_time('total_execution_time_start', 'total_execution_time_end');
 
         // 替换模板中执行时间、消耗内存的占位符
@@ -137,7 +143,7 @@ class tpl
         echo self::$output;
 
         // 新版本没有介入xhprof
-        //if( PHP_SAPI !== 'cli' && !req::is_ajax() ) 
+        //if( PHP_SAPI !== 'cli' && !req::is_json() ) 
         //{
             //debug_hanlde_xhprof();
         //}

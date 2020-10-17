@@ -269,7 +269,7 @@ class errorhandler
         // API接口不需要返回那么详细的html内容
         if ( req::is_json() ) 
         {
-            return $errstr;
+            return $errstr . ' in ' . $errfile . ' ' . $errline;
         }
 
         // 错误类型不存在
