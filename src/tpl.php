@@ -110,13 +110,15 @@ class tpl
             return;
         }
 
-        $elapsed = cls_benchmark::elapsed_time('total_execution_time_start', 'total_execution_time_end');
+        // 执行时间
+        $elapsed_time = cls_benchmark::elapsed_time(  'total_execution_start', 'total_execution_end');
+        // 执行内存
+        $memory_usage = cls_benchmark::elapsed_memory('total_execution_start', 'total_execution_end');
 
         // 替换模板中执行时间、消耗内存的占位符
         if (strpos(self::$output, '{elapsed_time}') !== false or strpos(self::$output, '{memory_usage}') !== false)
         {
-            $memory	= round(memory_get_usage() / 1024 / 1024, 2).'MB';
-            self::$output = str_replace(array('{elapsed_time}', '{memory_usage}'), array($elapsed, $memory), self::$output);
+            self::$output = str_replace(array('{elapsed_time}', '{memory_usage}'), array($elapsed_time, $memory_usage), self::$output);
         }
 
         if (strpos(self::$output, '{exec_time}') !== false or strpos(self::$output, '{mem_usage}') !== false)

@@ -185,7 +185,7 @@ class kali
         }
 
         // 启动计时器。。。嘀嗒嘀嗒。。。
-        cls_benchmark::mark('total_execution_time_start');
+        cls_benchmark::mark('total_execution_start');
         cls_benchmark::mark('loading_time:_base_classes_start');
     }
 
@@ -245,7 +245,7 @@ class kali
         }
 
         event::trigger(beforeAction);
-        cls_benchmark::mark('controller_execution_time_( '.$ct.' / '.$ac.' )_start');
+        cls_benchmark::mark('controller_execution_( '.$ct.' / '.$ac.' )_start');
 
         $controller = "control\\".$ctl;
 
@@ -279,7 +279,9 @@ class kali
 
         $instance->$ac();
 
-        cls_benchmark::mark('controller_execution_time_( '.$ct.' / '.$ac.' )_end');
+        cls_benchmark::mark('controller_execution_( '.$ct.' / '.$ac.' )_end');
+        // 记录执行日志，config/log.php 文件可以配置是否开启
+        log::exec_log( 'total_execution_start', 'total_execution_end');
         event::trigger(afterAction);
     }
 

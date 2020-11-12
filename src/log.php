@@ -14,6 +14,7 @@ namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
 use kaliphp\lib\cls_cli;
+use kaliphp\lib\cls_benchmark;
 
 defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
 
@@ -153,6 +154,37 @@ class log
     {
         $unit=['b','kb','mb','gb','tb','pb'];
         return @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i];
+    }
+
+    /**
+     * 写入执行信息记录
+     */
+    public static function exec_log($start = 'total_execution_start', $end = 'total_execution_end', $type = 0)
+    {
+        if( !config::instance('log')->get('exec_log', false) ) : return false; endif;
+        if( req::method() == 'CLI' ) : return false; endif;
+
+        $exe_log['ip']          = req::ip();
+        $exe_log['exe_url']     = req::url();
+        $exe_log['exe_time']    = cls_benchmark::elapsed_time(  $start, $end);
+        $exe_log['exe_memory']  = cls_benchmark::elapsed_memory($start, $end);
+        $exe_log['exe_os']      = req::os();
+        $exe_log['browser']     = req::browser();
+        $exe_log['referrer']    = req::referrer();
+        $exe_log['session_id']  = session_id();
+        $exe_log['add_time']    = time();
+        $exe_log['type']        = $type;
+        $exe_log['uid']         = kali::$auth->uid; // CLI 下无法获取，会报异常
+
+        $log_file = APPPATH.DS.'data'.DS.'log'.DS.'exe_log.log';
+
+        //print_r($exe_log);
+        //$arr = var_export($exe_log, true);
+        $json = json_encode($exe_log, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+
+        //$json = $json . "==========================================================================";
+        file_put_contents($log_file, $json."\n\n", FILE_APPEND | LOCK_EX);
+        @chmod($log_file, 0777);
     }
 
     /**

@@ -55,7 +55,7 @@ class req
     // All PATCH input
     public static $patchs = array();
 
-	// parsed request body as json
+    // parsed request body as json
     public static $jsons = array();
 
     // parsed request body as xml
@@ -121,26 +121,26 @@ class req
         return eval( $phpcode );
     }
 
-	/**
-	 * Returns PHP's raw input
-	 *
-	 * @return  array
-	 */
-	public static function raw()
-	{
-		// get php raw input
+    /**
+     * Returns PHP's raw input
+     *
+     * @return  array
+     */
+    public static function raw()
+    {
+        // get php raw input
         return file_get_contents('php://input');
-	}
+    }
 
-	/**
-	 * Returns all of the GET, POST, PUT, PATCH or DELETE array's
-	 *
-	 * @return  array
-	 */
-	public static function all()
-	{
-		return array_merge(self::$gets, self::$posts, self::$puts, self::$patchs, self::$deletes);
-	}
+    /**
+     * Returns all of the GET, POST, PUT, PATCH or DELETE array's
+     *
+     * @return  array
+     */
+    public static function all()
+    {
+        return array_merge(self::$gets, self::$posts, self::$puts, self::$patchs, self::$deletes);
+    }
 
     /**
      * 获得指定表单值
@@ -158,70 +158,70 @@ class req
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
-	/**
-	 * Gets the specified GET variable.
-	 *
-	 * @param   string  $index    The index to get
-	 * @param   string  $default  The default value
-	 * @return  string|array
-	 */
+    /**
+     * Gets the specified GET variable.
+     *
+     * @param   string  $index    The index to get
+     * @param   string  $default  The default value
+     * @return  string|array
+     */
     public static function get( $index = null, $default = null, $filter_type = '' )
     {   
         $value = (func_num_args() === 0) ? self::$gets : cls_arr::get(self::$gets, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
-	/**
-	 * Gets the specified POST variable.
-	 *
-	 * @param   string  $index    The index to get
-	 * @param   string  $default  The default value
-	 * @return  string|array
-	 */
+    /**
+     * Gets the specified POST variable.
+     *
+     * @param   string  $index    The index to get
+     * @param   string  $default  The default value
+     * @return  string|array
+     */
     public static function post( $index = null, $default = null, $filter_type = '' )
     {   
         $value = (func_num_args() === 0) ? self::$posts : cls_arr::get(self::$posts, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
-	/**
-	 * Fetch an item from the php://input for put arguments
-	 *
-	 * @param   string  $index    The index key
-	 * @param   mixed   $default  The default value
-	 * @return  string|array
-	 */
-	public static function put( $index = null, $default = null, $filter_type = '' )
-	{
+    /**
+     * Fetch an item from the php://input for put arguments
+     *
+     * @param   string  $index    The index key
+     * @param   mixed   $default  The default value
+     * @return  string|array
+     */
+    public static function put( $index = null, $default = null, $filter_type = '' )
+    {
         $value = (func_num_args() === 0) ? self::$puts : cls_arr::get(self::$puts, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
-	}
+    }
 
-	/**
-	 * Fetch an item from the php://input for patch arguments
-	 *
-	 * @param   string  $index    The index key
-	 * @param   mixed   $default  The default value
-	 * @return  string|array
-	 */
-	public static function patch( $index = null, $default = null, $filter_type = '' )
-	{
+    /**
+     * Fetch an item from the php://input for patch arguments
+     *
+     * @param   string  $index    The index key
+     * @param   mixed   $default  The default value
+     * @return  string|array
+     */
+    public static function patch( $index = null, $default = null, $filter_type = '' )
+    {
         $value = (func_num_args() === 0) ? self::$patchs : cls_arr::get(self::$patchs, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
-	}
+    }
 
-	/**
-	 * Fetch an item from the php://input for delete arguments
-	 *
-	 * @param   string  $index    The index key
-	 * @param   mixed   $default  The default value
-	 * @return  string|array
-	 */
-	public static function delete( $index = null, $default = null, $filter_type = '' )
-	{
+    /**
+     * Fetch an item from the php://input for delete arguments
+     *
+     * @param   string  $index    The index key
+     * @param   mixed   $default  The default value
+     * @return  string|array
+     */
+    public static function delete( $index = null, $default = null, $filter_type = '' )
+    {
         $value = (func_num_args() === 0) ? self::$deletes : cls_arr::get(self::$deletes, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
-	}
+    }
 
     /**
      * Get the request body interpreted as JSON.
@@ -267,46 +267,201 @@ class req
      */
     public static function server( $index = null, $default = null )
     {
-		return (func_num_args() === 0) ? $_SERVER : cls_arr::get($_SERVER, strtoupper($index), $default);
+        return (func_num_args() === 0) ? $_SERVER : cls_arr::get($_SERVER, strtoupper($index), $default);
     }
 
-	/**
-	 * Fetch a item from the HTTP request headers
-	 *
-	 * @param   mixed $index
-	 * @param   mixed $default
-	 * @return  array
-	 */
-	public static function headers( $index = null, $default = null )
-	{
-		static $headers = null;
+    /**
+     * Fetch a item from the HTTP request headers
+     *
+     * @param   mixed $index
+     * @param   mixed $default
+     * @return  array
+     */
+    public static function headers( $index = null, $default = null )
+    {
+        static $headers = null;
 
-		// do we need to fetch the headers?
-		if ( $headers === null )
-		{
-			// deal with fcgi or nginx installs
-			if ( ! function_exists('getallheaders'))
-			{
-				$server = cls_arr::filter_prefixed(static::server(), 'HTTP_', true);
+        // do we need to fetch the headers?
+        if ( $headers === null )
+        {
+            // deal with fcgi or nginx installs
+            if ( ! function_exists('getallheaders'))
+            {
+                $server = cls_arr::filter_prefixed(static::server(), 'HTTP_', true);
 
-				foreach ($server as $key => $value)
-				{
-					$key = join('-', array_map('ucfirst', explode('_', strtolower($key))));
+                foreach ($server as $key => $value)
+                {
+                    $key = join('-', array_map('ucfirst', explode('_', strtolower($key))));
 
-					$headers[$key] = $value;
-				}
+                    $headers[$key] = $value;
+                }
 
-				$value = static::server('Content_Type') and $headers['Content-Type'] = $value;
-				$value = static::server('Content_Length') and $headers['Content-Length'] = $value;
-			}
-			else
-			{
-				$headers = getallheaders();
-			}
-		}
+                $value = static::server('Content_Type') and $headers['Content-Type'] = $value;
+                $value = static::server('Content_Length') and $headers['Content-Length'] = $value;
+            }
+            else
+            {
+                $headers = getallheaders();
+            }
+        }
 
-		return empty($headers) ? $default : ((func_num_args() === 0) ? $headers : cls_arr::get(array_change_key_case($headers), strtolower($index), $default));
-	}
+        return empty($headers) ? $default : ((func_num_args() === 0) ? $headers : cls_arr::get(array_change_key_case($headers), strtolower($index), $default));
+    }
+
+    public static function language()
+    {
+        if ($lang = self::cookie("language"))
+        {
+            return $lang;
+        }
+
+        $languages = array();
+        if ( !empty(self::server('HTTP_ACCEPT_LANGUAGE')) )
+        {
+            $languages = explode(',', preg_replace('/(;\s?q=[0-9\.]+)|\s/i', '', strtolower(trim(self::server('HTTP_ACCEPT_LANGUAGE')))));
+        }
+
+        if (count($languages) === 0)
+        {
+            $languages = array('Undefined');
+        }
+
+        $lang = !in_array($languages[0], array("zh-cn", "zh-tw", "en", "km")) ? "zh-cn" : $languages[0];
+        return $lang;
+    }
+
+    /**
+     * Return's the query string
+     *
+     * @param   string $default
+     * @return  string
+     */
+    public static function query_string($default = '')
+    {
+        return static::server('QUERY_STRING', $default);
+    }
+
+    /**
+     * Return's the host
+     *
+     * @param   string $default
+     * @return  string
+     */
+    public static function host($default = '')
+    {
+        return static::server('HTTP_HOST', $default);
+    }
+
+    /**
+     * Return's the port
+     *
+     * @param   string $default
+     * @return  string
+     */
+    public static function port($default = '')
+    {
+        return static::server('SERVER_PORT', $default);
+    }
+
+    /**
+     * Return's the remote port
+     *
+     * @param   string $default
+     * @return  string
+     */
+    public static function remote_port($default = '')
+    {
+        return static::server('REMOTE_PORT', $default);
+    }
+
+    /**
+     * 返回请求所使用的协议
+     *
+     * @return  string  http | https
+     */
+    public static function protocol()
+    {
+        if (static::server('HTTPS') == 'on' or
+            static::server('HTTPS') == 1 or
+            static::server('SERVER_PORT') == 443 or
+            static::server('HTTP_X_FORWARDED_PROTO') == 'https' or
+            static::server('HTTP_X_FORWARDED_PORT') == 443)
+        {
+            return 'https';
+        }
+
+        return 'http';
+    }
+
+     /**
+     * 获取当前包含协议的域名
+     *
+     * exp:
+     * https://www.kaliphp.com
+     */
+    public static function domain($domain = null)
+    {
+        return self::protocol() . '://' . self::host();
+    }
+
+    /**
+     * 获得当前网址，不包含 Query String
+     *
+     * exp:
+     * https://www.kaliphp.com/home/
+     */
+    public static function base_url($uri = '', $protocol = null)
+    {
+        $url = req::url();
+        // 排除 Query String 后的 URL
+        $url = strpos($url, '?') ? strstr($url, '?', true) : $url;
+        return $uri ? self::domain() . $uri : $url;
+    }
+
+    /**
+     * 获得当前完整网址，包含 Query String
+     * 
+     * @return string
+     */
+    public static function url()
+    {
+        return self::domain().'?'.self::query_string();    
+    }
+
+    public static function path()
+    {
+        return self::cururl();
+    }
+
+    /**
+     * 获得当前路径
+     * /index.php?ct=test&ac=demo&id=10
+     */
+    public static function cururl()
+    {
+        if(!empty(self::server("REQUEST_URI")))
+        {
+            $script_name = self::server("REQUEST_URI");
+            $nowurl = $script_name;
+        }
+        else
+        {
+            $script_name = self::server("PHP_SELF");
+            $nowurl = empty(self::server("QUERY_STRING")) ? $script_name : $script_name."?".self::server("QUERY_STRING");
+        }
+        return $nowurl;
+    }
+
+    /**
+     * Return's the referrer
+     *
+     * @param   string $default
+     * @return  string
+     */
+    public static function referrer($default = '')
+    {
+        return static::server('HTTP_REFERER', $default);
+    }
 
     /**
      * 获取用户的公共IP地址
@@ -371,112 +526,6 @@ class req
         }
     }
 
-    public static function language()
-    {
-        if ($lang = self::cookie("language"))
-        {
-            return $lang;
-        }
-
-        $languages = array();
-        if ( !empty(self::server('HTTP_ACCEPT_LANGUAGE')) )
-        {
-            $languages = explode(',', preg_replace('/(;\s?q=[0-9\.]+)|\s/i', '', strtolower(trim(self::server('HTTP_ACCEPT_LANGUAGE')))));
-        }
-
-        if (count($languages) === 0)
-        {
-            $languages = array('Undefined');
-        }
-
-        $lang = !in_array($languages[0], array("zh-cn", "zh-tw", "en", "km")) ? "zh-cn" : $languages[0];
-        return $lang;
-    }
-
-    /**
-     * Return's the query string
-     *
-     * @param   string $default
-     * @return  string
-     */
-    public static function query_string($default = '')
-    {
-        return static::server('QUERY_STRING', $default);
-    }
-
-    /**
-     * 获得当前网址，不包含 Query String
-     */
-    public static function url($uri = '', $protocol = null)
-    {
-        $protocol = $protocol ? $protocol : self::server('REQUEST_SCHEME');
-        return $protocol.'://'.self::server('SERVER_NAME').$uri;
-    }
-
-    /**
-     * 获得当前完整网址，包含 Query String
-     * 
-     * @return string
-     */
-    public static function full_url()
-    {
-        return self::url().'?'.self::query_string();    
-    }
-
-    public static function path()
-    {
-        return self::cururl();
-    }
-
-    /**
-     * 获得当前路径
-     * /index.php?ct=test&ac=demo&id=10
-     */
-    public static function cururl()
-    {
-        if(!empty(self::server("REQUEST_URI")))
-        {
-            $script_name = self::server("REQUEST_URI");
-            $nowurl = $script_name;
-        }
-        else
-        {
-            $script_name = self::server("PHP_SELF");
-            $nowurl = empty(self::server("QUERY_STRING")) ? $script_name : $script_name."?".self::server("QUERY_STRING");
-        }
-        return $nowurl;
-    }
-
-    /**
-     * 返回请求所使用的协议
-     *
-     * @return  string  http | https
-     */
-    public static function protocol()
-    {
-        if (static::server('HTTPS') == 'on' or
-            static::server('HTTPS') == 1 or
-            static::server('SERVER_PORT') == 443 or
-            static::server('HTTP_X_FORWARDED_PROTO') == 'https' or
-            static::server('HTTP_X_FORWARDED_PORT') == 443)
-        {
-            return 'https';
-        }
-
-        return 'http';
-    }
-
-    /**
-     * Return's the referrer
-     *
-     * @param   string $default
-     * @return  string
-     */
-    public static function referrer($default = '')
-    {
-        return static::server('HTTP_REFERER', $default);
-    }
-
     /**
      * Return's the user agent
      *
@@ -486,6 +535,81 @@ class req
     public static function user_agent($default = '')
     {
         return static::server('HTTP_USER_AGENT', $default);
+    }
+
+    /**
+     * Return's the user browser
+     */
+    public static function browser()
+    {
+        $br = self::user_agent();
+        if ( !empty($br)) 
+        {
+            if (preg_match('/MSIE/i', $br)) 
+            {
+                $br = 'MSIE';
+            } 
+            else if (preg_match('/Firefox/i', $br)) 
+            {
+                $br = 'Firefox';
+            } 
+            else if (preg_match('/Chrome/i', $br)) 
+            {
+                $br = 'Chrome';
+            } 
+            else if (preg_match('/Safari/i', $br)) 
+            {
+                $br = 'Safari';
+            } 
+            else if (preg_match('/Opera/i', $br)) 
+            {
+                $br = 'Opera';
+            } 
+            else 
+            {
+                $br = 'Other';
+            }
+            return $br;
+        } 
+        else 
+        {
+            return 'Unknow';
+        }
+    }
+
+    /**
+     * Return's the user os
+     */
+    public static function os()
+    {
+        $user_agent = self::user_agent();
+        if ( !empty($user_agent)) 
+        {
+            $mua = [
+                'iOS'     => '#iphone|ipad|ios#i',
+                'Android' => '#android|\s+adr\s+#i',
+                'Windows' => '#win#i',
+                'MacOS'   => '#mac#i',
+                'Linux'   => '#linux#i',
+                'Unix'    => '#unix#i',
+                'BSD'     => '#bsd#i',
+            ];
+
+            $platform = 'Other';
+            foreach($mua as $plf => $regex)
+            {
+                if(preg_match($regex, $user_agent))
+                {
+                    $platform = $plf;
+                    break;
+                }
+            }
+            return $platform;
+        }
+        else 
+        {
+            return 'Unknow';
+        }
     }
 
     /**
@@ -507,6 +631,11 @@ class req
         $http_accept = $http_accepts[0];
         $http_accepts = explode(',', $http_accept);
         return in_array('application/json', $http_accepts);
+    }
+
+    public static function is_cli()
+    {
+        return self::method() === 'CLI';
     }
 
     /**
@@ -602,8 +731,8 @@ class req
      */
     public static function redirect($gourl = '')
     {
-        $gourl = self::cookie('gourl', $gourl);
-        $gourl = urldecode($gourl);
+        $gourl = self::cookie('gourl', $gourl, 'urldecode');
+        $gourl = $gourl ?: self::referrer();
         return $gourl;
     }
 

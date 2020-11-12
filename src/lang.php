@@ -72,14 +72,15 @@ class lang
 
         // Load the base file, so any others found can override it
         //$basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
-        $basepath = __dir__ . DS . 'lang' . DS; //src语言地址
-        $app_path = APPPATH . DS . 'lang' . DS; //app语言地址
+        $basepath    = __dir__ . DS . 'lang' . DS; //src语言地址
+        $app_path    = APPPATH . DS . 'lang' . DS; //app语言地址
+        $common_path = $app_path . DS . '..' . DS . '..' . DS . '..' . DS . 'common/lang';
 
         //默认语言
         $default_idiom = empty(self::$config['default']) ? 'en' : self::$config['default'];
         //优先用户传的->默认idiom->配置中的fallback
         $idioms = array_unique([$idiom, $default_idiom, util::get_value(self::$config, 'fallback')]);
-        foreach([$basepath, $app_path] as $path)
+        foreach([$basepath, $common_path, $app_path] as $path)
         {
             foreach($idioms as $idiom)
             {

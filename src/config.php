@@ -45,7 +45,7 @@ class config
      * db_config 在 数据库里面
      * @return config
      */
-    public static function instance( $module = 'config', $source = 'file' )
+    public static function instance($module = 'config', $source = 'file')
     {
         if (!isset(self::$_instance[$source][$module]))
         {
@@ -60,7 +60,7 @@ class config
      *
      * @param $name
      */
-    private function __construct( $module = 'config', $source = 'file' )
+    private function __construct($module = 'config', $source = 'file')
     {
         $this->_module = $module;
         $this->_source = $source;
@@ -124,7 +124,7 @@ class config
      * @param  bool    $update  是否更新
      * @return array   $configs 配置信息
      */
-    public function cache( bool $update = false )
+    public function cache(bool $update = false)
     {
         $cache_key = __CLASS__ .':sys_db_config';
         $configs = cache::get($cache_key);
@@ -153,7 +153,7 @@ class config
 	 * @param    string   $item   a (dot notated) config key
 	 * @param    mixed    $value  the config value
 	 */
-    public function set( $key, $value )
+    public function set($key, $value)
     {
 		strpos($key, '.') === false or $this->_cfg_caches[$this->_source][$this->_module][$key] = $value;
 		cls_arr::set($this->_cfg_caches[$this->_source][$this->_module], $key, $value);
@@ -166,7 +166,7 @@ class config
      * @param   mixed    $default   the return value if the item isn't found
      * @return  mixed               the config setting or default if not found
      */
-    public function get( $key = null, $default = null, $alias = true )
+    public function get($key = null, $default = null, $alias = true)
     {
         $configs = $this->load();
 

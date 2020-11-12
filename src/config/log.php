@@ -40,4 +40,5 @@ return [
     ],
     //MYSQL慢查询阀值
     'slow_query'             => 1000,
+    'exec_log'               => false,
 ];

@@ -257,24 +257,24 @@ class db
         return db_connection::instance()->table_prefix($table);
     }
 
-    public static function errno() 
+    public static function errno($instance = null) 
     {
-        return db_connection::instance()->errno();
+        return db_connection::instance($instance)->errno();
     }
 
-    public static function error() 
+    public static function error($instance = null) 
     {
-        return db_connection::instance()->error();
+        return db_connection::instance($instance)->error();
     }
 
-    public static function close() 
+    public static function close($name = null) 
     {
-        return db_connection::instance()->close();
+        return db_connection::instance()->close($name);
     }
 
-    public static function reconnect() 
+    public static function reconnect($instance = null) 
     {
-        return db_connection::instance()->reconnect();
+        return db_connection::instance($instance)->reconnect();
     }
 
     /**

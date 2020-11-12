@@ -45,6 +45,8 @@ return [
         ],
         // 隐私的控制器，会员登录后拥有权限的可以访问
         'private'    => [],
+        //user_session表用来区分项目，其他app如果要区分默认的，需要覆盖这个,如果不需要记录session,设置为false
+        'app_name'   => 'default',
     ],
 
     //请求配置

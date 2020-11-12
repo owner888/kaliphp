@@ -160,6 +160,12 @@ class db_connection
     protected $_as_result = false;
 
     /**
+     * 每个查询最大重连次数
+     * @var integer
+     */
+    protected $_max_reconnect = 2;
+
+    /**
      * @var \mysqli
      */
     private $_handler;
@@ -608,8 +614,13 @@ class db_connection
             $errmsg = $e->getMessage();
             log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $sql.'('.$this->_db_name.')'), 'SQL Error');
             
+            $this->_atts['reconnect_times'] = isset($this->_atts['reconnect_times']) ? ++$this->_atts['reconnect_times'] : 1;
             // Mysql 等待超时,如果是开启了事务，不应该重试，因为重连可能导致事务id发生变化
-            if ( empty($this->_atts['start']) && in_array($errno, [2013, 2006]) ) 
+            if ( 
+                empty($this->_atts['start']) && in_array($errno, [2013, 2006]) &&
+                //每个查询超出最大重连次数，不再重连，防止触发max_connect_errors，无法连接数据库
+                $this->_atts['reconnect_times'] <= $this->_max_reconnect
+            ) 
             {
                 log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $sql.'('.$this->_db_name.')'), 'SQL Reconnect');
                 // 重新链接，$this 默认是default_w 的
@@ -1880,7 +1891,7 @@ class db_connection
                 $tmp = [$column];
                 foreach($value as $f => $ff)
                 {
-                    $ff    = is_array($ff) ? json_encode($ff, JSON_UNESCAPED_UNICODE) : $ff;
+                    $ff    = is_array($ff) ? json_encode((object)$ff, JSON_UNESCAPED_UNICODE) : $ff;
                     //string的才加‘’,否则不加
                     $ff    = is_string($ff) ? "'{$ff}'" : $ff;
                     $tmp[] = "'$.\"{$f}\"', {$ff}";
@@ -2446,7 +2457,8 @@ class db_connection
                 $tmp = [$field];
                 foreach($value as $f => $ff)
                 {
-                    $ff    = is_array($ff) ? json_encode($ff, JSON_UNESCAPED_UNICODE) : $ff;
+                    //转成object是因为枚举数组没法更新
+                    $ff    = is_array($ff) ? json_encode((object)$ff, JSON_UNESCAPED_UNICODE) : $ff;
                     //string的才加‘’,否则不加
                     $ff    = is_string($ff) ? "'{$ff}'" : $ff;
                     $tmp[] = "'$.\"{$f}\"', {$ff}";
@@ -2894,7 +2906,8 @@ class db_connection
                 //兼容子进程下再开子进程
                 if ( !isset(self::$config[$name]) && isset(static::$_instance[$name .'_w']) ) 
                 {
-                    self::instance($name, static::$_instance[$name .'_w']->_config);
+                    self::init_db($name);
+                    //self::instance($name, static::$_instance[$name .'_w']->_config);
                 }
             }
         }

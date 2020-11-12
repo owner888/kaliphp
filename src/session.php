@@ -207,7 +207,7 @@ class session
 
         if ( $key ) 
         {
-            $sess_data = $sess_data[$key];
+            $sess_data = $sess_data[$key] ?? '';
         }
 
         return $sess_data;
