@@ -10,8 +10,8 @@
  * @link       http://kaliphp.com
  */
 
-namespace kali\core\lib;
-use kali\core\log;
+namespace kaliphp\lib;
+use kaliphp\log;
 
 /**
  * 多进程执行任务
@@ -60,12 +60,12 @@ class cls_muti_process
         {
             throw new \Exception("fork fail", -1001);
         }
-        else if( !isset(static::$_instances[$_name]) )
+        else if( !isset(static::$_instances[$name]) )
         {
-            static::$_instances[$_name] = new self($name, $max_worker_process);
+            static::$_instances[$name] = new self($name, $worker_process_num);
         }
 
-        return static::$_instances[$_name];
+        return static::$_instances[$name];
     }
 
     /**
@@ -75,9 +75,9 @@ class cls_muti_process
      */
     public function __construct($name = null, $worker_process_num = null)
     {
-        $this->_name               = isset($_name) ? $name : $this->_name;
-        $this->_max_worker_process = isset($worker_process_num) ? $worker_process_num : $this->_max_workers;
-        $this->_master_pid         = posix_getpid();
+        $this->_name        = isset($name) ? $name : $this->_name;
+        $this->_max_workers = isset($worker_process_num) ? $worker_process_num : $this->_max_workers;
+        $this->_master_pid  = posix_getpid();
     }
 
     /**
@@ -100,7 +100,7 @@ class cls_muti_process
      */
     public function insert($func, $params = [], $is_file = false)
     {
-        if( 
+        if(
             (!$is_file && is_callable($func)) ||
             ($is_file && file_exists($func))
         )
@@ -116,55 +116,35 @@ class cls_muti_process
     }
 
     /**
-     * 定时器,暂时没法用
-     * @Author han
-     * @param  float $delay_time 延时执行秒数，精确到0.0001秒
-     * @return void
-     */
-    public function clock($delay_time)
-    {
-        if( $delay_time && !$this->_clock )
-        {
-            pcntl_async_signals(true);
-            $this->_clock = true;
-            pcntl_signal(SIGALRM, function($sign_no) {
-                log::error('catch sigalrm');
-                static::instance($this->_name)->execute();
-            }, true);
-
-
-            log::error('init sigalrm');
-            pcntl_alarm($delay_time);
-        }
-    }
-
-    /**
      * 执行函数/文件
      * @Author han
      * @return int 返回开启的进程数
      */
-    public function execute()
+    public function execute($params = [])
     {
+        if( !$this->_stack_jobs ) return false;
+        // echo "execute():".$this->_name;
+        // var_dump($this->_stack_jobs);exit;
         $length     = ceil(count($this->_stack_jobs) / $this->_max_workers);
         $stack_jobs = array_chunk($this->_stack_jobs, $length);
         $max_works  = count($stack_jobs);
-        for ($work_id = 0; $work_id < $this->_max_workers; $work_id++) 
-        { 
+        for ($work_id = 0; $work_id < $this->_max_workers; $work_id++)
+        {
             if( !isset($stack_jobs[$work_id]) ) break;
             //创建子进程,返回子进程id
             $pid = pcntl_fork();
             //错误处理：创建子进程失败时返回-1.
-            if( $pid == -1 ) 
+            if( $pid == -1 )
             {
                 die('Could not fork');
-            } 
+            }
             //父进程会得到子进程号，所以这里是父进程执行的逻辑
-            else if( $pid ) 
+            else if( $pid )
             {
                 $this->sub_pids[$pid] = $pid;
-            } 
+            }
             //子进程因为获取不到子进程id的,子进程得到的$pid为0,这里执行子进程逻辑
-            else 
+            else
             {
                 $this->_run($work_id, $stack_jobs[$work_id]);
                 exit($this->_exit_status);
@@ -175,7 +155,7 @@ class cls_muti_process
         $this->_clock      = false;
 
         //监控子进程执行状态
-        $this->_monitor_worker();
+        empty($params['is_clock']) && $this->_monitor_worker();
         return $max_works;
     }
 
@@ -186,21 +166,21 @@ class cls_muti_process
      */
     private function _monitor_worker()
     {
-        if ( $this->_master_pid === posix_getpid() ) 
+        if ( $this->_master_pid === posix_getpid() )
         {
             $try_times = 0;
             $max_trys  = $this->_max_workers*10;
-            while (true) 
+            while (true)
             {
                 //等待子进程中断，防止子进程成为僵尸进程。
                 $pid         = pcntl_wait($call_status, WUNTRACED);
                 $call_status = pcntl_wexitstatus($call_status);
-                if ($call_status === $this->_exit_status) 
+                if ($call_status === $this->_exit_status)
                 {
                     unset($this->sub_pids[$pid]);
                 }
 
-                if ( empty($this->sub_pids) || $try_times > $max_trys ) 
+                if ( empty($this->sub_pids) || ++$try_times > $max_trys )
                 {
                     break;
                 }
@@ -217,27 +197,20 @@ class cls_muti_process
      */
     private function _run($work_id, $jobs)
     {
-        try 
+        foreach($jobs as $job)
         {
-            foreach($jobs as $job)
+            if ($job)
             {
-                if ($job)
+                //运行crond文件
+                if( $job['is_file'] && file_exists($job['func']) )
                 {
-                    //运行crond文件
-                    if( $job['is_file'] && file_exists($job['func']) )
-                    {
-                        include $job['func'];
-                    }
-                    else
-                    {
-                        call_user_func_array($job['func'], $job['params']);
-                    }
+                    include $job['func'];
+                }
+                else
+                {
+                    call_user_func_array($job['func'], $job['params']);
                 }
             }
-        } 
-        catch (\Exception $e) 
-        {
-            log::error("sub death");
         }
 
         //防止常驻脚本，子进程不会退出

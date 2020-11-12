@@ -12,6 +12,7 @@
 
 namespace kaliphp\lib;
 
+use common\extend\pub_func;
 use kaliphp\log;
 use kaliphp\req;
 use kaliphp\kali;
@@ -114,7 +115,6 @@ class cls_spam
     {
         $_key  = self::get_key($key);
         self::$spam_data[$_key] = $spam = self::get($key);
-
         $limit  = intval($limit);
         //系统设置了使用系统的
         $limit = empty($limit) ? (isset(self::$spam_data[$_key]['limit']) ? 
@@ -128,7 +128,7 @@ class cls_spam
             !empty(self::$spam_data[$_key]['timestamp']) &&
             (KALI_TIMESTAMP - self::$spam_data[$_key]['timestamp'] <= $interval) )
         {
-            $ret = null; //区别于触发阀值
+            $ret = NULL; //区别于触发阀值
         }
         else
         {
@@ -191,7 +191,14 @@ class cls_spam
         //是否存在自动执行的spam
         if( !empty($ret) && !empty(self::$auto_spam) )
         {
-            list($module, $action, $val) = explode(':', $key);
+            $tmp = explode(':', $key);
+            //大于3说明"$val"包含了":"
+            if (count($tmp) > 3)
+            {
+                $tmp = [$tmp[0], $tmp[1], implode(':', array_slice($tmp, 2))];
+            }
+            
+            list($module, $action, $val) = $tmp;
             foreach(self::$auto_spam as $ip_key => $spam)
             {
                 self::$auto_spam[$ip_key]['data'] = isset(self::$auto_spam[$ip_key]['data']) ? 
@@ -351,6 +358,12 @@ class cls_spam
         if( !isset($module_actions[$key]) )
         {
             $tmp = explode(':', $key);
+            //大于3说明"$val"包含了":"
+            if (count($tmp) > 3)
+            {
+                $tmp = [$tmp[0], $tmp[1], implode(':', array_slice($tmp, 2))];
+            }
+
             if( count($tmp) == 3 )
             {
                 list($module, $action, $val) = $tmp;

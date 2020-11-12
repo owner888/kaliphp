@@ -58,8 +58,8 @@ class cls_filter
             return $val;
         }
 
-        // 值为数组类型，递归过滤
-        if ( is_array($val) ) 
+        // 值为数组类型，递归过滤，需要判断是否为空，因为为空需要进入else，比如空的array，强制转为object，一般是json接口用
+        if ( is_array($val) && !empty($val) ) 
         {
             foreach ($val as $k => $v ) 
             {

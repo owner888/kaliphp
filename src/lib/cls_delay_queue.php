@@ -16,6 +16,7 @@ use kaliphp\config;
 use kaliphp\log;
 use kaliphp\util;
 use kaliphp\lib\cls_redis;
+use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_redis_lock;
 
 /**
@@ -457,17 +458,16 @@ class cls_delay_queue
      * @param  string $tube_type tube类型
      * @return string            
      */
-    protected function get_current_tube($tube_type = 'tube')
+    public function get_current_tube($tube_type = 'tube')
     {
         if ( !isset($this->_atts['current'])  ) 
         {
-            $this->use_tube(util::get_value($this->_config, 'default_tube', 'default'));
+            $this->use_tube($this->_config['default_tube'] ?? 'default');
         }
 
         if ( !isset($this->_atts['current'][$tube_type]) ) 
         {
             throw new \Exception("Error tube_type");
-            
         }
 
         return $this->_atts['current'][$tube_type];
@@ -499,3 +499,5 @@ class cls_delay_queue
         unset($this->_atts);
     }
 }
+
+

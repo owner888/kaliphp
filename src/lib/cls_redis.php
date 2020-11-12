@@ -27,6 +27,7 @@ class cls_redis
      * @var resource
      */
     private $handler;
+    private $_name;
     private $connect;
 
     public static function _init()
@@ -50,8 +51,9 @@ class cls_redis
                 // 如果把redis当cache用，增加一个 :cache 字符用于 Redis UI 分文件夹查看
                 $config['prefix'] = ($name == 'cache') ? self::$config['prefix'].':cache' : self::$config['prefix'];
             }
-            self::$_instances[$_name] = new self($config);
+            self::$_instances[$_name] = new self($name, $config);
         }
+
         return self::$_instances[$_name];
     }
 
@@ -60,9 +62,10 @@ class cls_redis
      *
      * @param $config   链接配置
      */
-    public function __construct( array $config = null )
+    public function __construct(string $name, array $config = null )
     {
         $this->connect = $config;
+        $this->_name   = $name;
     }
 
     /**
@@ -82,7 +85,6 @@ class cls_redis
     private function connect($config = null)
     {
         $config = $this->connect;
-
         if( class_exists('RedisCluster') && !empty($config['cluster']) )
         {
             $pass = empty($config['cluster']["pass"]) ? null : $config['cluster']["pass"];
@@ -152,6 +154,23 @@ class cls_redis
     }
 
     /**
+     * 在多进程的时候，子进程会复用进程的属性，所以这里根据进程名区分handle
+     * 否则在多进程的时候会出现protocol error, got '0' as reply type byte\n的bug
+     * @return object
+     */
+    private function _handle()
+    {
+        $name = static::get_muti_name($this->_name);
+        if ( !isset(self::$_instances[$name]->handler) ) 
+        {
+            self::instance($this->_name);
+            $this->connect();
+        }
+
+        return $this->handler;
+    }
+
+    /**
      * set
      * 
      * @param string        $key    键
@@ -161,17 +180,13 @@ class cls_redis
      */
     public function set( $key, $value, $expire = 0 )
     {
-       if ( empty($value) ) 
-       {
-           trigger_error('Cache value cannot be empty');
-           return false;
-       }
-
-        if (!$this->handler)
+        if ( empty($value) ) 
         {
-            $this->connect();
+            trigger_error('Cache value cannot be empty');
+            return false;
         }
- 
+
+        $this->_handle();
         $value = $this->encode($value);
         if ( $expire > 0 ) 
         {
@@ -185,101 +200,85 @@ class cls_redis
 
     public function get( $key )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
+        $this->_handle();
         return $this->decode($this->handler->get($key));
-    }
-
-    public function hget( $key, $hash )
-    {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
-        return $this->decode($this->handler->hGet($key, $hash));
     }
 
     public function hset( $key, $hash, $value )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
+        $this->_handle();
         return $this->handler->hSet($key, $hash, $this->encode($value));
+    }
+
+    public function hget( $key, $hash )
+    {
+        $this->_handle();
+        return $this->decode($this->handler->hGet($key, $hash));
+    }
+
+    public function hdel( $key, $hash )
+    {
+        $this->_handle();
+        return $this->handler->hDel($key, $hash);
     }
 
     public function hgetall( $key )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
+        $this->_handle();
         return $this->decode($this->handler->hGetAll($key));
+    }
+
+    public function hlen( $key )
+    {
+        $this->_handle();
+        return $this->handler->hLen($key);
+    }
+
+    public function hmget( $key, array $hashs = [] )
+    {
+        $this->_handle();
+        return $this->handler->hMget($key, $hashs);
+    }
+
+    public function hmset( $key, array $array = [] )
+    {
+        $this->_handle();
+        return $this->handler->hMset($key, $array);
     }
 
     public function lpush( $key, $value )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
+        $this->_handle();
         return $this->handler->lpush($key, $this->encode($value));
     }
 
     public function rpop( $key )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
- 
+        $this->_handle();
         return $this->decode($this->handler->rpop($key));
     }
 
     public function rpush( $key, $value )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
- 
+        $this->_handle();
         return $this->handler->rpush($key, $this->encode($value));
     }
 
     public function lpop( $key )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
+        $this->_handle();
         return $this->decode($this->handler->lpop($key));
     }
 
     public function lindex( $key, $index )
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-
+        $this->_handle();
         return $this->decode($this->handler->lindex($key, $index));
     }
 
     public function scan($keyword)
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
-        
+        $this->_handle();
         $keys = [];
         if( !empty($this->connect['is_cluster']) )
         {
@@ -358,9 +357,9 @@ class cls_redis
      * @param  string $name 实例名称
      * @return string       cli下带进程号的实例名称
      */
-    public static function get_muti_name($name = 'redis')
+    public static function get_muti_name(string $name = 'redis'):string
     {
-        if (PHP_SAPI == 'cli')
+        if ( PHP_SAPI == 'cli' )
         {
             $pid = ':'.posix_getpid();
             if ( strpos($name, $pid) === false ) 
@@ -373,6 +372,24 @@ class cls_redis
     }
 
     /**
+     * 关闭实例
+     * @param  string $name 
+     * @return bool
+     */
+    public function close(?string $name = null):bool
+    {
+        $name = static::get_muti_name($name ?? $this->_name);
+        unset(self::$_instances[$name]);
+
+        return true;
+    }
+
+    public function __destruct()
+    {
+        $this->close();
+    }
+
+    /**
      * 调用Redis其他方法
      *
      * @param $method
@@ -382,10 +399,7 @@ class cls_redis
      */
     public function __call($method, $arguments)
     {
-        if (!$this->handler)
-        {
-            $this->connect();
-        }
+        $this->_handle();
         return call_user_func_array([$this->handler, $method], $arguments);
     }
 }
