@@ -18,6 +18,7 @@ use kaliphp\req;
 use kaliphp\util;
 use kaliphp\config;
 use kaliphp\session;
+use kaliphp\lib\cls_filter;
 
 use Exception;
 
@@ -36,6 +37,7 @@ class cls_auth
         'user_login'    => '#PB#_admin_login',      // 用户登录日志表
         'user_oplog'    => '#PB#_admin_oplog',      // 用户操作日志表
         'user_purview'  => '#PB#_admin_purview',    // 用户权限表
+        'user_session'  => '#PB#_user_session',     // 用户session表
     ];
     // 用户表字段
     public static $table_fields = [
@@ -61,10 +63,24 @@ class cls_auth
     // 用户信息
     public $user = [];
 
+    public static $os           = null;    // 当前系统
+    public static $version      = null;    // API版本
+    public static $utma         = null;    // 设备ID
+    public static $device_type  = null;    // 设备类型 1、游戏 2、助手 3、小程序 4、微信回调
+    public static $os_version   = null;    // 系统版本
+    public static $device       = null;    // 设备型号
+
     public static function _init()
     {
         static::$config = config::instance('config')->get('purview');
         static::$config['cookie'] = config::instance('config')->get('cookie');
+
+        self::$os          = req::item('os',          null, 'strtolower');  // 当前系统
+        self::$version     = req::item('version',     null, 'string');      // 当前版本
+        self::$utma        = req::item('utma',        null, 'string');      // 设备ID    
+        self::$device_type = req::item('device_type', null, 'string');      // 设备类型
+        self::$device      = req::item('device',      null, 'string');      // 设备型号  
+        self::$os_version  = req::item('os_version',  null, 'string');      // 当前版本
     }
 
     /**
@@ -164,6 +180,206 @@ class cls_auth
     }
 
     /**
+     * 添加/更新用户登陆session
+     * 大于0表示成功
+     * @param  array  $data   SESSION DATA
+     * @param  array  $where  只有强制为只更新模式才需要 
+     *
+     * @return int       
+     */
+    public static function save_user_session(array $data, array $where = [])
+    {
+        $data_filter = cls_filter::data([
+            'uid'           => ['type' => 'text', 'default' => null],
+            'username'      => ['type' => 'text', 'default' => null, 'callback' => 'trim'],
+            'version'       => ['type' => 'text', 'default' => null],
+            'device'        => ['type' => 'text', 'default' => null],
+            'device_type'   => ['type' => 'int',  'default' => null],
+            'os_version'    => ['type' => 'text', 'default' => null],
+            'os'            => ['type' => 'text', 'default' => null],
+            'address'       => ['type' => 'text', 'default' => null],
+            'loginip'       => ['type' => 'text', 'default' => null],
+            'logintime'     => ['type' => 'int',  'default' => time()],
+            'online'        => ['type' => 'text', 'default' => null],
+            'conn_ip'       => ['type' => 'text', 'default' => null],
+            'conn_time'     => ['type' => 'int',  'default' => null],
+            'app_name'      => ['type' => 'text',  'default' => null],
+            'token' => [
+                'type'      => 'text', 'default' => null, 
+                'required'  => empty($data['client_id']) && empty($data['utma'])
+            ],
+            'utma' => [
+                'type'      => 'text', 'default' => null, 
+                'required'  => empty($data['client_id']) && empty($data['token'])
+            ],
+            'client_id' => [
+                'type'      => 'text', 'default' => null, 
+                'required'  => empty($data['token']) && empty($data['utma'])
+            ],
+
+            '_config_' => ['filter_null' => true],
+        ], $data);
+ 
+        // 过滤完数据为空
+        if ( !is_array($data_filter) ) return false;
+        try 
+        {
+            //只更新模式
+            if ( $where ) 
+            {
+                $status = db::update(static::$table_config['user_session'])
+                    ->set($data_filter)
+                    ->where($where)
+                    ->execute();
+            }
+            //没有就插入，有就更新
+            else
+            {
+                $dups = array_diff_key($data_filter, [
+                    'logintime' => null,
+                ]);
+
+                list($id, $status) = db::insert(static::$table_config['user_session'])
+                    ->set($data_filter)
+                    ->dup($dups)
+                    ->ignore(true)
+                    ->execute();
+            }
+        } 
+        catch (\Exception $e) 
+        {
+            $status = min(-1, $e->getCode());
+        }
+
+        return $status;
+    }
+
+    /**
+     * 获取用户session列表
+     * @param  array  $data 
+     * @return array
+     */
+    public static function list_user_session(array $data):array
+    {
+        $data_filter = cls_filter::data([
+            'uid' => [
+                'type' => 'text', 'default' => null,
+                'required' => empty($data['client_id']) && empty($data['utma']) && empty($data['token'])
+            ],
+            'device_type' => ['type' => 'int', 'default' => null],
+            'token' => [
+                'type' => 'text', 'default' => null, 
+                'required' => empty($data['client_id']) && empty($data['utma']) && empty($data['uid'])
+            ],
+            'client_id' => [
+                'type' => 'text', 'default' => null, 
+                'required' => empty($data['token']) && empty($data['utma']) && empty($data['uid'])
+            ],
+            'utma' => [
+                'type' => 'text', 'default' => null, 
+                'required' => empty($data['token']) && empty($data['client_id']) && empty($data['uid'])
+            ],
+            'id' => [
+                'type' => 'text', 'default' => null],
+            '_config_' => ['filter_null' => true],
+        ], $data);
+    
+        if ( !is_array($data_filter) ) return [];
+
+        $where = [];
+        foreach($data_filter as $filed => $val)
+        {
+            $where[] = [$filed, is_array($val) ? 'IN' : '=', $val];
+        }
+
+        $ret = (array) db::select($data['fields'] ?? '*')
+            ->from(static::$table_config['user_session'])
+            ->where($where)
+            ->execute();
+    
+        return $ret;
+    }
+
+    /**
+     * 获取用户token记录
+     * @param  string $token 
+     * @param  string $type  
+     * @return bool
+     */
+    public static function get_user_session(string $token, string $type = 'token')
+    {
+        //只能按照下面这几种类型删除
+        $vali_types = ['token', 'utma', 'client_id', 'uid', 'id'];
+        if ( !in_array($type, $vali_types) ) return false;
+        $data = static::list_user_session([$type => $token]);
+        //非按用户取，返回一条数据
+        if ( $type != 'uid ') 
+        {
+            $data = reset($data);
+        }
+
+        return $data;
+    }
+
+    /**
+     * 删除session
+     * @param  array  $data 
+     * @return 大于0表示成功
+     */
+    public static function delete_user_session(array $data)
+    {
+        $data_filter = cls_filter::data([
+            'uid' => [
+                'type' => 'text', 'default' => null,
+                'required' => empty($data['client_id']) && empty($data['utma']) && empty($data['token'])
+            ],
+            'device_type' => ['type' => 'int', 'default' => null],
+            'token' => [
+                'type' => 'text', 'default' => null, 
+                'required' => empty($data['client_id']) && empty($data['utma']) && empty($data['uid'])
+            ],
+            'client_id' => [
+                'type' => 'text', 'default' => null, 
+                'required' => empty($data['token']) && empty($data['utma']) && empty($data['uid'])
+            ],
+            'utma' => [
+                'type' => 'text', 'default' => null, 
+                'required' => empty($data['token']) && empty($data['client_id']) && empty($data['uid'])
+            ],
+            'app_name' => ['type' => 'text', 'default' => self::$config['app_name'] ?? null],
+            'id' => ['type' => 'text', 'default' => null],
+            '_config_' => ['filter_null' => true],
+        ], $data);
+
+        $where = [];
+        foreach($data_filter as $filed => $val)
+        {
+            $where[] = [$filed, is_array($val) ? 'IN' : '=', $val];
+        }
+
+        if ( !$where ) return false;
+        $status = db::delete(static::$table_config['user_session'])
+            ->where($where)
+            ->execute();
+
+        return $status;
+    }
+
+    /**
+     * 删除用户session
+     * @param  string $token 
+     * @param  string $type  
+     * @return bool
+     */
+    public static function delete_user_session_by_type(?string $token, string $type = 'token')
+    {
+        //只能按照下面这几种类型删除
+        $vali_types = ['token', 'utma', 'client_id'];
+        if ( !in_array($type, $vali_types)) return false;
+        return self::delete_user_session([$type => $token]);
+    }
+
+    /**
      * 验证登录成功后对用户进行授权
      * 登录接口才会到这里来
      *
@@ -190,6 +406,27 @@ class cls_auth
 
         // 返回即可，不需要更新到用户缓存，否则每个端登录都会替换缓存的数据，没有意义
         $user['session_id'] = session_id();
+        // 如果配置了需要绑定uid,才会进行uid和token的绑定，方便通过uid操作token
+        if ( !empty(self::$config['app_name']) && !empty(static::$table_config['user_session']) ) 
+        {
+            // 插入用户登陆session
+            static::$utma && $status = static::save_user_session([
+                'uid'         => $user['uid'],
+                'utma'        => static::$utma,
+                'token'       => session_id(),
+                'username'    => $user['username'],
+                'address'     => $_SERVER['COUNTRY_LONG'] ?? COUNTRY,
+                'version'     => static::$version,
+                'os_version'  => static::$os_version,
+                'os'          => static::$os,
+                'device'      => static::$device,
+                'device_type' => static::$device_type, 
+                'loginip'     => req::ip(),
+                'logintime'   => time(),
+                'app_name'    => self::$config['app_name'],
+            ]);
+        }
+  
         return $user;
     }
 
@@ -204,7 +441,7 @@ class cls_auth
      */
     public static function auth(string $ct, string $ac)
     {
-        $uid = cls_arr::get($_SESSION, static::$auth_hand.'_uid', 0);
+        $uid = self::get_uid();
 
         /** @var cls_auth $auth */
         $auth = static::instance($uid);
@@ -254,7 +491,7 @@ class cls_auth
 
         $keeptime = $keeptime ?? static::$config['cookie']['expire'];
         // 不管是web session 还是 api token，都保存到session
-        $_SESSION[static::$auth_hand.'_uid'] = $uid;
+        $_SESSION[self::_session_uid_key()] = $uid;
         static::set_cookie('uid', $uid, $keeptime);
 
         return true;
@@ -511,15 +748,35 @@ class cls_auth
         cache::del(static::$_cache_prefix.'_purview_mods'.'-'.$uid);
     }
 
+    private static function _session_uid_key()
+    {
+        return static::$auth_hand.'_uid';
+    }
+
+    /**
+     * 获取当前uid
+     * @return string | null
+     */
+    public static function get_uid()
+    {
+        return $_SESSION[self::_session_uid_key()] ?? 0;
+    }
+
     /**
      * 注销登录
      */
     public function logout()
     {
         // 清空SESSION
-        if( !empty($_SESSION[static::$auth_hand.'_uid']) ) 
+        if( false != ($sess_id = self::get_uid()) ) 
         {
-            $_SESSION[static::$auth_hand.'_uid'] = '';
+            // 如果配置了需要绑定uid,才会进行uid和token的绑定，方便通过uid操作token
+            if ( !empty(self::$config['app_name']) && !empty(static::$table_config['user_session']) ) 
+            {
+                self::delete_user_session_by_type($sess_id);
+            }
+    
+            $_SESSION[self::_session_uid_key()] = '';
             session_destroy();
         }
         // 删除COOKIE中的uid
@@ -711,14 +968,14 @@ class cls_auth
                 break;
             }
         }
-
+        
         $user = $this->get_user();
         db::insert(static::$table_config['user_oplog'])
             ->set([
                 'session_id' => session_id(),
                 'uid'        => $user['uid'],
                 'username'   => $user['username'],
-                'msg'        => addslashes($msg),
+                'msg'        => substr(addslashes($msg), 0, 150),
                 'do_ip'      => req::ip(),
                 'do_country' => req::country(),
                 'do_time'    => time(),
