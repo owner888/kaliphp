@@ -206,6 +206,12 @@ class cls_arr
         return true;
     }    
 
+    // 删除数组中值为0的
+    public static function del_zero_value(array &$array)
+    {
+        return array_filter($array, function($val) { return $val != 0; });
+    }   
+
     /**
      * Pluck an array of values from an array.
      *
@@ -623,7 +629,7 @@ class cls_arr
      * @param   bool   $remove  if true, removes the matched elements.
      * @return  array
      */
-    public static function filter_keys($array, $keys, $remove = false)
+    public static function filter_keys($array, $keys, $remove = false): array
     {
         $return = array();
         foreach ($keys as $key)
@@ -638,6 +644,24 @@ class cls_arr
             }
         }
         return $remove ? $array : $return;
+    }
+
+    /**
+     * 二维数组方式过滤keys 
+     * 
+     * @param   array  $arrays  the array list to filter.
+     * @param   array  $keys    the keys to filter
+     * @param   bool   $remove  if true, removes the matched elements.
+     * 
+     * @return void
+     */
+    public static function filter_keys_list($arrays, $keys, $remove = false): array
+    {
+        foreach ($arrays as $key => $array) 
+        {
+            $arrays[$key] = self::filter_keys($array, $keys, $remove);
+        }
+        return $arrays;
     }
 
     /**
@@ -1143,15 +1167,16 @@ class cls_arr
      * @return void
      *
      * exp:
-     * $data = array (
+       $data = array (
            array ( "name" => "bill", "age" => 40 ),
            array ( "name" => "john", "age" => 30 ),
            array ( "name" => "jack", "age" => 50 ),
            array ( "name" => "john", "age" => 25 )
        );
-       print_r( cls_arr::arr_search( $data , "age>=30" ) );
-       print_r( cls_arr::arr_search( $data , "name=='john'" ) );
-       print_r( cls_arr::arr_search( $data , "age>25 and name=='john'" ) );
+       print_r( cls_arr::arr_search($data, "age>=30") );
+       print_r( cls_arr::arr_search($data, "name=='john'") );
+       print_r( cls_arr::arr_search($data, "age>25 and name=='john'") );
+       print_r( cls_arr::arr_search($data, "age>40 and name=='bill,jack'") );
      */
     public static function arr_search(array $array, string $expression) 
     {
@@ -1161,10 +1186,35 @@ class cls_arr
         }
 
         $result = array();
-        $expression = preg_replace_callback( "/([^\s]+?)([=<>!]{1,})/" , function($match) {
-            return "\$a['{$match[1]}'] {$match[2]} ";
+        //$expression = preg_replace_callback( "/([^\s]+?)([=<>!]{1,})/" , function($match) {
+            //return "\$a['{$match[1]}'] {$match[2]} ";
+        //}, $expression );
+        //foreach ( $array as $a ) if ( eval ( "return $expression;" ) ) $result [] = $a ;
+        $expression = preg_replace_callback( "/([^\s]+?)([=<>!]{1,})[A-Za-z0-9,']+/" , function($match) {
+            $item_arr = explode($match[2], $match[0]);
+            if ( $match[2] == '==' && strpos($match[0], ',') !== false )
+            {
+                $item_arr = explode($match[2], $match[0]);
+                if (is_string($item_arr[1]))
+                {
+                    $item_arr[1] = str_replace('\'', '', $item_arr[1]);
+                    $item_arr[1] = array_map(function($item){return "'".$item."'";}, explode(',', $item_arr[1]));
+                    $item_arr[1] = implode(',', $item_arr[1]);
+                }
+                return 'in_array($a[\''.$item_arr[0].'\'],['.$item_arr[1].'])';
+            }
+            return "\$a['{$match[1]}'] {$match[2]} {$item_arr[1]}";
         }, $expression );
-        foreach ( $array as $a ) if ( eval ( "return $expression;" ) ) $result [] = $a ;
+
+        if ( count($array) == count($array, COUNT_RECURSIVE) ) 
+        {
+            $a = $array;
+            if ( eval ( "return $expression;" ) ) $result = $a ;
+        } 
+        else 
+        {
+            foreach ( $array as $a ) if ( eval ( "return $expression;" ) ) $result [] = $a ;
+        }
         return $result ;
     }
 
