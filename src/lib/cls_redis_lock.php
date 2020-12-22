@@ -70,17 +70,6 @@ class cls_redis_lock
                 return true;
             }
 
-            // 以秒为单位，返回给定key的剩余生存时间
-            $ttl = cls_redis::instance()->ttl($redis_key);
-            // ttl小于0 表示key上没有设置生存时间（key是不会不存在的，因为前面setnx会自动创建）
-            // 如果出现这种状况，那就是进程的某个实例setnx成功后 crash 导致紧跟着的expire没有被调用
-            // 这时可以直接设置expire并把锁纳为己用
-            if ($ttl < 0)
-            {
-                cls_redis::instance()->set($redis_key, $expire_at);
-                return true;
-            }
-
             // 循环请求锁部分
             // 如果没设置锁失败的等待时间 或者 已超过最大等待时间了，那就退出
             if ($timeout <= 0 || $timeout_at < microtime(true)) break;
