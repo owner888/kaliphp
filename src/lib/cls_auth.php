@@ -224,7 +224,7 @@ class cls_auth
         if ( !is_array($data_filter) ) return false;
         try 
         {
-            //只更新模式
+            // 只更新模式
             if ( $where ) 
             {
                 $status = db::update(static::$table_config['user_session'])
@@ -308,7 +308,7 @@ class cls_auth
      */
     public static function get_user_session(string $token, string $type = 'token')
     {
-        //只能按照下面这几种类型删除
+        // 只能按照下面这几种类型删除
         $vali_types = ['token', 'utma', 'client_id', 'uid', 'id'];
         if ( !in_array($type, $vali_types) ) return false;
         $data = static::list_user_session([$type => $token]);
@@ -612,6 +612,11 @@ class cls_auth
         }
 
         $data['uid']    = isset($data['uid']) ? $data['uid'] : util::random('web', 16);
+        // echo db::insert(static::$table_config['user'])
+        //    ->set($data)
+        //    ->dup($dups)
+        //    ->compile();
+        // exit;
         list(, $status) = db::insert(static::$table_config['user'])
            ->set($data)
            ->dup($dups)
@@ -795,7 +800,7 @@ class cls_auth
      * 
      * @return void
      */
-    public function save_login_history(array $user, int $loginsta = 0)
+    public function save_login_history(array $user, int $loginsta = 0, $session_id = null)
     {
         $ltime       = time();
         $loginip     = req::ip();

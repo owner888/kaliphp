@@ -81,6 +81,8 @@ class db_connection
      */
     protected $_set = array();
 
+    protected $_dups = [];
+
     /**
      * @var array  $_select  columns to select
      */
@@ -1899,8 +1901,8 @@ class db_connection
 
                 $value = 'JSON_SET('.implode(",", $tmp).')';
             }
-            //兼容`xxx`和values(`xxx`)
-            else if( !preg_match('#values\s*\([^\)]+\)#i', $value) )
+            // 兼容`xxx`和values(`xxx`)
+            else if( $value != null && !preg_match('#values\s*\([^\)]+\)#i', $value) )
             {
                 $value = $this->quote_value(array($value, $column));
             }

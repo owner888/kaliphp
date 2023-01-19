@@ -993,7 +993,7 @@ class cls_validate
                 $sign = 0;
                 for ( $i = 0; $i < 17; $i++ )
                 {
-                    $b = (int) $id{$i};
+                    $b = (int) $id[$i];
                     $w = $arr_int[$i];
                     $sign += $b * $w;
                 }

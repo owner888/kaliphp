@@ -185,7 +185,7 @@ class cls_filter
                     $val = cls_security::xss_clean($val);
                     break;
                 default:
-                    if ( function_exists($type)) 
+                    if ( function_exists($type) && $val != null ) 
                     {
                         $val = $type($val);
                     }

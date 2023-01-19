@@ -123,9 +123,10 @@ class errorhandler
      * trigger_error 直接到这里来
      * throw new Exception 先到 exception_handler，再到这里来
      * trigger_error 不会中断程序，只是警告；Exception 会中断程序
+     * 8.x 开始 error_handler 只接收 4 个参数，所以 $errcontext 需要给一个默认值
      *
      */
-    public static function error_handler($errno, $errstr, $errfile, $errline, $errcontext)
+    public static function error_handler($errno, $errstr, $errfile, $errline, $errcontext = [])
     {
         $err = self::format_errstr($errno, $errstr, $errfile, $errline, $errcontext);
         // 存在错误信息

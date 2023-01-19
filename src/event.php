@@ -233,7 +233,7 @@ class event
             // 是否允许跨域
             $allow_origin = config::instance('config')->get('security.allow_origin');
             $origin = req::server('HTTP_ORIGIN');
-            if ( in_array('*', $allow_origin) || in_array($origin, $allow_origin) ) 
+            if ( $allow_origin != NULL && (in_array('*', $allow_origin) || in_array($origin, $allow_origin)) ) 
             {
                 header("Access-Control-Allow-Origin: {$origin}");
                 header("Access-Control-Allow-Methods: GET, POST, PATCH, PUT, OPTIONS");

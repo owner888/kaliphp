@@ -30,6 +30,18 @@ class cls_profiler {
     // 当前实例
     protected static $_instance;
 
+    protected $_compile_benchmarks;
+    protected $_compile_config;
+    protected $_compile_controller_info;
+    protected $_compile_http_headers;
+    protected $_compile_uri_string;
+    protected $_compile_get;
+    protected $_compile_post;
+    protected $_compile_cookie_data;
+    protected $_compile_session_data;
+    protected $_compile_memory_usage;
+    protected $_compile_queries;
+
     public $enable_profiler = false;
 
     /**
