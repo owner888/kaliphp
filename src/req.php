@@ -710,6 +710,20 @@ class req
     }
 
     /**
+     * 前页
+     * 
+     * @param mixed $url
+     * @return void
+     * @author seatle <seatle@foxmail.com> 
+     * @created time :2018-06-29 12:03
+     */
+    public static function forword($gourl = '')
+    {
+        $gourl = empty(self::server('HTTP_REFERER')) ? $gourl : self::server('HTTP_REFERER');
+        return $gourl;
+    }
+
+    /**
      * 设置跳转页
      * 
      * @param string $gourl

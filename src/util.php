@@ -218,7 +218,7 @@ class util
      */  
     public static function second2time($seconds)
     {  
-        //$seconds = 3500;
+        // $seconds = 3500;
         $seconds = (int)$seconds;
         if ( $seconds < 0 ) 
         {

@@ -110,28 +110,26 @@ class tpl
             return;
         }
 
+        self::$output = self::$output ?? '';
         // 执行时间
         $elapsed_time = cls_benchmark::elapsed_time(  'total_execution_start', 'total_execution_end');
         // 执行内存
         $memory_usage = cls_benchmark::elapsed_memory('total_execution_start', 'total_execution_end');
 
         // 替换模板中执行时间、消耗内存的占位符
-        if (self::$output != null) 
+        if (strpos(self::$output, '{elapsed_time}') !== false or strpos(self::$output, '{memory_usage}') !== false)
         {
-            if (strpos(self::$output, '{elapsed_time}') !== false or strpos(self::$output, '{memory_usage}') !== false)
-            {
-                self::$output = str_replace(array('{elapsed_time}', '{memory_usage}'), array($elapsed_time, $memory_usage), self::$output);
-            }
+            self::$output = str_replace(array('{elapsed_time}', '{memory_usage}'), array($elapsed_time, $memory_usage), self::$output);
+        }
 
-            if (strpos(self::$output, '{exec_time}') !== false or strpos(self::$output, '{mem_usage}') !== false)
-            {
-                $bm = kali::app_total();
-                self::$output = str_replace(
-                    array('{exec_time}', '{mem_usage}'),
-                    array(round($bm[0], 4), round($bm[1] / pow(1024, 2), 3)),
-                    self::$output
-                );
-            }
+        if (strpos(self::$output, '{exec_time}') !== false or strpos(self::$output, '{mem_usage}') !== false)
+        {
+            $bm = kali::app_total();
+            self::$output = str_replace(
+                array('{exec_time}', '{mem_usage}'),
+                array(round($bm[0], 4), round($bm[1] / pow(1024, 2), 3)),
+                self::$output
+            );
         }
 
         //开启程序分析
