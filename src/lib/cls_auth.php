@@ -547,7 +547,7 @@ class cls_auth
             }
         }
 
-        //统一在get_user处理，其他地方不需要处理
+        // 统一在 get_user 处理，其他地方不需要处理
         if ( isset($user['avatar']) && $user['avatar']) 
         {
             $user['avatar'] = self::get_user_avatar($user['avatar']);
@@ -596,7 +596,7 @@ class cls_auth
      * @param array $data
      * @return void
      */
-    public function save_user( $data )
+    public function save_user($data)
     {
         // 明文加密字段
         foreach(['password', 'fake_password', 'onetime_password'] as $f)
@@ -612,11 +612,6 @@ class cls_auth
         }
 
         $data['uid']    = isset($data['uid']) ? $data['uid'] : util::random('web', 16);
-        // echo db::insert(static::$table_config['user'])
-        //    ->set($data)
-        //    ->dup($dups)
-        //    ->compile();
-        // exit;
         list(, $status) = db::insert(static::$table_config['user'])
            ->set($data)
            ->dup($dups)
@@ -684,10 +679,10 @@ class cls_auth
     public static function del_cookie($key, $encode = true)
     {
         $key = static::$auth_hand.'_'.$key;
-        setcookie($key, '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain']);
+        setcookie($key, '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
         if( $encode )
         {
-            setcookie($key.'_kaliphp', '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain']);
+            setcookie($key.'_kaliphp', '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
         }
     }
 
