@@ -646,7 +646,7 @@ class db_connection
             return null;
         }
 
-        $result = null;
+        $result = [];
         if ($this->_type === db::SELECT)
         {
             if ( $this->_as_result ) 
@@ -671,7 +671,7 @@ class db_connection
                 mysqli_free_result($this->_result);
                 if ( empty($rows[0]) && empty($params['index']) ) 
                 {
-                    $result = null;
+                    $result = [];
                 }
                 elseif ( $this->_as_field ) 
                 {
@@ -1887,22 +1887,22 @@ class db_connection
                 $value = $this->_parameters[$value];
             }
 
-            //json字段
+            // json字段
             if( is_array($value) && false != $this->_check_json_field($column) )
             {
                 $tmp = [$column];
                 foreach($value as $f => $ff)
                 {
                     $ff    = is_array($ff) ? json_encode((object)$ff, JSON_UNESCAPED_UNICODE) : $ff;
-                    //string的才加‘’,否则不加
+                    // string 才加 '', 否则不加
                     $ff    = is_string($ff) ? "'{$ff}'" : $ff;
                     $tmp[] = "'$.\"{$f}\"', {$ff}";
                 }
 
                 $value = 'JSON_SET('.implode(",", $tmp).')';
             }
-            // 兼容`xxx`和values(`xxx`)
-            else if( $value != null && !preg_match('#values\s*\([^\)]+\)#i', $value) )
+            // 兼容 `xxx` 和 values(`xxx`)
+            else if(!preg_match('#values\s*\([^\)]+\)#i', $value ?? ''))
             {
                 $value = $this->quote_value(array($value, $column));
             }
@@ -2007,29 +2007,29 @@ class db_connection
         return $this;
     }
 
-    //innodb排他行锁，其他事物不能读和改
+    // innodb排他行锁，其他事物不能读和改
     public function lock($value = true) 
     {
         $this->_atts['lock'] = (bool) $value;
         return $this;
     }
 
-    //innodb共享锁，多个事物可以同时获取共享锁，但是大于1个事务同时获取共享锁后，没法更新
+    // innodb共享锁，多个事物可以同时获取共享锁，但是大于1个事务同时获取共享锁后，没法更新
     public function share($value = true) 
     {
         $this->_atts['share'] = (bool) $value;
         return $this;
     }
 
-    //忽略错误
+    // 忽略错误
     public function ignore($value = true) 
     {
         $this->_atts['ignore'] =(bool) $value;
         return $this;
     }
 
-    //强制使用索引，非主键索引，行数占比太多，优化器不会跑索引，而是全表扫描
-    //一些行级锁的操作，使用的是非主键的索引的必须带上，否则会死锁
+    // 强制使用索引，非主键索引，行数占比太多，优化器不会跑索引，而是全表扫描
+    // 一些行级锁的操作，使用的是非主键的索引的必须带上，否则会死锁
     public function force_index($index_name)
     {
         if( !empty($index_name) )
@@ -2081,7 +2081,7 @@ class db_connection
         return $this;
     }
 
-    //主要用于更新或者删除是是否有条件
+    // 主要用于更新或者删除是是否有条件
     public function has_where() 
     {
         foreach(self::$_instance as $instance)
