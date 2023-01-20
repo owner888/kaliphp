@@ -69,7 +69,7 @@ class kali
      * @access	public
      * @return	void
      */
-    public static function registry(array $config = null)
+    public static function registry(?array $config = null)
     {
         // 获取配置
         self::$config = $config;
@@ -93,6 +93,7 @@ class kali
         {
             exit(self::fmt_code(1007, [self::$log_root]));
         }
+
         if ( !is_writable(self::$cache_root) && !@mkdir(self::$cache_root) )
         {
             exit(self::fmt_code(1007, [self::$cache_root]));
@@ -125,7 +126,7 @@ class kali
         // idea://open?file=%file&line=%line
         defined('SYS_EDITOR') or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
 
-        //定义保护
+        // 定义保护
         defined('RUN_SHELL') or define('RUN_SHELL', false);
         defined('SYS_DEBUG') or define('SYS_DEBUG', false);
         defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
@@ -146,7 +147,7 @@ class kali
         defined('KALI_START_MEM')  or define('KALI_START_MEM',  memory_get_usage());
         defined('KALI_TIMESTAMP')  or define('KALI_TIMESTAMP',  time());
 
-        //event 默认事件
+        // event 默认事件
         defined('beforeAction') or define('beforeAction', 1);
         defined('afterAction') or define('afterAction', 2);
         defined('onException') or define('onException', 3);
