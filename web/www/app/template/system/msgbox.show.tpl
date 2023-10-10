@@ -10,13 +10,13 @@
     .msgbox h4{ font-size:14px; line-height:24px; margin-bottom:10px; }
  </style>
 <base target='_self' />
-<title> <{$title}> </title>
+<title> <{$app_name}> </title>
 </head>
 <body>
 
     <div class="msgbox">
         <div style="border:1px #909090 solid;">
-            <h2><{$title}></h2>
+            <h2><{$app_name}></h2>
             <div class="content">
 	        	<h4> <{$msg}> </h4>
 				<{$jumpmsg}>

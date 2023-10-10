@@ -103,11 +103,11 @@ cache::set("info", "userinfo", $data, 86400);
 if( !is_array($data) ) $data = array($data);
 foreach( $data as $key => $val )</code></pre>
             <p>如：</p>
-            <pre><code class="php">$name = "seatle"; // 姓名
+            <pre><code class="php">$name = "test"; // 姓名
 $sex = 1; // 性别
 $age = 25; // 年龄</code></pre>
             <p>像上述代码，一旦定义变量多起来，就会犹如杂草丛生，建议按如下方式对齐：</p>
-            <pre><code class="php">$name = "seatle"; // 姓名
+            <pre><code class="php">$name = "test"; // 姓名
 $sex  = 1;        // 性别
 $age  = 25;       // 年龄</code></pre>
 
@@ -222,7 +222,7 @@ $app_config = [
     'menu_file'  => 'menu.xml',                             // 获取菜单和用户权限配置
 ];
 kali::registry( $app_config );
-tpl::assign('title', 'KaliPHP DEMO');
+tpl::assign('app_name', 'KaliPHP DEMO');
 // 运行MVC
 kali::run();</code></pre>
     </div>

@@ -19,7 +19,6 @@ use kaliphp\cache;
 use kaliphp\event;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
-use kaliphp\lib\cls_auth;
 use extend\pub_define;
 
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);
@@ -59,7 +58,7 @@ class kali
      */
     public static $auth = null;
 
-    // 当前ct和ac
+    // 当前 Controller 和 Action
     public static $ct = '';
     public static $ac = '';
 
@@ -69,10 +68,22 @@ class kali
      * @access	public
      * @return	void
      */
-    public static function registry(?array $config = null)
+    public static function registry(?array $config = [])
     {
         // 获取配置
         self::$config = $config;
+
+        defined('ENVPATH') or define('ENVPATH', '.env');
+        if (file_exists(ENVPATH) && ($envs = parse_ini_file(ENVPATH))) 
+        {
+            foreach ($envs as $k => $v) 
+            {
+                if (strpos($k, "# ") === false) // 过滤注释的行
+                {
+                    $_ENV[$k] = $v;
+                }
+            }
+        }
 
         if ( !defined('APPPATH'))
         {
@@ -400,9 +411,7 @@ class kali
             memory_get_peak_usage() - KALI_START_MEM,
         );
     }
-
 }
-
 
 /* vim: set expandtab: */
 

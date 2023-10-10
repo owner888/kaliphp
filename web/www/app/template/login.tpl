@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
 <head>
-    <title>登录到 <{$title}></title>
+    <title>登录到 <{$app_name}></title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <!-- 移动设备 viewport -->
@@ -27,7 +27,7 @@
                 <div class="page-brand vertical-align-middle">
                     <div class="brand">
                         <img class="brand-img" src="static/frame/img/logo-white-min.svg" height="50" />
-                        <span><{$title}></span>
+                        <span><{$app_name}></span>
                     </div>
                     <!--<h2 class="hidden-sm">Admui 通用管理系统快速开发框架</h2>-->
                     <!--<ul class="list-icons hidden-sm">-->
@@ -75,10 +75,10 @@
                     <div class="vertical-align-middle" >
                         <div class="brand visible-xs text-center">
                             <img class="brand-img" src="static/frame/img/logo.svg" height="50" />
-                            <span><{$title}></span>
+                            <span><{$app_name}></span>
                         </div>
                         <h3 class="hidden-xs">
-                            登录 <{$title}>
+                            登录 <{$app_name}>
                             <!--<div class="btn-group version-toggle">-->
                                 <!--<a href="javascript:;" class="btn btn-default btn-outline btn-sm">pjax版</a>-->
                                 <!--<a href="javascript:;" class="btn btn-default btn-outline btn-sm active">iframe版</a>-->
@@ -92,7 +92,7 @@
                                 <!--<label class="sr-only" for="identity">选择身份</label>-->
                                 <!--<select class="form-control" id="identity" data-plugin="select2">-->
                                     <!--<option value="0">我自己</option>-->
-                                    <!--<option value="wuliaokaka8@gmail" data-password="123456">王佳琪</option>-->
+                                    <!--<option value="" data-password="123456">王佳琪</option>-->
                                 <!--</select>-->
                             <!--</div>-->
                             <div class="form-group">
@@ -206,8 +206,8 @@
                     <{/if}>
                 </div>
                 <footer class="page-copyright">
-                    <p>傲创网络科技 &copy;
-                        <a href="#" target="_blank">ultron.com</a>
+                    <p>KaliPHP ©
+                        <a href="#" target="_blank">doc.kaliphp.com</a>
                     </p>
                 </footer>
             </div>

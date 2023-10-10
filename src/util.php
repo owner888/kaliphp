@@ -21,7 +21,6 @@ use kaliphp\lib\cls_snowflake;
  *
  * 替代lib_common
  *
- * @author seatle<seatle@foxmail.com>
  * @version $Id$  
  */
 class util
@@ -218,7 +217,7 @@ class util
      */  
     public static function second2time($seconds)
     {  
-        // $seconds = 3500;
+        //$seconds = 3500;
         $seconds = (int)$seconds;
         if ( $seconds < 0 ) 
         {
@@ -231,18 +230,18 @@ class util
             // 大于一天
             if( $seconds>24*3600 )
             {
-                $days		= (int)($seconds/86400);
-                $days_num	= $days."天";
-                $seconds	= $seconds%86400;//取余
+                $days       = (int)($seconds/86400);
+                $days_num   = $days."天";
+                $seconds    = $seconds%86400;//取余
             }
             $hours = intval($seconds/3600);
             $minutes = $seconds%3600;//取余下秒数
-            $time = $days_num.$hours."小时".gmstrftime('%M分钟%S秒', $minutes);
+            $time = $days_num.$hours."小时".date('i分钟s秒', $minutes);
         }
         // 等于一个小时
         elseif( $seconds == 3600 )
         {
-            $time = gmstrftime('1小时', $seconds);
+            $time = date('1小时', $seconds);
         }
         // 小于一小时
         else
@@ -250,17 +249,17 @@ class util
             // 大于一分钟
             if( $seconds>60 )
             {
-                $time = gmstrftime('%M分钟%S秒', $seconds);
+                $time = date('i分钟s秒', $seconds);
             }
             // 等于一分钟
             elseif( $seconds == 60 )
             {
-                $time = gmstrftime('1分钟', $seconds);
+                $time = date('1分钟', $seconds);
             }
             // 小于一分钟
             else 
             {
-                $time = gmstrftime('%S秒', $seconds);
+                $time = date('s秒', $seconds);
             }
         }
         return $time;
@@ -1273,7 +1272,6 @@ class util
      * 
      * @param mixed $text
      * @return void
-     * @author seatle <seatle@foxmail.com> 
      * @created time :2019-10-09 13:36
      */
     public static function arr_split_zh($text)

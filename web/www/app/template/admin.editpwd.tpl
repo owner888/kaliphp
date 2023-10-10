@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title><{$title}></title>
+    <title><{$app_name}></title>
     <link href="static/frame/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
     <link href="static/frame/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
     <link href="static/frame/css/animate.min.css" rel="stylesheet">
@@ -64,9 +64,9 @@
                         <div class="hr-line-dashed"></div>
 
                         <div class="form-group">
-                            <label class="col-sm-2 control-label"><code>*</code> 工作称呼:</label>
+                            <label class="col-sm-2 control-label"><code>*</code> 昵称:</label>
                             <div class="col-sm-10">
-                                <input type="text" name='realname' class="form-control" value="<{$v.realname}>" datatype="*" nullmsg="请输入工作称呼"/>
+                                <input type="text" name='realname' class="form-control" value="<{$v.realname}>" datatype="*" nullmsg="请输入昵称"/>
                             </div>
                         </div>
 

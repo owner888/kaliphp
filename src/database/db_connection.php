@@ -13,7 +13,6 @@
 namespace kaliphp\database;
 use kaliphp\config;
 use kaliphp\req;
-use kaliphp\util;
 use kaliphp\log;
 use kaliphp\db;
 use kaliphp\event;
@@ -22,7 +21,6 @@ use Exception;
 /**
  * 数据库类
  *
- * @author seatle<seatle@foxmail.com>
  * @version 2.0
  */
 class db_connection
@@ -932,7 +930,7 @@ class db_connection
 
         if (is_array($column))
         {
-            foreach ($column as $key => $val)
+            foreach ($column as $val)
             {
                 $value = $val[0];
                 $op = empty($val[1]) ? '' : $val[1];
@@ -1237,7 +1235,7 @@ class db_connection
         return $this;
     }
 
-     public function get_compiled_sql()
+    public function get_compiled_sql()
     {
         // Compile the SQL query
         $sql = $this->compile();
@@ -1495,7 +1493,7 @@ class db_connection
         // $sql = "SHOW COLUMNS FROM $table"; //和下面的语句效果一样
         $rows = db::get_all("Desc `{$table}`");
         $fields = array();
-        foreach ($rows as $k => $v)
+        foreach ($rows as $v)
         {
             // 过滤自增主键
             // if ($v['Key'] != 'PRI')
@@ -2284,8 +2282,6 @@ class db_connection
      * @param string $select    是否SELECT子句里面的参数，是才能带AS匿名
      * @param string $inside    是否从SUM、MIX、MIN等函数里面提取出来的字段名
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2018-03-16 14:02
      */
     public function quote_field($value, $select = true, $inside = false)
     {

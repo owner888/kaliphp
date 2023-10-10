@@ -28,7 +28,10 @@ class cls_page
         // 每页显示条数
         //$page_size = isset($page_size) ? $page_size : req::item('page_size', 20);
         // 默认调用初始化的页数，当用户选择了页数，就以用户选择为主
+        // 检查cookie是否有 table_page_size ,读取所为默认page_size
         $page_size = isset($prefix['page_size']) ? req::item('page_size', 20) : $page_size;
+        $page_size = isset($_COOKIE["table_page_size"]) ? $_COOKIE["table_page_size"] : $page_size;
+
         unset($prefix[$page_name]);
         $url_prefix = '?'.http_build_query($prefix);
 
@@ -36,6 +39,7 @@ class cls_page
         $current_page = req::item($page_name, 1);
         $offset = ( $current_page - 1 ) * $page_size;
 
+        // 总页数
         $total_page = ceil($total_rs / $page_size);
 
         // 如果当前页大于总页数
@@ -50,9 +54,9 @@ class cls_page
             {
                 $prefix[$page_name] = $total_page;
             }
-            $jump_url = '?'.http_build_query($prefix);
-            header("Location: {$jump_url}");
-            exit;
+            // $jump_url = '?'.http_build_query($prefix);
+            // header("Location: {$jump_url}");
+            // exit;
         }
 
         // 总页数不到二页返回空
@@ -73,16 +77,14 @@ class cls_page
             $pages .= "<select class=\"page_size\" onchange='pageFormSubmit();'>";
             $selected = $page_size == 10 ? "selected" : "";
             $pages .= "<option value='10' {$selected}>10</option>";
+            $selected = $page_size == 15 ? "selected" : "";
+            $pages .= "<option value='15' {$selected}>15</option>";
             $selected = $page_size == 20 ? "selected" : "";
             $pages .= "<option value='20' {$selected}>20</option>";
             $selected = $page_size == 50 ? "selected" : "";
             $pages .= "<option value='50' {$selected}>50</option>";
-            $selected = $page_size == 100 ? "selected" : "";
-            $pages .= "<option value='100' {$selected}>100</option>";
-            $selected = $page_size == 200 ? "selected" : "";
-            $pages .= "<option value='200' {$selected}>200</option>";
-            $selected = $page_size == 500 ? "selected" : "";
-            $pages .= "<option value='500' {$selected}>500</option>";
+            $selected = $page_size == '-1' ? "selected" : "";
+            $pages .= "<option value='-1' {$selected}>自定义</option>";
             $pages .= "</select> ";
             $pages .= "<span>共{$total_rs}条</span> \n";
         }
@@ -148,7 +150,7 @@ class cls_page
         // 输入框跳转
         if ($jump_info)
         {
-            $pages .= " <input type=\"text\" class=\"page_no\" value=\"{$current_page}\" /><button type='button' class='btn' onclick=\"javascript:pageFormSubmit();\">Go</button>";
+            $pages .= " <input type=\"text\" class=\"page_no\" value=\"{$current_page}\" id='custom_page_val' /><button type='button' class='btn' onclick=\"javascript:pageFormSubmit();\">Go</button>";
         }
 
         $pages .= '</div>';

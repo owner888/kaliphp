@@ -2,7 +2,7 @@
 // 上传设置
 return [
     'filepath'      => './uploads',
-    'filelink'      => 'http://uploads.kaliphp.com',
+    'filelink'      => 'https://uploads.kaliphp.com',
     'dir_num'       => 128,     // 目录数量
     'max_size'      => 1024,    // 允许上传图片大小的最大值（单位 KB），设置为 0 表示无限制
     'file_max_size' => 0,       // 允许上传文件大小的最大值（单位 KB），设置为 0 表示无限制

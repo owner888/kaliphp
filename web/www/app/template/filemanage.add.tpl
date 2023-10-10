@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><{$title}></title>
+    <title><{$app_name}></title>
     <link href="static/frame/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
     <link href="static/frame/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
     <link href="static/frame/css/animate.min.css" rel="stylesheet">
@@ -169,11 +169,6 @@
 <script src="static/frame/js/main.js"></script>
 <script src="static/frame/js/validform.js"></script>
 <script src="static/frame/js/newvalidform.js"></script>
-<script>
-    function hideBtnFn(){
-        $(".hide").hide();
-    };
-</script>
 </body>
 </html>
 

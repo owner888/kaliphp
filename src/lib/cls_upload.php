@@ -214,7 +214,7 @@ class cls_upload
      * @param float $max_file_age           Temp file age in seconds 5x3600=18000
      * @return array
      */
-    public static function upload_chunked( $formname = 'file', $dir = 'file', $guid, $chunk = 0, $chunks = 1, $thumb_w = 0, $thumb_h = 0, $cleanup_target_dir = true, $max_file_age = 18000 )
+    public static function upload_chunked($formname = 'file', $dir = 'file', $guid = 'guid', $chunk = 0, $chunks = 1, $thumb_w = 0, $thumb_h = 0, $cleanup_target_dir = true, $max_file_age = 18000)
     {
         $dir = self::filter_path($dir);
 
@@ -412,17 +412,17 @@ class cls_upload
                 'realname' => $realname,
                 'filename' => $filename,
                 'filelink' => $filelink,
+                'realpath' => realpath(self::$config['filepath']),
+                'file_ext' => $file_ext,
             );
         }
     }
 
     public static function thumb( $upload_dir, $filename, $file_ext = 'jpg', $thumb_w = 0, $thumb_h = 0 )
     {
-        $pathinfo = getimagesize($upload_dir.'/'.$filename);
-        //var_dump($upload_dir.'/'.$filename);    
-        //var_dump($pathinfo);    
-        $width  = $pathinfo[0];
-        $height = $pathinfo[1];
+        // $pathinfo = getimagesize($upload_dir.'/'.$filename);
+        // $width  = $pathinfo[0];
+        // $height = $pathinfo[1];
 
         // 缩略图的临时目录
         $filepath_tmp = self::$config['filepath'].'/tmp';

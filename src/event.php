@@ -32,7 +32,6 @@ defined('onSql') or define('onSql', 'onSql');
  * 
  * @version 2.7.0
  * @copyright 1997-2019 The PHP Group
- * @author seatle <seatle@foxmail.com> 
  * @created time :2019-05-16
  */
 class event

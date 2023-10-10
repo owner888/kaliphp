@@ -58,10 +58,6 @@ class ctl_upload
     
     /**
      * HTML5 图片字节流方式上传
-     * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2018-07-18 17:18
      */
     public function upload_html5()
     {

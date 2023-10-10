@@ -47,10 +47,9 @@ class lang
     /**
      * Load a language file
      * 
-     * @param   mixed   $langfile   Language file name
-     * @param   string  $idiom      Language name (english, etc.)
+     * @param  mixed   $langfile   Language file name
+     * @param  string  $idiom      Language name (english, etc.)
      * @return void
-     * @author seatle <seatle@foxmail.com> 
      * @created time :2017-12-07 17:17
      */
     public static function load($langfile, $idiom = '')

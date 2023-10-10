@@ -26,7 +26,6 @@ class cls_benchmark
      * 
      * @param mixed $name
      * @return void
-     * @author seatle <seatle@foxmail.com> 
      * @created time :2017-01-12 11:30
      */
     public static function mark($name, $value = '')
@@ -44,8 +43,6 @@ class cls_benchmark
      * @param string $point2
      * @param int $decimals
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2017-01-12 11:30
      */
     public static function elapsed_time($point1 = '', $point2 = '', $decimals = 4)
     {
@@ -74,8 +71,6 @@ class cls_benchmark
      * @param string $point2
      * @param int $decimals
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2017-01-12 11:30
      */
     public static function elapsed_memory($point1 = '', $point2 = '', $decimals = 2)
     {
@@ -104,8 +99,6 @@ class cls_benchmark
      * @param string $point2
      * @param int $decimals
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2017-01-12 11:30
      */
     public static function elapsed_memory_peak($point1 = '', $point2 = '', $decimals = 2)
     {
@@ -131,8 +124,6 @@ class cls_benchmark
      * Memory Usage
      * 
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2017-01-12 11:30
      */
     public static function memory_usage()
     {

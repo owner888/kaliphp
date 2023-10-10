@@ -12,13 +12,12 @@
 
 namespace kaliphp;
 
-use kaliphp\kali;
 use kaliphp\config;
 use kaliphp\util;
-use kaliphp\cache;
 use kaliphp\tpl;
 use kaliphp\log;
 use kaliphp\req;
+use kaliphp\resp;
 use kaliphp\lib\cls_benchmark;
 
 class errorhandler
@@ -90,7 +89,7 @@ class errorhandler
 
         // exception_handler 是直接调用的 error_handler
         // 如果 error_handler 函数还抛出异常，这里就会到这里来
-        //$last_error = error_get_last();
+        // $last_error = error_get_last();
 
         // Set a mark point for benchmarking
         cls_benchmark::mark('loading_time:_base_classes_end');
@@ -98,22 +97,22 @@ class errorhandler
         // 输出HTML
         tpl::output();
 
-        // 如果有错误信息，显示
+        // 如果有错误信息则显示，有警告的情况下，会导致已经输出的 json 后面又拼接这个错误 json，导致前端无法解开
         self::show_error();
 
         // 运行放进后台的操作
         util::shutdown_function(null, array(), true);
 
-        //$config = config::instance('cache')->get();
-        //$sess_config = $config['session'];
+        // $config = config::instance('cache')->get();
+        // $sess_config = $config['session'];
         // 这里的执行在session::write()之前，释放会导致session无法写入
         // 所以session如果采用cache方式，这里不要释放，在 sesson::write() 里面释放
         // 没有启动session 或者 session类型不是cache的情况下
         // 反正是长链，缓存不要关了，否则session_regenerate_id会出问题
-        //if( !session_id() || $sess_config['type'] != 'cache' ) 
-        //{
-            //cache::free();
-        //}
+        // if( !session_id() || $sess_config['type'] != 'cache' ) 
+        // {
+        //     cache::free();
+        // }
     }
 
 
@@ -184,7 +183,7 @@ class errorhandler
                 // API接口不需要返回那么详细的html内容
                 if ( req::is_json() ) 
                 {
-                    util::response_error(-1, self::$_debug_error_msg);
+                    resp::response_error(-500, self::$_debug_error_msg);
                 }
                 else 
                 {
@@ -232,12 +231,12 @@ class errorhandler
             }
         }
 
-        //// 生产环境不理会普通的警告错误
-        //$not_save_error = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_NOTICE, E_USER_WARNING, E_WARNING ];
-        //if( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
-        //{
+        // 生产环境不理会普通的警告错误
+        // $not_save_error = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_NOTICE, E_USER_WARNING, E_WARNING ];
+        // if( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
+        // {
         //    return '@';
-        //}
+        // }
 
         // 错误文件不存在
         if( !is_file($errfile) )
@@ -372,7 +371,7 @@ class errorhandler
             else
             {
                 $cutime = microtime(true);
-                $etime = sprintf('%0.4f', $cutime - $_debug_mt_time);
+                $etime = sprintf('%0.4f', $cutime - self::$_debug_mt_time);
                 $m = sprintf('%0.2f', memory_get_usage()/1024/1024);
                 self::$_debug_mt_info .= "{$optmsg}: 当前内存 {$m} MB 用时：{$etime} 秒<br />\n";
                 self::$_debug_mt_time = $cutime;

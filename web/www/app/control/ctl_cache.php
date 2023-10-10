@@ -37,10 +37,6 @@ class ctl_cache
 
     /**
      * redis_info Redis服务器信息
-     * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2015-12-18 11:28
      */
     public function redis_info()
     {
@@ -65,10 +61,6 @@ class ctl_cache
     
     /**
      * 根据keys查询
-     * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2015-12-18 11:28
      */
     public function redis_keys()
     {
@@ -100,10 +92,6 @@ class ctl_cache
 
     /**
      * 显示缓存内容
-     * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2015-12-18 11:28
      */
     public function show_cache()
     {
@@ -137,10 +125,6 @@ class ctl_cache
 
     /**
      * 删除Redis对应Key的内容
-     * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2015-12-18 11:28
      */
     public function del()
     {
@@ -158,10 +142,6 @@ class ctl_cache
 
     /**
      * 清除缓存
-     * 
-     * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2016-09-02 12:05
      */
     public function clear()
     {

@@ -7,7 +7,7 @@
             <menu name='内容修改' ct='content' ac='edit' display='none' />
             <menu name='内容删除' ct='content' ac='del' display='none' />
             <menu name='{lang.menu_content_category_manage}' ct='category' ac='index' />
-            <menu name='{lang.menu_content_category_add}'    ct='category' ac='add' display='none' />
+            <menu name='{lang.menu_content_category_create}'    ct='category' ac='add' display='none' />
             <menu name='{lang.menu_content_category_update}' ct='category' ac='edit' display='none' />
             <menu name='{lang.menu_content_category_delete}' ct='category' ac='del' display='none'  />
         </menu>

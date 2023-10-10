@@ -11,6 +11,7 @@
  */
 
 namespace kaliphp;
+
 use kaliphp\kali;
 use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_security;
@@ -24,7 +25,6 @@ use kaliphp\lib\cls_ip2location;
  * 禁止此文件以外的文件出现 $_POST、$_GET、$_FILES变量 以及 eval函数(用 req::myeval )
  * 以便于对主要黑客攻击进行防范
  *
- * @author seatle<seatle@foxmail.com>
  * @version 2.0
  */
 class req
@@ -149,8 +149,6 @@ class req
      * @param string $defaultvalue  默认值
      * @param string $formattype    格式化类型
      * @return mixed $return        返回值
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2014-12-16 10:48
      */
     public static function item( $index = null, $default = null, $filter_type = '' )
     {   
@@ -475,10 +473,23 @@ class req
     }
 
     /**
+     * 获得国家中文名
+     * 
+     * @param string $ip
+     * @return string
+     */
+    public static function country_cn($ip = '')
+    {
+        $tmp = config::instance('areacode')->get();
+        $map = array_column($tmp, null, 2); // 以第 2 个作为 key
+        return $map[self::country($ip)][0] ?? ' - ';
+    }
+
+    /**
      * 获得国家代码
      * 
      * @param string $ip
-     * @return void
+     * @return string
      */
     public static function country($ip = '')
     {
@@ -612,6 +623,17 @@ class req
         }
     }
 
+    // 是否请求中文数据
+    public static function is_cn()
+    {
+        if (req::server('HTTP_ACCEPT_LANGUAGE') == 'zh-cn') 
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * 客户端是否请求JSON编码内容 
      * Accept 属于请求头，表示客户端希望接收到的数据内容
@@ -626,7 +648,12 @@ class req
             return true;
         }
 
-        $http_accept = req::server('HTTP_ACCEPT');
+        if (req::server('HTTP_CONTENT_TYPE') == 'application/json') 
+        {
+            return true;
+        }
+
+        $http_accept = (string)req::server('HTTP_ACCEPT');
         $http_accepts = explode(';', $http_accept);
         $http_accept = $http_accepts[0];
         $http_accepts = explode(',', $http_accept);
@@ -714,7 +741,6 @@ class req
      * 
      * @param mixed $url
      * @return void
-     * @author seatle <seatle@foxmail.com> 
      * @created time :2018-06-29 12:03
      */
     public static function forword($gourl = '')
@@ -980,9 +1006,35 @@ class req
     {
         // get the input method and unify it
         $method = strtolower(self::method());
+        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
+
+        //命令行模式
+        if( $method === 'cli' ) 
+        {
+            // 把命令行参数转化为get参数
+            if ( count(cls_cli::$args) > 0) 
+            {
+                foreach (cls_cli::$args as $k=>$v) 
+                {
+                    if (!is_numeric($k)) 
+                    {
+                        $_GET[$k] = $v;
+                    }
+                }
+            }
+            
+            // 处理get
+            if( count($_GET) > 0 )
+            {
+                if( !$magic_quotes_gpc ) $_GET = self::add_s( $_GET );
+                if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
+                self::$gets = $_GET;
+            }
+            return;
+        }
 
         // get the content type from the header, strip optional parameters
-        $content_header = self::headers('Content-Type');
+        $content_header = (string) self::headers('Content-Type');
         if (($content_type = strstr($content_header, ';', true)) === false)
         {
             $content_type = $content_header;
@@ -1078,24 +1130,6 @@ class req
             // don't know how to handle it, allow the application to handle it
             // reset the method to avoid having it stored below!
             $method = null;
-        }
-
-        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
-
-        //命令行模式
-        if( $method === 'cli' ) 
-        {
-            // 把命令行参数转化为get参数
-            if ( count(cls_cli::$args) > 0) 
-            {
-                foreach (cls_cli::$args as $k=>$v) 
-                {
-                    if (!is_numeric($k)) 
-                    {
-                        $_GET[$k] = $v;
-                    }
-                }
-            }
         }
 
         // 处理get

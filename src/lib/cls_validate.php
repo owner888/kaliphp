@@ -38,7 +38,6 @@ use kaliphp\lang;
  * min[param]: "请输入一个最小为 {param} 的值"
  * range[minnum:maxnum]: "请输入一个介于 {minnum} 和 {maxnum} 之间的值",
  * 参考：http://joe5456536.blog.163.com/blog/static/85374773201282485744194/
- * @author  Seatle Yang <seatle@foxmail.com>
  * @version 0.1
  */
 class cls_validate
@@ -118,8 +117,6 @@ class cls_validate
      * 
      * @param array $data
      * @return void
-     * @author seatle <seatle@foxmail.com> 
-     * @created time :2018-04-28 23:58
      */
     public function set_data(array $data)
 	{

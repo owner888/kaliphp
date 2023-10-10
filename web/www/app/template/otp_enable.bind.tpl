@@ -79,8 +79,8 @@
     </article>
     <footer>
         <div class="" style="margin-top: 100px;text-align: center">
-            <p>傲创网络科技 ©
-                <a href="#" target="_blank">ultron.com</a>
+            <p>KaliPHP ©
+                <a href="#" target="_blank">doc.kaliphp.com</a>
             </p>
         </div>
     </footer>

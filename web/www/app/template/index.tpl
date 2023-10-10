@@ -6,7 +6,7 @@
     <meta name="renderer" content="webkit">
     <meta http-equiv="Cache-Control" content="no-siteapp" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title><{$title}></title>
+    <title><{$app_name}></title>
     <link href="static/img/favicon.ico" rel="shortcut icon">
     <link href="static/frame/css/bootstrap.min14ed.css" rel="stylesheet">
     <link href="static/frame/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
@@ -25,7 +25,7 @@
             <div class="nav-header">
                 <div class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#" aria-expanded="false">
-                        <span><{$title}></span>
+                        <span><{$app_name}></span>
                         <img src="static/frame/img/logo-white-min.svg" alt="">
                         <!--<i class="fa fa-caret-down"></i>-->
                     </a>

@@ -20,7 +20,6 @@ defined('DS') or define('DS', DIRECTORY_SEPARATOR);
 /**
  * 模板引擎实现类
  *
- * @author seatle<seatle@foxmail.com>
  * @version $Id$
  */
 class tpl
@@ -92,6 +91,7 @@ class tpl
     
     protected static function config ()
     {
+        self::$_instance->assign('app_name', $_ENV["APP_NAME"]);
         self::$_instance->assign('request', req::$forms);
         self::$_instance->assign('clear_cache', '?' . time());
     }

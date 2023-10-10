@@ -11,20 +11,18 @@
  */
 
 namespace kaliphp;
-use kaliphp\config;
+
 use kaliphp\database\db_connection;
 use kaliphp\database\db_expression;
 
 /**
  * 数据库类
  *
- * @author seatle<seatle@foxmail.com>
  * @version 2.0
  */
 class db
 {
     public static $config = [];
-
     public static $queries = [];
     public static $query_times = [];
 
@@ -39,7 +37,6 @@ class db
      */
     public static function _init()
     {
-  
     }
 
     /**
@@ -102,6 +99,23 @@ class db
     }
 
     /**
+     * select_count
+     * 
+     * @param string $select
+     * @param mixed $db  select默认会读取从库，提供db类方便读取主库
+     * @return db_connection
+     */
+    public static function select_count($table, $where = []): int
+    {
+        return (int) db_connection::instance()
+            ->select('COUNT(*) AS `count`')
+            ->from($table)
+            ->where($where)
+            ->as_field()
+            ->execute();
+    }
+
+    /**
      * insert
      *
      * @param null $table
@@ -138,7 +152,7 @@ class db
         return db_connection::instance()->has_where();
     }
 
-    public static function fetch($rsid = '', $result_type = MYSQLI_ASSOC)
+    public static function fetch($rsid = null, $result_type = MYSQLI_ASSOC)
     {
         return mysqli_fetch_array($rsid, $result_type);
     }

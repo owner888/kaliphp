@@ -23,7 +23,6 @@ use kaliphp\lib\cls_redis;
  * 为什么要这样做呢？
  * 因为memcache或memcached对应用缓存服务器群通常是很多网站一起使用的，如果没前缀区分，很容易会错把目标网站的同名缓存给clear掉
  *
- * @author seatle<seatle@foxmail.com>
  * @version 2.0
  */
 class cache

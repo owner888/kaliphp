@@ -5,8 +5,8 @@ return [
     'user'       => 'kaliphp',
     'pass'       => 'kaliphp',
     'name'       => 'kaliphp',
-    'charset'    => 'utf8',
-    'collation'  => 'utf8_unicode_ci',
+    'charset'    => 'utf8mb4',
+    'collation'  => 'utf8mb4_general_ci',
     'prefix'     => 'kali',
     // 是否启用长链接，不要启用，mysqli的长链问题很多
     'keep-alive' => false,

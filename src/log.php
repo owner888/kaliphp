@@ -24,7 +24,6 @@ defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
  * 注意：通常情况下，debug产生的非致命错误，不要使用日志系统记录，由debug系统自行控制
  *
  * @since 2011-07-20
- * @author seatle<seatle@foxmail.com>
  * @version $Id$
  */
 class log

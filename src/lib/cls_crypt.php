@@ -76,6 +76,7 @@ class cls_crypt
             cls_aes::instance()->set_key(substr($key, 0, 16));
             cls_aes::instance()->set_iv(substr($key, 16, 16));
             $value = cls_aes::instance()->decrypt($value);
+            $value = preg_replace('/[\x00-\x1F\x80-\x9F]/u', '', trim($value));
         }
         return $value;
     }

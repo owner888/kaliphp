@@ -73,7 +73,7 @@ class cls_image
      * @param $issave     true 是否保存为文件（如果此模式用false），则直接输出文件流
      * @return bool
      */
-    public function thumb($thumbwidth, $thumbheight, $tofile='', $type='auto', $bgcolor=0, $issave=true)
+    public function thumb($thumbwidth = 0, $thumbheight = 0, $tofile = '', $type = 'auto', $bgcolor = 0, $issave = true)
     {
         if(function_exists('imagecreatetruecolor') && function_exists('imagecopyresampled') && function_exists('imagejpeg'))
         {
@@ -154,7 +154,7 @@ class cls_image
      * @param bool $issave
      * @return bool
      */
-    public function thumb_fill($toW = 0, $toH, $tofile = '', $bgcolor = 0, $issave = true)
+    public function thumb_fill($toW = 0, $toH = 0, $tofile = '', $bgcolor = 0, $issave = true)
     {
         if($tofile=='') $tofile = $this->target_file;
         $imagecreatefromfunc = $this->image_create_func;
