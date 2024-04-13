@@ -146,7 +146,7 @@ body {
 }
 
 .nav-header {
-  background: #4e97d9;
+  background: #0088ff;
   float: left;
   width: 220px;
   text-align: center;
@@ -184,7 +184,7 @@ body {
 }
 
 .nav-header:hover {
-  background: #4e97d9 !important;
+  background: #0088ff !important;
   border-left: none !important;
 }
 
@@ -510,7 +510,7 @@ body.canvas-menu.mini-navbar nav.navbar-static-side {
 .navbar-static-top {
   margin-bottom: 0;
   height: 61px;
-  background: #4e97d9;
+  background: #0088ff;
 }
 
 li {
