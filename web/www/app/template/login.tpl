@@ -14,11 +14,11 @@
     <meta http-equiv="Cache-Control" content="no-siteapp">
 
     <!-- 样式 -->
-    <link rel="stylesheet" href="static/frame/css/bootstrap.min14ed.css">
-    <link rel="stylesheet" href="static/frame/css/font-awesome.min93e3.css">
-    <link rel="stylesheet" href="static/frame/css/select2.css">
-    <link rel="stylesheet" href="static/frame/css/main.css">
-    <link rel="stylesheet" href="static/frame/css/login.css">
+    <link rel="stylesheet" href="static/css/bootstrap.min14ed.css">
+    <link rel="stylesheet" href="static/css/font-awesome.min93e3.css">
+    <link rel="stylesheet" href="static/css/select2.css">
+    <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="static/css/login.css">
 </head>
 <body class="page-login layout-full page-dark">
     <div class="page height-full">

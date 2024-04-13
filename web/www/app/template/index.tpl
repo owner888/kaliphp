@@ -8,12 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     <title><{$app_name}></title>
     <link href="static/img/favicon.ico" rel="shortcut icon">
-    <link href="static/frame/css/bootstrap.min14ed.css" rel="stylesheet">
-    <link href="static/frame/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/frame/css/animate.min.css" rel="stylesheet">
+    <link href="static/css/bootstrap.min14ed.css" rel="stylesheet">
+    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+    <link href="static/css/animate.min.css" rel="stylesheet">
     <link href="static/frame/ui/css/style.css" rel="stylesheet">
-    <link href="static/frame/css/jquery.gritter.css" rel="stylesheet">
-    <link href="static/frame/css/plugins/toastr/toastr.min.css" rel="stylesheet">
+    <link href="static/css/jquery.gritter.css" rel="stylesheet">
+    <link href="static/css/plugins/toastr/toastr.min.css" rel="stylesheet">
     <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
     <script src="static/frame/js/common.js"></script>
 </head>

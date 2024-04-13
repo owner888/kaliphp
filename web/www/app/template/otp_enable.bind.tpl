@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     <title>PHPCALL</title>
-    <link href="static/frame/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/frame/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/frame/css/animate.min.css" rel="stylesheet">
-    <link href="static/frame/css/authentication.css" rel="stylesheet">
+    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+    <link href="static/css/animate.min.css" rel="stylesheet">
+    <link href="static/css/authentication.css" rel="stylesheet">
     <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
 </head>
 <body id="authen">
