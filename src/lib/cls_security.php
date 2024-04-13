@@ -7,14 +7,16 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp\lib;
-use kaliphp\config;
+
+use kaliphp\log;
 use kaliphp\req;
 use kaliphp\util;
-use kaliphp\log;
+use kaliphp\cache;
+use kaliphp\config;
 
 /** 
  * 安全类，XSS、CSRF 
@@ -395,10 +397,10 @@ class cls_security
         static $spams = array();
         $data = array_merge(array('key' => '', 'action' => 'check'), $data);
 
-        $key = 'spam|'. $data['key'];
+        $key = $prefix.':spam|'. $data['key'];
         if( !isset($spams[$key]) )
         {
-            $spams[$key] = cache::get($prefix, $key);
+            $spams[$key] = cache::get($key);
             if(empty($spams[$key]))
             {
                 $spams[$key] = array(
@@ -410,18 +412,18 @@ class cls_security
         if( $data['action'] == 'save' )
         {
             $spams[$key]['total']++;
-            $spams[$key]['timestamp'] = TIMESTAMP;
+            $spams[$key]['timestamp'] = KALI_TIMESTAMP;
             if(isset($data['data']))
             {
                 $spams[$key]['data'] = $data['data'];
             }
 
-            return cache::set($prefix, $key, $spams[$key]);
+            return cache::set($key, $spams[$key]);
         }
         else if( $data['action'] == 'clear' )
         {
             unset($spams[$key]);
-            return cache::set($prefix, $key, array());
+            return cache::del($key);
         }
 
         return $spams[$key];

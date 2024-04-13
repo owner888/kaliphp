@@ -15,6 +15,7 @@ define('SYS_DEBUG', true);
 define('SYS_ENV', 'dev');
 // app path
 define('APPPATH', __DIR__.'/../');
+define('SWG_DIR', __DIR__.'/../data');//配置下swgui的json文件存放文件夹路径即可
 
 // Set the current directory correctly for CLI requests
 if (defined('STDIN'))

@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp\lib;
@@ -185,6 +185,8 @@ class cls_profiler {
      */
     protected function _compile_queries()
     {
+		// $versin = db::select('SELECT VERSION()')->as_field()->execute();
+		// var_dump($versin);
         $db_config = config::instance('database')->get();
         // 如果没有启动数据库
         if ( count(db::$queries) == 0 )
@@ -230,7 +232,9 @@ class cls_profiler {
         {
             foreach (db::$queries as $key => $val)
             {
+				$db_name = db::$query_db_names[$key];
                 $time = number_format(db::$query_times[$key], 4);
+                $val_raw = htmlspecialchars($val);
                 $val = util::highlight_code($val);
                 // 解决小屏幕无法自动换行bug
                 $val = str_replace(
@@ -245,8 +249,8 @@ class cls_profiler {
                 }
 
                 $output .= '<tr><td style="padding:5px;vertical-align:top;width:1%;color:#900;font-weight:normal;background-color:#ddd;">'
-                    .$time.'&nbsp;&nbsp;</td><td style="padding:5px;color:#000;font-weight:normal;background-color:#ddd;">'
-                    .$val."</td></tr>\n";
+                    . $db_name . ' (' . $time . ')' .'&nbsp;&nbsp;</td><td style="display: flex;align-items: top;padding:5px;color:#000;font-weight:normal;background-color:#ddd;" class="item-profiler">'
+                    .$val."<div class='opt-in'><span class='btn-copy btn btn-primary btn-xs' data-text='$val_raw'>Copy</span></div></td></tr>\n";
             }
         }
 
@@ -548,6 +552,9 @@ class cls_profiler {
             #kali_profiler>div tr td div{ word-break: break-all; word-wrap: break-word; background: #fff; padding:10px; }
             #kali_profiler table{ display: table; border-collapse: separate; border-spacing: 2px; border-color: grey; background: none; background-color: none; }
             #kali_profiler div{ overflow-x: scroll; }
+            #kali_profiler .item-profiler > *:nth-child(1){ flex: 1; }
+            #kali_profiler .item-profiler .opt-in{ background: #fff; display: flex; align-items: center; padding-top: 5px;padding-bottom: 5px; }
+            #kali_profiler .item-profiler .btn-copy{ display: inline-block; }
             </style>';
         $output .= '<div id="kali_profiler"><div>';
         $fields_displayed = 0;
@@ -571,6 +578,17 @@ class cls_profiler {
         $output .= '</div></div>';
         $output .= '
             <script>
+                function CopyCommand(text){
+                    var aux = document.createElement("input");
+                    aux.setAttribute("value", text);
+                    aux.setAttribute("class", "CopyCommand");
+                    document.body.appendChild(aux);
+                    aux.select();
+                    var content = window.getSelection().toString();
+                    // 执行复制命令
+                    document.execCommand("copy");
+                    document.body.removeChild(aux);
+                }
                 $(".kali_profiler_toggle").on("click",function(){
 
                     var txt = $(this).text();
@@ -581,6 +599,13 @@ class cls_profiler {
                         $(this).text("Hide");
                     }
                     $(this).closest("div").find("table").toggle();
+                })
+                $(".item-profiler").find(".btn-copy").on("click", function(){
+                    var text = $(this).attr("data-text");
+                    console.warn(text)
+                    CopyCommand(text)
+
+                    layer.msg("copyed");
                 })
             </script>
         ';

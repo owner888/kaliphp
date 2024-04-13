@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp\database;

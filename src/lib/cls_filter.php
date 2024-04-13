@@ -7,39 +7,43 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp\lib;
+
 use kaliphp\util;
+use kaliphp\req;
 use Exception;
 
 /**
  * 数据过滤类(这个类只对不符合类型的字符进行过滤，数据验证使用cls_validate.php类)
  *
+ * @author seatle<seatle@foxmail.com>
  * @version 1.0
  */
 class cls_filter
 { 
     
     // 过滤类型
-    protected $_filter_types = array('int',         // 0-12位的数字(可包含-)
-                                     'float',       // 小数
-                                     'string',      // 字符串
-                                     'bool',        // 布尔类型
-                                     'array',       // 数组
-                                     'object',      // 对象
-                                     'email',       // 邮箱
-                                     'username',    // 用户名 \w 类型英文及任意中文字符
-                                     'qq',          // 5-12位数字 (不匹配返回0)
-                                     'mobile',      // 11位数字   (不匹配返回0)
-                                     'ip',          // 用户ip
-                                     'var',         // 变量名类型，即是 \w
-                                     'keyword',     // 搜索关键字（对一些特殊字符进行过滤）
-                                     'hash',        // 纯英文、数字组成的字符串
-                                     'xss_clean',   // XSS过滤
-                                     );
-   
+    protected $_filter_types = [
+        'int',         // 0-12位的数字(可包含-)
+        'float',       // 小数
+        'string',      // 字符串
+        'bool',        // 布尔类型
+        'array',       // 数组
+        'object',      // 对象
+        'email',       // 邮箱
+        'username',    // 用户名 \w 类型英文及任意中文字符
+        'qq',          // 5-12位数字 (不匹配返回0)
+        'mobile',      // 11位数字   (不匹配返回0)
+        'ip',          // 用户ip
+        'var',         // 变量名类型，即是 \w
+        'keyword',     // 搜索关键字（对一些特殊字符进行过滤）
+        'hash',        // 纯英文、数字组成的字符串
+        'xss_clean',   // XSS过滤
+    ];
+
     /**
      * 过滤操作
      *
@@ -58,7 +62,7 @@ class cls_filter
         }
 
         // 值为数组类型，递归过滤，需要判断是否为空，因为为空需要进入else，比如空的array，强制转为object，一般是json接口用
-        if ( is_array($val) && !empty($val) ) 
+        if ( is_array($val) && !in_array(strtolower($type), ['object', 'array']) ) 
         {
             foreach ($val as $k => $v ) 
             {
@@ -68,43 +72,61 @@ class cls_filter
         else 
         {
             // type为array，说明是 [$class, $method] 这种处理方式
-            if ( is_array($type)) 
+            if ( is_array($type) ) 
             {
                 $val = call_user_func($type, $val);
                 return $val;
             }
 
             $type = strtolower($type);
-            $val  = is_string($val) ? trim($val) : $val;
+            if ( !isset($val) ) 
+            {
+                return null;
+            }
+
+            $val = is_string($val) ? trim($val) : $val;
             switch( $type )
             {
                 case 'int':
                     $val = intval($val);
                     break;
+                case 'gt0': // 参数大于0，小于则返回0
+                    $val = isset($val) ? max(0, intval($val)) : null;
+                    break;
                 case 'float':
                     $val = floatval($val);
                     break;
                 case 'string':
-                    $val = htmlspecialchars(trim((string) $val), ENT_QUOTES);
+                    $val = $val ? self::filter(strip_tags(htmlspecialchars_decode($val)), 'htmlentities') : $val;
+                    break;
+                //安全可信的string，彻底杜绝sql注入,对于那种自己要使用英文的()，可以用string类型，但是一定要考虑sql注入问题
+                case 'text':
+                case 'safe_str': 
+                    $val = str_replace(
+                        ['(', ')'], ['（', '）'], 
+                        self::filter($val, 'string') ?? ''
+                    );
+
                     break;
                 case 'bool':
                     $val = (bool) $val;
                     break;
                 case 'array':
-                    $val = (array) $val;
+                    $val = (array) self::filter($val, 'safe_str');
                     break;
                 case 'object':
                     $val = (object) $val;
                     break;
                 case 'stripslashes':
-                    $val = $val && !is_object($val) ? stripslashes($val) : $val;
+                    $val = $val && is_string($val) ? stripslashes($val) : $val;
                     break;
+                case 'html':
                 case 'htmlentities':
                     // 同时转义双,单引号
-                    $val = htmlspecialchars(trim($val), ENT_QUOTES);
+                    $val = $val ? htmlspecialchars(trim($val), ENT_QUOTES) : $val;
                     break;
                 case 'email':
-                    if( !self::_test_email($val) )
+                    if( !self::test_email($val) )
                     {
                         if( strlen($val) > 0 && $throw_error ) 
                         {
@@ -158,7 +180,7 @@ class cls_filter
                     }
                     break;
                 case 'ip':
-                    if( !self::_test_ip($val) ) 
+                    if( !self::test_ip($val) ) 
                     {
                         if( $throw_error ) 
                         {
@@ -169,6 +191,20 @@ class cls_filter
                             $val = '';
                         }
                     }
+                    break;
+                case 'id_card':
+                    if( !self::test_is_idcard($val) ) 
+                    {
+                        if( $throw_error ) 
+                        {
+                            self::_throw_errmsg("身份证不合法");
+                        } 
+                        else 
+                        {
+                            $val = '';
+                        }
+                    }
+
                     break;
                 case 'var':
                     $val = preg_replace("/[^\w]/", '', $val);
@@ -184,9 +220,13 @@ class cls_filter
                     $val = cls_security::xss_clean($val);
                     break;
                 default:
-                    if ( function_exists($type) && $val != null ) 
+                    if ( function_exists($type)) 
                     {
-                        $val = $type($val);
+                        $val = $type($val ?? '');
+                    }
+                    else
+                    {
+                        $val = self::filter($val, 'safe_str');
                     }
                     break;
             }
@@ -204,7 +244,8 @@ class cls_filter
      * default          默认值
      * callback         回调函数
      * length           截取长度
-     * map_field        映射字段 a => b
+     * input_field      来源字段
+     * as_field         映射字段 a => b
      * from_charset     从xx转换编码
      * charset          转换成xx编码
      * _config_         配置是否过滤空值
@@ -217,9 +258,8 @@ class cls_filter
      *
      * @param  array $filter        过滤条件
      * @param  array $data          过滤数据
-     * @param  bool  $magic_slashes 去掉魔法引号
-     *
-     * @return array $ret 过滤后结果
+     * @param  bool  $magic_slashes 去掉魔法引号,框架已经默认转义过一次，所以这里再去掉一下
+     * @return mixed $ret 过滤后结果
      */
     public static function data(array $filter, array $data, bool $magic_slashes = true)
     {
@@ -228,7 +268,7 @@ class cls_filter
         {
             $data = self::filter( $data, 'stripslashes');
         }
-        
+
         // 用于配置过滤空值
         if (!empty($filter['_config_']))
         {
@@ -241,23 +281,23 @@ class cls_filter
         {
             $default  = null;
             $is_array = false;
-            if (is_array($config))
+            if ( is_array($config) )
             {
+                // 来源映射
+                if( !empty($config['input_field']) )
+                {
+                    $config['as_field'] = $field;
+                    $field = $config['input_field'];
+                }
+
                 $is_array = true;
                 $required = cls_arr::get($config, 'required', false);
-                if ($required)
+                if ( $required )
                 {
                     if (!isset($data[$field]))
                     {
                         return $field;
                     }
-                }
-
-                // 来源映射
-                if( !empty($config['input_field']) )
-                {
-                    $config['map_field'] = $field;
-                    $field = $config['input_field'];
                 }
 
                 // 递归
@@ -269,7 +309,6 @@ class cls_filter
                 }
 
                 $type = $config['type'] ?? 'text';
-
                 if (isset($config['default']))
                 {
                     $default = $config['default'];
@@ -283,6 +322,7 @@ class cls_filter
 
             // 过滤空项
             if (
+                empty($config['not_empty']) &&
                 // 去掉为null的值
                 (
                     !empty($ext_config['filter_null']) &&
@@ -292,135 +332,158 @@ class cls_filter
                 (
                     !empty($ext_config['filter_empty']) &&
                     null === $default &&
-                    (!isset($data[$field]) || (isset($data[$field]) && $data[$field] !== 0 && empty($data[$field])))
+                    (
+                        !isset($data[$field]) || 
+                        (
+                            isset($data[$field]) && 
+                            $data[$field] !== 0 && empty($data[$field])
+                        )
+                    )
                 ) ||
                 // 去掉指定字段空值
                 (
-                    !empty($ext_config['filter_fields']) && in_array($field, (array)$ext_config['filter_fields']) && empty($data[$field])
+                    !empty($ext_config['filter_fields']) && 
+                    in_array($field, (array)$ext_config['filter_fields']) && 
+                    empty($data[$field])
                 )
             )
             {
                 // 存在忽略字段
                 if (
                     !isset($ext_config['exclude_fields']) ||
-                    (isset($ext_config['exclude_fields']) && !in_array($field, (array)$ext_config['exclude_fields']))
+                    (
+                        isset($ext_config['exclude_fields']) && 
+                        !in_array($field, (array)$ext_config['exclude_fields'])
+                    )
                 )
                 {
                     continue;
                 }
             }
 
+            // 过滤指定值
+            if ( isset($config['filter_value']) ) 
+            {
+                $data[$field] = cls_arr::filter_value($data[$field], $config['filter_value']);
+            }
+
             switch ($type)
             {
-            case 'bool_int':
-                $ret[$field] = empty($data[$field]) ? 0 : 1;
-                break;
-            case 'bool':
-                $ret[$field] = !empty($data[$field]) ? true : false;
-                break;
-
-            case 'int':
-                $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'int') : $default;
-                if ($is_array && isset($config['min']))
-                {
-                    $ret[$field] = max($config['min'], $ret[$field]);
-                }
-
-                if ($is_array && isset($config['max']))
-                {
-                    $ret[$field] = min($config['max'], $ret[$field]);
-                }
-                break;
-
-            case 'float':
-            case 'double':
-                $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'float') : $default;
-                if ($is_array && isset($config['min']))
-                {
-                    $ret[$field] = max($config['min'], $ret[$field]);
-                }
-
-                if ($is_array && isset($config['max']))
-                {
-                    $ret[$field] = min($config['max'], $ret[$field]);
-                }
-                break;
-
-            case 'mixed':
-            case 'html':
-                $ret[$field] = $data[$field] ?? $default;
-                break;
-
-            case 'json':
-                $ret[$field] = isset($data[$field]) ? json_encode($data[$field]) : $default;
-                $ret[$field] = addslashes($ret[$field]);
-                break;
-
-            case 'serialize':
-                $ret[$field] = isset($data[$field]) ? serialize($data[$field]) : $default;
-                $ret[$field] = addslashes($ret[$field]);
-                break;
-
-            case 'regex':
-                if (!isset($config['regex']))
-                {
-                    $ret[$field] = $data[$field] ?? $default;
+                case 'bool_int':
+                    $ret[$field] = empty($data[$field]) ? 0 : 1;
                     break;
-                }
+                case 'bool':
+                    $ret[$field] = (bool) ($data[$field] ?? ($default ?? false));
+                    break;
 
-                $replace = $config['replace'] ?? '';
-                $ret[$field] = isset($data[$field]) ? preg_replace($config['regex'], $replace, $data[$field]) : $default;
-                break;
+                case 'int':
+                    $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'int') : $default;
+                    if ($is_array && isset($config['min']))
+                    {
+                        $ret[$field] = max($config['min'], $ret[$field]);
+                    }
 
-            case 'callback':
-                if (
-                    isset($data[$field]) &&
-                    isset($config['callback']) && is_callable($config['callback'])
-                )
-                {
-                    $ret[$field] = call_user_func($config['callback'], $data[$field]);
-                }
-                else
-                {
-                    $ret[$field] = $default;
-                }
-                break;
-            case 'array':
-                if(isset($data[$field]) && !is_array($data[$field]))
-                {
-                    return $field;
-                } 
-                
-                $ret[$field] = isset($data[$field]) ? (array) $data[$field] : $default;
-                break;
+                    if ($is_array && isset($config['max']))
+                    {
+                        $ret[$field] = min($config['max'], $ret[$field]);
+                    }
+                    break;
 
-            case 'text':
-            default:
-                $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'htmlentities') : $default;
-                if ( !is_array($ret[$field]))
-                {
-                    $ret[$field] = trim($ret[$field]);
-                    $charset = $config['charset'] ?? 'utf-8';
+                case 'float':
+                case 'double':
+                    $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'float') : $default;
+                    if ($is_array && isset($config['min']))
+                    {
+                        $ret[$field] = max($config['min'], $ret[$field]);
+                    }
+
+                    if ($is_array && isset($config['max']))
+                    {
+                        $ret[$field] = min($config['max'], $ret[$field]);
+                    }
+                    break;
+
+                case 'mixed':
+                    $ret[$field]  = $data[$field] ?? $default;
+                    break;
+                case 'html':
+                    $data[$field] = $data[$field] ?? $default;
+                    $ret[$field]  = self::filter($data[$field], 'htmlentities');
+                    break;
+
+                case 'json':
+                    $ret[$field] = isset($data[$field]) ? json_encode($data[$field]) : $default;
+                    break;
+
+                case 'serialize':
+                    $ret[$field] = isset($data[$field]) ? serialize($data[$field]) : $default;
+                    break;
+
+                case 'regex':
+                    if (!isset($config['regex']))
+                    {
+                        $ret[$field] = $data[$field] ?? $default;
+                        break;
+                    }
+
+                    $replace = $config['replace'] ?? '';
+                    $ret[$field] = isset($data[$field]) ? preg_replace($config['regex'], $replace, $data[$field]) : $default;
+                    break;
+
+                case 'callback':
                     if (
-                        isset($config['from_charset']) &&
-                        !mb_check_encoding($ret[$field], $charset) &&
-                        $to = mb_detect_encoding($ret[$field], $config['from_charset'])
+                        isset($data[$field]) &&
+                        isset($config['callback']) && is_callable($config['callback'])
                     )
                     {
-                        $ret[$field] = mb_convert_encoding($ret[$field], $charset, $to);
+                        $ret[$field] = call_user_func($config['callback'], $data[$field]);
                     }
-
-                    if ( isset($config['length']))
+                    else
                     {
-                        $ret[$field] = mb_substr(
-                            $ret[$field],
-                            0, $config['length'],
-                            $charset
-                        );
+                        $ret[$field] = $default;
                     }
-                }
 
-                break;
+                    break;
+                case 'array': //如果数组中的元素需要类型过来加一个sub_type，默认safe_str
+                    $data[$field] = $data[$field] ?? (array) $default;
+                    if(isset($data[$field]) && !is_array($data[$field]))
+                    {
+                        return $field;
+                    }
+
+                    $ret[$field] = !empty($config['sub_type']) ? self::filter($data[$field], $config['sub_type']) : $data[$field];
+                    break;
+                case 'text':
+                case 'safe_str':
+                    $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'safe_str') : $default;
+                    break;
+                case 'string':
+                default:
+                    $ret[$field] = isset($data[$field]) ? self::filter( $data[$field], 'htmlentities') : $default;
+                    if ( !is_array($ret[$field]))
+                    {
+                        $ret[$field] = trim($ret[$field]);
+                        $charset = $config['charset'] ?? 'utf-8';
+                        if (
+                            isset($config['from_charset']) &&
+                            !mb_check_encoding($ret[$field], $charset) &&
+                            $to = mb_detect_encoding($ret[$field], $config['from_charset'])
+                        )
+                        {
+                            $ret[$field] = mb_convert_encoding($ret[$field], $charset, $to);
+                        }
+
+                        if ( isset($config['length']))
+                        {
+                            $ret[$field] = mb_substr(
+                                $ret[$field],
+                                0, $config['length'],
+                                $charset
+                            );
+                        }
+                    }
+
+                    break;
             }
 
             //空值直接返回当前字段
@@ -429,28 +492,74 @@ class cls_filter
                 return $field;
             }
 
-            // 过滤后回调
-            if (!empty($ret[$field]) && 
-                isset($config['callback']) && is_callable($config['callback']))
+            //必须在数据组检查
+            if ( 
+                !empty($config['in_array']) && 
+                is_array($config['in_array']) && 
+                !in_array($ret[$field], $config['in_array']) 
+            ) 
             {
-                if (is_array($ret[$field]))
+                return $field;
+            }
+
+            // 过滤后回调
+            if ( isset($config['callback']) ) 
+            {
+                //单个函数或者闭包
+                if ( is_callable($config['callback']) ) 
                 {
-                    $ret[$field] = array_map($config['callback'], $ret[$field]);
+                    $funcs = [$config['callback']];
                 }
+                //支持多个函数
                 else
                 {
-                    $ret[$field] = call_user_func($config['callback'], $ret[$field]);
+                    $funcs = explode('|', $config['callback']);
+                }
+
+                //当前字段不需要指定，如果要使用当前做参数的时候指定一个不存在的field,一般用row
+                $callback_field = $config['callback_field'] ?? $field;
+                $callback_param = $ret[$callback_field] ?? $ret;
+                foreach($funcs as $func)
+                {
+                    if ( is_callable($func) )
+                    {
+                        if (is_array($ret[$field]))
+                        {
+                            $ret[$field] = array_map($func, $callback_param);
+                        }
+                        else
+                        {
+                            $ret[$field] = call_user_func($func, $callback_param);
+                        }
+                    }
                 }
             }
 
             // 添加映射字段
-            if( !empty($config['map_field']) )
+            if( !empty($config['as_field']) )
             {
-                $ret[$config['map_field']] = $ret[$field];
+                $ret[$config['as_field']] = $ret[$field];
                 unset($ret[$field]);
+            }
+
+            // 比较运算
+            $operate_maps = [
+                'egt' => '>=',
+                'gt'  => '>',
+                'elt' => '<=',
+                'lt'  => '<'
+            ];
+            foreach ($operate_maps as $f => $fv) 
+            {
+                if ( isset($config[$f]) && !util::operation($ret[$field], $fv, $config[$f])) 
+                {
+                    return $field;
+                }
             }
         }
 
+        // 如果去掉了转移，需要加一次
+        // $magic_slashes && $ret = req::add_s($ret);        
         return $ret;
     }
 
@@ -480,7 +589,7 @@ class cls_filter
     /**
      * 检测字符串是否为email
      */
-    private static function _test_email($str)
+    public static function test_email($str)
     {
         return preg_match('/^[a-z0-9]+([\+_\-\.]?[a-z0-9]+)*@([a-z0-9]+[\-]?[a-z0-9]+\.)+[a-z]{2,6}$/i', $str);
     }
@@ -488,9 +597,56 @@ class cls_filter
     /**
      * 检测字符串是否为ip
      */
-    private static function _test_ip($ip)
+    public static function test_ip($ip)
     {
         return preg_match('/((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]\d)|\d)(\.((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]\d)|\d)){3}/', $ip);
+    }
+
+    /**
+     * 是否为身份证
+     * @param    string    $id_card
+     * @return   bool       
+     */
+    public static function test_is_idcard($id_card)
+    {
+        $cities = [
+            '11','12','13','14','15','21','22',
+            '23','31','32','33','34','35','36',
+            '37','41','42','43','44','45','46',
+            '50','51','52','53','54','61','62',
+            '63','64','65','71','81','82','91'
+        ];
+
+        if ( 
+            !preg_match('/^([\d]{17}[xX\d]|[\d]{15})$/', $id_card) || 
+            !in_array(substr($id_card, 0, 2), $cities)
+        ) return false;
+
+        $id_card = preg_replace('/[xX]$/i', 'a', $id_card);
+        $length = strlen($id_card);
+        if ( $length == 18 ) 
+        {
+            $birth_day = substr($id_card, 6, 4) . '-' . substr($id_card, 10, 2) . '-' . substr($id_card, 12, 2);
+        } 
+        else 
+        {
+            $birth_day = '19' . substr($id_card, 6, 2) . '-' . substr($id_card, 8, 2) . '-' . substr($id_card, 10, 2);
+        }
+
+        if (date('Y-m-d', strtotime($birth_day)) != $birth_day) return false;
+        if ($length == 18) 
+        {
+            $v_sum = 0;
+            for ($i = 17 ; $i >= 0 ; $i--) 
+            {
+                $vSubStr = substr($id_card, 17 - $i, 1);
+                $v_sum += (pow(2, $i) % 11) * (($vSubStr == 'a') ? 10 : intval($vSubStr , 11));
+            }
+
+            if($v_sum % 11 != 1) return false;
+        }
+
+        return true;
     }
 
     /**

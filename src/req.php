@@ -7,16 +7,17 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp;
 
 use kaliphp\kali;
-use kaliphp\lib\cls_arr;
-use kaliphp\lib\cls_security;
-use kaliphp\lib\cls_filter;
 use kaliphp\lib\cls_cli;
+use kaliphp\lib\cls_arr;
+use kaliphp\lib\cls_crypt;
+use kaliphp\lib\cls_filter;
+use kaliphp\lib\cls_security;
 use kaliphp\lib\cls_ip2location;
 
 /**
@@ -101,7 +102,7 @@ class req
         // Is the string an array?
         if (is_array($str))
         {
-            foreach ($str as $key => &$value)
+            foreach ($str as $key => $value)
             {
                 $str[$key] = self::add_s($value);
             }
@@ -109,7 +110,11 @@ class req
             return $str;
         }
 
-        $str = addslashes($str);
+        if ( $str && is_string($str) ) 
+        {
+            $str = addslashes($str);
+        }
+
         return $str;
     }
 
@@ -1006,35 +1011,9 @@ class req
     {
         // get the input method and unify it
         $method = strtolower(self::method());
-        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
-
-        //命令行模式
-        if( $method === 'cli' ) 
-        {
-            // 把命令行参数转化为get参数
-            if ( count(cls_cli::$args) > 0) 
-            {
-                foreach (cls_cli::$args as $k=>$v) 
-                {
-                    if (!is_numeric($k)) 
-                    {
-                        $_GET[$k] = $v;
-                    }
-                }
-            }
-            
-            // 处理get
-            if( count($_GET) > 0 )
-            {
-                if( !$magic_quotes_gpc ) $_GET = self::add_s( $_GET );
-                if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
-                self::$gets = $_GET;
-            }
-            return;
-        }
 
         // get the content type from the header, strip optional parameters
-        $content_header = (string) self::headers('Content-Type');
+        $content_header = self::headers('Content-Type', '');
         if (($content_type = strstr($content_header, ';', true)) === false)
         {
             $content_type = $content_header;
@@ -1043,8 +1022,48 @@ class req
         // fetch the raw input data
         $php_input = self::raw();
 
-        // handle form-urlencoded input
-        if ( $content_type == 'application/x-www-form-urlencoded' )
+        // 是否开启加密 是否忽略部分ct ac
+        $encrypt            = self::headers('ENCRYPT', '');
+        $no_encrypt_actions = self::$config['no_encrypt_actions'] ?? [];
+        $must_encrypt       = !empty(self::$config['encrypt_key']) && !empty($encrypt);
+        if (
+            $must_encrypt && 
+            isset($_GET['ct']) && 
+            isset($_GET['ac']) && 
+            in_array(sprintf("%s:%s", $_GET['ct'], $_GET['ac']), $no_encrypt_actions)
+        ) 
+        {
+            $must_encrypt = false;
+        }
+
+        if ( $must_encrypt )
+        {
+            // 加密逻辑 依赖 resp类处理
+            $encrypt_key = self::$config['encrypt_key'];
+            resp::set_encrypt(true);
+            resp::set_encrypt_key($encrypt_key);
+            $php_input = cls_crypt::decode($php_input, $encrypt_key);
+            $data = json_decode($php_input, true);
+
+            if (json_last_error() != JSON_ERROR_NONE)
+            {
+                resp::response(-1, [], 'descrypt error: ' . json_last_error());
+            }
+
+            //直接覆盖所有的$_POST 值
+            $php_input = '';
+
+            $_GET = $_POST = $_REQUEST = [];
+            //上传的文件处理
+            if( isset($_FILES) && count($_FILES) > 0 )
+            {
+                self::filter_files($_FILES);
+            }
+
+            self::assign_values($data, 'POST');
+            return;//加密的请求后面的过滤不需要处理了，处理了反而操作大部分字符串数据要反向操作下
+        }
+        elseif ( $content_type == 'application/x-www-form-urlencoded' )
         {
             // double-check if max_input_vars is not exceeded,
             // it doesn't always give an E_WARNING it seems...
@@ -1062,7 +1081,6 @@ class req
                 parse_str($php_input, $php_input);
             }
         }
-
         // handle multipart/form-data input
         elseif ( $content_type == 'multipart/form-data' )
         {
@@ -1076,7 +1094,7 @@ class req
 
             // loop data blocks
             $php_input = array();
-            foreach ($blocks as $id => $block)
+            foreach ($blocks as $block)
             {
                 // skip empty blocks
                 if ( ! empty($block))
@@ -1112,10 +1130,11 @@ class req
                 $php_input = urldecode($php_input);
                 parse_str($php_input, $php_input);
             }
-
-            self::$jsons = $php_input;
-
+ 
+            self::$jsons         = $php_input;
             self::${$method.'s'} = $php_input;
+            //json的也放一份到$_REQUEST
+            $_REQUEST = array_merge($php_input, $_REQUEST);
         }
 
         // handle xml input
@@ -1132,67 +1151,132 @@ class req
             $method = null;
         }
 
+        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
+
+        //命令行模式
+        if( $method === 'cli' ) 
+        {
+            // 把命令行参数转化为get参数
+            if ( count(cls_cli::$args) > 0) 
+            {
+                foreach (cls_cli::$args as $k=>$v) 
+                {
+                    if (!is_numeric($k)) 
+                    {
+                        $_GET[$k] = $v;
+                    }
+                }
+            }
+        }
+
+        //上传的文件处理
+        if( isset($_FILES) && count($_FILES) > 0 )
+        {
+            self::filter_files($_FILES);
+        }
+
         // 处理get
         if( count($_GET) > 0 )
         {
-            if( !$magic_quotes_gpc ) $_GET = self::add_s( $_GET );
-            if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
+            // if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
             self::$gets = $_GET;
         }
-
+     
         // 处理post
         if( count($_POST) > 0 )
         {
-            if( !$magic_quotes_gpc ) $_POST = self::add_s( $_POST );
-            if (self::$config['global_xss_filtering']) $_POST = cls_security::xss_clean($_POST);
+            // if (self::$config['global_xss_filtering']) $_POST = cls_security::xss_clean($_POST);
             self::$posts = $_POST;
         }
 
         // 处理cookie
         if( count($_COOKIE) > 0 )
         {
-            if( !$magic_quotes_gpc ) $_COOKIE = self::add_s( $_COOKIE );
-            if (self::$config['global_xss_filtering']) $_COOKIE = cls_security::xss_clean($_COOKIE);
+            // if (self::$config['global_xss_filtering']) $_COOKIE = cls_security::xss_clean($_COOKIE);
             self::$cookies = $_COOKIE;
         }
 
         // 处理request
-        if( count($_REQUEST) > 0 )
+        if( self::$gets || self::$posts )
         {
-            if( !$magic_quotes_gpc ) $_REQUEST = self::add_s( $_REQUEST );
-            if (self::$config['global_xss_filtering']) $_REQUEST = cls_security::xss_clean($_REQUEST);
-            self::$forms = $_REQUEST;
+            // if( !$magic_quotes_gpc ) $_REQUEST = self::add_s( $_REQUEST );
+            // if (self::$config['global_xss_filtering']) $_REQUEST = cls_security::xss_clean($_REQUEST);
+            // self::$forms = $_REQUEST;
+            // 修改成gets和posts的集合，更适合一点
+            self::$forms = array_merge(self::$gets, self::$posts);
         }
-
-        //上传的文件处理
-        if( isset($_FILES) && count($_FILES) > 0 )
-        {
-            if( !$magic_quotes_gpc ) $_FILES = self::add_s( $_FILES );
-            self::filter_files($_FILES);
-        }
-
+    
         unset($_GET);
         unset($_POST);
         unset($_REQUEST);
 
         // store the parsed data based on the request method
-        if ($method == 'put' or $method == 'patch' or $method == 'delete')
+        if ( $php_input && ($method == 'put' or $method == 'patch' or $method == 'delete') )
         {
-            self::${$method.'s'} = $php_input;
+            self::${$method.'s'} = !is_array($php_input) ? json_decode($php_input, true) : $php_input;
         }
 
-        //// 是否启用rewrite(保留参数)
-        //$url_rewrite = self::$config['use_rewrite'] ?? false;
-        //// 处理url_rewrite(暂时不实现)
-        //if( $url_rewrite )
-        //{
-            //$gstr = self::server('QUERY_STRING');
+        // base64上传的内容转到files中，防止保存日志或者记录日志的时候，数据文件太大
+        if ( defined('BASE64_UPLOAD_FLAG') && BASE64_UPLOAD_FLAG ) 
+        {
+            $flag_len = strlen(BASE64_UPLOAD_FLAG);
+            foreach(self::$posts as $field => $value)
+            {
+                if ( substr($field, 0, $flag_len) === BASE64_UPLOAD_FLAG ) 
+                {
+                    $is_base64 = is_array($value);
+                    if ( $is_base64 ) 
+                    {
+                        foreach($value as $k => $v)
+                        {
+                            if ( !is_numeric($k) || !is_string($v) ) 
+                            {
+                                $is_base64 = false;
+                                break;
+                            }
+                        }
+                    }
 
-            //if( empty($gstr) )
-            //{
-                //$gstr = self::server('PATH_INFO');
-            //}
-        //}
+                    $real_field = substr($field, $flag_len);
+                    if ( $is_base64 ) 
+                    {
+                        self::$files[$real_field] = $value;
+                    }
+                    else
+                    {
+                        self::$posts[$real_field] = !empty(self::$posts[$field][0]['value']) ? 
+                        self::$posts[$field][0]['value'] : $value;
+                    }
+          
+                    unset(self::$posts[$field], self::$forms[$field]);
+                }
+            }
+        }
+        
+        // 开启过滤
+        if ( !$magic_quotes_gpc ) 
+        {
+            foreach(['forms', 'gets', 'posts', 'puts', 'patchs', 'jsons', 'deletes', 'xmls'] as $f)
+            {
+                if( self::${$f} )
+                {
+                    self::${$f} = self::add_s(self::${$f});
+                }
+            }
+        }
+
+
+        // 开启过滤
+        if ( self::$config['global_xss_filtering'] ) 
+        {
+            foreach(['forms', 'gets', 'posts', 'puts', 'patchs', 'jsons', 'deletes', 'xmls'] as $f)
+            {
+                if( self::${$f} )
+                {
+                    self::${$f} = cls_security::xss_clean(self::${$f});
+                }
+            }
+        }
     }
 
     public static function xml_to_array($xmls) 

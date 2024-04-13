@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace model;
@@ -548,7 +548,6 @@ class mod_auth extends cls_auth
      */
     public function save_admin_log($msg)
     {
-        $msg = addslashes( $msg );
         $url = '?ct='.req::item('ct').'&ac='.req::item('ac');
         foreach(req::$forms as $k => $v)
         {
@@ -569,7 +568,7 @@ class mod_auth extends cls_auth
 
         $uid = $this->uid;
         $user = $this->get_user($uid);
-        $do_url     = addslashes( $url );
+        $do_url     = $url;
         $do_time    = time();
         $do_ip      = req::ip();
         $do_country = req::country();

@@ -31,8 +31,6 @@ class ctl_index
     {   
         $security = config::instance('config')->get('security');
         self::$config = $security['validate'];
-
-        tpl::assign('app_name', 'KaliPHP Demo');
     }
 
     public function document()

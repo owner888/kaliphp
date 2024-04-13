@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp\lib;
@@ -645,6 +645,26 @@ class cls_arr
         }
         return $remove ? $array : $return;
     }
+    
+    /**
+     * 删除指定值
+     * @param    array     $array
+     * @param    mixed     $value
+     * @return   array       
+     */
+    public static function filter_value(array $array, $value)
+    {
+        $value = (array) $value;
+        foreach($array as $k => $v)
+        {
+            if ( in_array($v, $value) ) 
+            {
+                unset($array[$k]);
+            }
+        }
+
+        return $array;
+    }
 
     /**
      * 二维数组方式过滤keys 
@@ -800,12 +820,12 @@ class cls_arr
     /**
      * Sorts a multi-dimensional array by it's values.
      *
-     * @access	public
-     * @param	array   $array       The array to fetch from
-     * @param	string  $key         The key to sort by
-     * @param	string  $order       The order (asc or desc)
-     * @param	int	    $sort_flags  The php sort type flag
-     * @return	array
+     * @access  public
+     * @param   array   $array       The array to fetch from
+     * @param   string  $key         The key to sort by
+     * @param   string  $order       The order (asc or desc)
+     * @param   int     $sort_flags  The php sort type flag
+     * @return  array
      */
     public static function sort($array, $key, $order = 'asc', $sort_flags = SORT_REGULAR)
     {

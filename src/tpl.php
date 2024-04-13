@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp;
@@ -132,7 +132,7 @@ class tpl
             );
         }
 
-        //开启程序分析
+        // 开启程序分析
         if (cls_profiler::instance()->enable_profiler === true)
         {
             $profiler = cls_profiler::instance()->run();

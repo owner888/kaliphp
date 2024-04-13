@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp\lib;
@@ -975,11 +975,11 @@ class cls_auth
                 'session_id' => session_id(),
                 'uid'        => $user['uid'],
                 'username'   => $user['username'],
-                'msg'        => substr(addslashes($msg), 0, 150),
+                'msg'        => substr($msg, 0, 150),
                 'do_ip'      => req::ip(),
                 'do_country' => req::country(),
                 'do_time'    => time(),
-                'do_url'     => addslashes($url),
+                'do_url'     => $url,
             ])
             ->execute();
     }

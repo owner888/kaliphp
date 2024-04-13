@@ -12,6 +12,7 @@ define('SYS_DEBUG', true);
 define('SYS_CONSOLE', false);
 define('SYS_ENV', 'dev'); // dev || pre || pub
 define('APPPATH', __DIR__.'/../app');
+define('SWG_DIR', __DIR__.'/../app/data');//配置下swgui的json文件存放文件夹路径即可
 
 # APP信息
 $app_config = [
@@ -28,8 +29,6 @@ if ( !(req::item('ct') == 'index' && req::item('ac') == 'index') )
     // 所有访问开启程序分析器
     // cls_profiler::instance()->enable_profiler(true);
 }
-
-tpl::assign('title', 'KaliPHP DEMO');
 
 // 运行MVC，不走 MVC 可以只 kali::registry() 即可
 kali::run();

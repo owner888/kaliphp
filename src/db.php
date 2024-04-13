@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp;
@@ -25,6 +25,7 @@ class db
     public static $config = [];
     public static $queries = [];
     public static $query_times = [];
+    public static $query_db_names = [];
 
     // Query types
     const SELECT =  1;
@@ -51,6 +52,26 @@ class db
     }
 
     /**
+     * 初始化数据库
+     * @param string $name 实例名称
+     * @param string $name 数据库配置文件名
+     * @param boll $$default_instance 是否设置为默认数据库
+     */
+    public static function init_db($name = null, $database = null, $default_instance = false)
+    {
+        return db_connection::init_db($name, $database, $default_instance);
+    }
+
+    /**
+     * 切换数据库
+     * @param string $name 实例名称
+     */
+    public static function switch_db($name = null)
+    {
+        return db_connection::switch_db($name);
+    }
+
+    /**
      * SQL查询.
      *
      *     // SELECT
@@ -65,9 +86,9 @@ class db
      * @return array    list (insert id, row count) for INSERT queries
      * @return integer  number of affected rows for all other queries
      */
-    public static function query($sql)
+    public static function query($sql, array $params = [])
     {
-        return db_connection::instance()->query($sql);
+        return db_connection::instance()->query($sql, $params);
     }
 
 
@@ -315,26 +336,6 @@ class db
     public static function raw($string)
     {
         return self::expr($string);
-    }
-
-    /**
-     * 初始化数据库
-     * @param string $name 实例名称
-     * @param string $name 数据库配置文件名
-     * @param boll $$default_instance 是否设置为默认数据库
-     */
-    public static function init_db($name = null, $database = null, $default_instance = false)
-    {
-        return db_connection::init_db($name, $database, $default_instance);
-    }
-
-    /**
-     * 切换数据库
-     * @param string $name 实例名称
-     */
-    public static function switch_db($name = null)
-    {
-        return db_connection::switch_db($name);
     }
 
 }

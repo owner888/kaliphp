@@ -7,7 +7,7 @@
  * @author     KALI Development Team
  * @license    MIT License
  * @copyright  2010 - 2018 Kali Development Team
- * @link       http://kaliphp.com
+ * @link       https://doc.kaliphp.com
  */
 
 namespace kaliphp;
@@ -292,7 +292,7 @@ class event
 
     public static function on_sql($event, string $sql = null, string $db_name = null, $query_time = 0)
     {
-        log::info(sprintf('SQL Query [%s]: %s (%ss)', $db_name, $sql, $query_time));
+        // log::info(sprintf('SQL Query [%s]: %s (%ss)', $db_name, $sql, $query_time));
 
         if ( SYS_CONSOLE )
         {
