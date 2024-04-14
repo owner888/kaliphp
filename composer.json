@@ -18,11 +18,13 @@
         "php" : "^8.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5.26",
-        "phpstan/phpstan": "2.0.x-dev"
+        "phpstan/phpstan": "2.0.x-dev",
+        "pestphp/pest": "3.x-dev"
     },
     "autoload": {
-        "psr-4": {"kaliphp\\": "src"},
+        "psr-4": {
+            "kaliphp\\": "src"
+        },
         "files": [
             "src/autoloader.php"
         ]
@@ -30,5 +32,14 @@
     "autoload-dev": {
         "psr-4": {"kaliphp\\tests\\": "tests"}
     },
-    "minimum-stability" : "dev"
+    "minimum-stability": "dev",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "analyze": "phpstan",
+        "test": "pest --colors=always"
+    }
 }
