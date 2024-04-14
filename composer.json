@@ -1,9 +1,12 @@
 {
     "name"  : "owner888/kaliphp",
-    "description" : "The KaliPHP framework",
-    "type" : "framework",
-    "keywords": ["framework","KaliPHP"],
-    "homepage": "http://www.kaliphp.com",
+    "description" : "A MVC PHP framework for easily building fast",
+    "type" : "library",
+    "keywords": [
+        "MVC",
+        "framework"
+    ],
+    "homepage": "https://doc.kaliphp.com",
     "license" : "MIT",
     "authors" : [
         {
@@ -12,13 +15,20 @@
         }
     ],
     "require": {
-        "php" : ">=5.4"
+        "php" : "^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5.26",
+        "phpstan/phpstan": "2.0.x-dev"
     },
     "autoload": {
-        "psr-4": {"kaliphp\\": "./src"}
+        "psr-4": {"kaliphp\\": "src"},
+        "files": [
+            "src/autoloader.php"
+        ]
     },
-    "files": [
-        "src/autoloader.php"
-    ],
+    "autoload-dev": {
+        "psr-4": {"kaliphp\\tests\\": "tests"}
+    },
     "minimum-stability" : "dev"
 }
