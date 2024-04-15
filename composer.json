@@ -19,7 +19,8 @@
     },
     "require-dev": {
         "phpstan/phpstan": "2.0.x-dev",
-        "pestphp/pest": "3.x-dev"
+        "pestphp/pest": "2.x-dev",
+        "pestphp/pest-plugin-stressless": "2.x-dev"
     },
     "autoload": {
         "psr-4": {
