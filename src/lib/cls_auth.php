@@ -406,6 +406,8 @@ class cls_auth
 
         // 返回即可，不需要更新到用户缓存，否则每个端登录都会替换缓存的数据，没有意义
         $user['session_id'] = session_id();
+        // 需要更新到数据库一份
+        $this->save_user(['uid' => $user['uid'], 'session_id' => $user['session_id']]);
         // 如果配置了需要绑定uid,才会进行uid和token的绑定，方便通过uid操作token
         if ( !empty(self::$config['app_name']) && !empty(static::$table_config['user_session']) ) 
         {
