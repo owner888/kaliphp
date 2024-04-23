@@ -1025,7 +1025,8 @@ class req
         // 是否开启加密 是否忽略部分ct ac
         $encrypt            = self::headers('ENCRYPT', '');
         $no_encrypt_actions = self::$config['no_encrypt_actions'] ?? [];
-        $must_encrypt       = !empty(self::$config['encrypt_key']) && !empty($encrypt);
+        $must_encrypt       = !empty(self::$config['encrypt_key']) && 
+            (!empty($encrypt) || !empty(self::$config['use_encrypt']));
         if (
             $must_encrypt && 
             isset($_GET['ct']) && 
@@ -1254,7 +1255,7 @@ class req
         }
         
         // 开启过滤
-        if ( !$magic_quotes_gpc ) 
+        if ( !$magic_quotes_gpc && !empty(self::$config['use_magic_quotes']) ) 
         {
             foreach(['forms', 'gets', 'posts', 'puts', 'patchs', 'jsons', 'deletes', 'xmls'] as $f)
             {
