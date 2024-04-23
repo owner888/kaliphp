@@ -1,16 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title><{$app_name}></title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <{include file='common/header.tpl'}>
 </head>
-
+<body>
 <body>
 
 <div id="content">
@@ -63,27 +56,23 @@
                         </div>
 
                         <div class="hr-line-dashed"></div>
-
-
-                        <div class="form-group">
-                            <label class="col-sm-2 control-label"><code>*</code> 变量值:</label>
-                            <div class="col-sm-10">
-                                <textarea type='input' name='value' class="form-control" datatype="*" nullmsg="请输入变量值"/></textarea>
-                            </div>
-                        </div>
-
-                        <div class="hr-line-dashed"></div>
-
                         <div class="form-group">
                             <label class="col-sm-2 control-label">变量类型:</label>
                             <div class="col-sm-10">
-                                <div class="radio">
+                                <div class="radio" id="group-radio">
                                     <label><input type='radio' name='type' value='string' checked /> 字符串</label>
                                     <label><input type='radio' name='type' value='number' /> 数字</label>
                                     <label><input type='radio' name='type' value='text' /> 多行文本</label>
                                     <label><input type='radio' name='type' value='bool' /> Bool(布尔变量)</label>
+                                    <label><input type='radio' name='type' value='json' /> JSON格式</label>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label"><code>*</code> 变量值:</label>
+                            <div class="col-sm-10" id="dynamic-varible"></div>
                         </div>
 
                         <div class="hr-line-dashed"></div>
@@ -99,7 +88,7 @@
 
                         <div class="form-group">
                             <div class="col-sm-4 col-sm-offset-2">
-                                <button type="submit" class="btn btn-success">提交</button>
+                                <button type="submit" class="btn btn-success" id="submitform">提交</button>
                             </div>
                         </div>
                     </div>
@@ -108,11 +97,61 @@
         </div>
     </div>
 </div>
+<{include file='common/footer.tpl'}>
+<script>
+$(function(){
+    // 变量类型下标
+    var tabType = 'string';
+    var tpl_textarea = `<textarea type='input' name='value' class="form-control" datatype="*" nullmsg="请输入变量值"/></textarea>`;
+    var tpl_raido = `<div class="radio"><label><input type="radio" name="value" value="1" checked /> 是</label><label><input type="radio" name="value" value="0" /> 否</label></div>`;
 
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/validform.js"></script>
-<script src="static/frame/js/newvalidform.js"></script>
-<script src="static/frame/js/main.js"></script>
+    $('#dynamic-varible').html(tpl_textarea);
 
+    var editor;
+    $('#group-radio input').on('click', function(){
+        var type = $(this).val();
+        tabType = type;
+        switch(type){
+            case 'bool':
+                // 单选框
+                $('#dynamic-varible').html(tpl_raido);
+                break;
+            case 'json':
+                // json.view 编辑器
+                $('#dynamic-varible').html('<div id="editor-json" class="editor-json" />');
+                editor = new JsonEditor($("#editor-json"), {}, {
+                    collapsed: false,
+                    rootCollapsable: false,
+                    withQuotes: false,
+                    withLinks: true,
+                });
+                break;
+            default:
+                $('#dynamic-varible').html(tpl_textarea);
+                break;
+        }
+    })
+
+    // 提交表单前需要把编辑器的数据拿到toString()
+    $('#submitform').on('click', function(){
+        // json编辑器下
+        if(tabType === 'json'){
+            try{
+                var json2string = JSON.stringify(editor.get());
+                var tplSubmitInput = `<input type="hidden" name="value" value='${json2string}' />`;
+
+                if($('#dynamic-varible').find('input[name="value"]').length === 0){
+                    $('#dynamic-varible').append(tplSubmitInput);
+                }else{
+                    $('#dynamic-varible').find('input[name="value"]').val(json2string);
+                }
+            }catch(err){
+                console.error(err)
+                layer.msg('JSON格式有误')
+            }
+        }
+    })
+})
+</script>
 </body>
 </html>

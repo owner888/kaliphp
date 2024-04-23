@@ -14,11 +14,11 @@ return [
         'm-d H:i',  //某月-某日 某时-某分
         'Y-m-d H:i',//某年-某月-某日 某时-某分
     ],
-    // 配置执行的文件
+    // 配置执行的文件 db管理crond就不需要这个配置项了
     'the_time' => [
         // 每分钟
         //'*' => array('xxx.php'),
-        '*' => array('crond_test.php'),
+        // '*' => array('crond_test.php'),
 
         // 每小时 某分
         //'*:00' => array('xxx.php'),

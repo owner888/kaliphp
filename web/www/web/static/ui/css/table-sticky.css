@@ -1,0 +1,45 @@
+/* 
+* Expentend for boostrap CSS
+* by dawson
+*/
+.layout-table-foot * {
+  float: none;
+}
+.layout-table-foot {
+  display: flex;
+  padding: 10px 0;
+  position: sticky;
+  justify-content: space-between;
+  left: 0;
+}
+table.table-sticky {
+  border-collapse: separate;
+  table-layout: fixed;
+}
+table.table-sticky td,
+table.table-sticky th {
+  border: 0 none !important;
+  border-right: 1px solid #ddd !important;
+  border-bottom: 1px solid #ddd !important;
+}
+
+table.table-sticky th {
+  background: #efefef !important;
+}
+table.table-sticky td,
+table.table-sticky th {
+  box-sizing: border-box;
+}
+table.table-sticky tr:hover td,
+table.table-sticky tr:hover th {
+  background: #f3f3f3;
+}
+
+table.table-sticky .is-sticky,
+table.table-sticky td[data-style],
+table.table-sticky th[data-style] {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #f9f9f9;
+}

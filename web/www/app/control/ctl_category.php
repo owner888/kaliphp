@@ -46,25 +46,6 @@ class ctl_category
             ->offset($pages['offset'])
             ->execute();
 
-        foreach ($list as $k=>$v) 
-        {
-            // app
-            //$timezone_set = req::item('timezone_set');
-            //$timezone_set = -8;
-            //// web
-            //$timezone_set = util::timezone_set();
-            //date_default_timezone_set("Etc/GMT{$timezone_set}");
-
-
-            //$list[$k]['create_time'] = date('Y-m-d H:i:s', $v['create_time']);
-            //$list[$k]['update_time'] = date('Y-m-d H:i:s', $v['update_time']);
-
-
-            //$timezone_set = config::instance('config')->get('timezone_set');
-            //date_default_timezone_set($timezone_set);
-        }
-        //echo pub_benchmark::elapsed_time("操作数据库");
-
         tpl::assign('list', $list);
         tpl::assign('pages', $pages['show']);
         tpl::display('category.index.tpl');
@@ -88,9 +69,8 @@ class ctl_category
 
             list($insert_id, $rows_affected) = db::insert('#PB#_category')
                 ->set(array(
-                    'name'        => $name,
-                    'create_user' => kali::$auth->uid,
-                    'create_time' => time(),
+                    'name'       => $name,
+                    'created_at' => date('Y-m-d H:i:s'),
                 ))
                 ->execute();
 
@@ -126,9 +106,8 @@ class ctl_category
 
             db::update('#PB#_category')
                 ->set(array(
-                    'name'        => $name,
-                    'update_user' => kali::$auth->uid,
-                    'update_time' => time(),
+                    'name'       => $name,
+                    'updated_at' => date('Y-m-d H:i:s'),
                 ))
                 ->where('id', $id)
                 ->execute();

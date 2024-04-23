@@ -1,28 +1,25 @@
 <?php
 namespace control;
-use kaliphp\kali;
+
 use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
 use kaliphp\log;
-use kaliphp\config;
-use kaliphp\cache;
+use kaliphp\kali;
 use kaliphp\util;
-use kaliphp\lib\cls_msgbox;
-use kaliphp\lib\cls_securimage;
-use kaliphp\lib\cls_google_auth;
+use kaliphp\cache;
+use kaliphp\config;
 use kaliphp\lib\cls_auth;
 use kaliphp\lib\cls_menu;
 use kaliphp\lib\cls_redis;
-use kaliphp\lib\cls_redis_lock;
-use kaliphp\lib\cls_snowflake;
-use kaliphp\lib\cls_notice;
 use kaliphp\lib\cls_crypt;
-use model\mod_test;
+use kaliphp\lib\cls_notice;
+use kaliphp\lib\cls_msgbox;
+use kaliphp\lib\cls_snowflake;
+use kaliphp\lib\cls_redis_lock;
+use kaliphp\lib\cls_securimage;
+use kaliphp\lib\cls_google_auth;
 
-/**
- * 演示Action
- */
 class ctl_index
 {
     public static $config = [];
@@ -44,7 +41,7 @@ class ctl_index
      */
     public function index()
     {
-        tpl::assign('menus', cls_menu::parse_menu($this->_get_menu_data()));
+        tpl::assign('menus', cls_menu::parse_menu());
         tpl::assign('user', kali::$auth->get_user());
 
         //// websocket
@@ -72,54 +69,6 @@ class ctl_index
         //tpl::assign('websocket_url', $websocket_url);
         //tpl::assign('websocket_key', $websocket_key);
         tpl::display('index.tpl');
-    }
-
-    private function _get_menu_data()
-    {
-        $replace_menu_data = array();
-        return $replace_menu_data;
-
-        //$uid = kali::$auth->uid;
-
-        //$cates = db::select('id, name')
-            //->from('#PB#_category')
-            //->where('create_user', $uid)
-            //->execute();
-
-        //foreach ($cates as $cate) 
-        //{
-            //$replace_menu_data['content_menu'][] = array(
-                //'name'  => $cate['name'].'列表',
-                //'ct'    => 'content',
-                //'ac'    => 'index',
-                //'url'   => '?ct=content&ac=index&catid='.$cate['id'],
-            //);
-        //}
-
-        //$replace_menu_data = array(
-            //'server_menu' => array(
-                //array(
-                    //'name'    => '服务器1',
-                    //'class'   => '',
-                    //'ct'      => 'server',
-                    //'ac'      => 'list',
-                    //'url'     => '?ct=server&ac=list&id=1',
-                    //'reload'  => '',
-                    //'display' => '',
-                //),
-                //array(
-                    //'name'    => '服务器2',
-                    //'class'   => '',
-                    //'ct'      => 'server',
-                    //'ac'      => 'list',
-                    //'url'     => '?ct=server&ac=list&id=2',
-                    //'reload'  => '',
-                    //'display' => '',
-                //),
-            //)
-        //);
-
-        return $replace_menu_data;
     }
 
     /**
@@ -181,7 +130,7 @@ class ctl_index
                         else 
                         {
                             // 保存用户ID到COOKIE和SESSION
-                            kali::$auth->set_logininfo( $user );
+                            kali::$auth->auth_user($user, $remember);
                             $jumpurl = empty($gourl) ? '?ct=index' : $gourl;
                             cls_msgbox::show('成功登录', '成功登录，正在重定向你访问的页面', $jumpurl);
                         }
@@ -201,7 +150,6 @@ class ctl_index
         tpl::assign('image_code', self::$config['image_code'] );
         tpl::assign('third_login', self::$config['third_login'] );
         tpl::display('login.tpl');
-        exit();
     }
 
     /**

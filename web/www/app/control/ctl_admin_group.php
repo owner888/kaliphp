@@ -1,10 +1,11 @@
 <?php
 namespace control;
-use kaliphp\kali;
+
 use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
 use kaliphp\log;
+use kaliphp\kali;
 use kaliphp\util;
 use kaliphp\config;
 use kaliphp\lib\cls_msgbox;
@@ -18,6 +19,8 @@ use kaliphp\lib\cls_menu;
  */
 class ctl_admin_group
 {
+    public static $table = '#PB#_admin_group';
+
     /**
      * 构造函数
      * @return void
@@ -36,13 +39,8 @@ class ctl_admin_group
             $where[] = array( 'name', 'like', "%$keyword%" );
         }
 
-        $row = db::select('COUNT(*) AS `count`')
-            ->from('#PB#_admin_group')
-            ->where($where)
-            ->as_row()
-            ->execute();
-
-        $pages = cls_page::make($row['count'], 10);
+        $count = db::select_count(self::$table, $where);
+        $pages = cls_page::make($count, 10);
 
         $list = db::select()
             ->from('#PB#_admin_group')
@@ -175,8 +173,6 @@ class ctl_admin_group
             ->execute();
 
         kali::$auth->save_admin_log("用户组删除 {$id}");
-
-        //cache::del('cls_auth_cfg_admin_group', 'admin');
 
         cls_msgbox::show('系统提示', "删除成功", req::forword());
     }

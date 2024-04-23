@@ -1,5 +1,4 @@
 <xml>
-    <!-- //这里的子菜单为隐性项目 -->
     <menu name='常用' class='fa fa-th-list'>    
         <menu name='内容管理' class='fa fa-file'>
             <menu name='内容列表' ct='content' ac='index' reload='1' default='1' />
@@ -10,12 +9,6 @@
             <menu name='{lang.menu_content_category_create}'    ct='category' ac='add' display='none' />
             <menu name='{lang.menu_content_category_update}' ct='category' ac='edit' display='none' />
             <menu name='{lang.menu_content_category_delete}' ct='category' ac='del' display='none'  />
-        </menu>
-        <menu name='会员管理' class='fa fa-users'>
-            <menu name='会员列表' ct='member' ac='index' reload='1' />
-            <menu name='会员添加' ct='member' ac='add' display='none' />
-            <menu name='会员修改' ct='member' ac='edit' display='none' />
-            <menu name='会员删除' ct='member' ac='del' display='none' />
         </menu>
     </menu>
     <menu name='系统' class='fa fa-gear'>

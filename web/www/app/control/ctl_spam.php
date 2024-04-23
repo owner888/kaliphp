@@ -52,9 +52,14 @@ class ctl_spam
             $key = $key.':'.$keyword;
             if( false != ($ret = cls_spam::get($key)) && !empty($ret['timestamp']) )
             {
-                $ret['timestamp'] = date('Y-m-d H:i:s', $ret['timestamp']);
+                $ret['timestamp'] = is_numeric($ret['timestamp']) ? date('Y-m-d H:i:s', intval($ret['timestamp'])) : $ret['timestamp'];
             }
 
+            if (empty($ret['timestamp'])) 
+            {
+                // 没有触发就直接返回空吧
+                $ret = [];
+            }
         }
 
         util::return_json($ret);

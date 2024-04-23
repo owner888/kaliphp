@@ -1,30 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title><{$app_name}></title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/main.css<{$clear_cache}>" rel="stylesheet">
+    <{include file='common/header.tpl'}>
     <link href="static/redactor/css/redactor.css" rel="stylesheet" />
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
-    <script src="static/redactor/js/redactor.js"></script>
-    <script src="static/redactor/js/zh_cn.js"></script>
-    <script type="text/javascript">
-        $(function()
-        {
-            $('#redactor_content').redactor({
-                imageGetJson: '?ct=upload&ac=redactor&type=file_manager_json',
-                imageUpload: '?ct=upload&ac=redactor&type=image',
-                clipboardUploadUrl: '?ct=upload&ac=redactor&type=clipboard',
-                lang: 'zh_cn',
-                minHeight: '480', // pixels
-                maxHeight: '480', // pixels
-            });
-        });
-    </script>
 </head>
 
 <body>
@@ -95,9 +73,21 @@
         </div>
     </div>
 </div>
-
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/main.js<{$clear_cache}>"></script>
-
+<{include file='common/footer.tpl'}>
+<script src="static/redactor/js/redactor.js"></script>
+<script src="static/redactor/js/zh_cn.js"></script>
+<script type="text/javascript">
+    $(function()
+    {
+        $('#redactor_content').redactor({
+            imageGetJson: '?ct=upload&ac=redactor&type=file_manager_json',
+            imageUpload: '?ct=upload&ac=redactor&type=image',
+            clipboardUploadUrl: '?ct=upload&ac=redactor&type=clipboard',
+            lang: 'zh_cn',
+            minHeight: '480', // pixels
+            maxHeight: '480', // pixels
+        });
+    });
+</script>
 </body>
 </html>

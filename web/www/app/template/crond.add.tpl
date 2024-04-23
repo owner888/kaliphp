@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title><{$app_name}></title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <{include file='common/header.tpl'}>
 </head>
-
 <body>
-
 <div id="content">
     <div class="container-fluid">
         <div class="row">
@@ -47,8 +38,8 @@
                         <div class="form-group">
                             <label class="col-sm-2 control-label">任务脚本 :</label>
                             <div class="col-sm-10">
-                                <textarea name="filename" rows="5" cols="10" class="form-control"></textarea>
-                                <span class="help-block m-b-none"><i class="fa fa-info-circle"></i> 不能包含路径，程序脚本必须存放于 ./core/crond/ 目录中，一行一个脚本6位</span>
+                                <input name="filename" type="text" class="form-control" datatype="*"  nullmsg="请输入任务脚本" />
+                                <span class="help-block m-b-none"><i class="fa fa-info-circle"></i> 文件名即可，不能包含路径，程序脚本必须存放于 ./admin/app/crond/ 目录中</span>
                             </div>
                         </div>
 
@@ -67,21 +58,17 @@
                             <label class="col-sm-2 control-label"><code>*</code> 任务执行时间 :</label>
                             <div class="col-sm-10">
                                 <input name="runtime_format" type="text" class="form-control" datatype="*"  nullmsg="请输入任务执行时间"/>
-                            </div>
-                        </div>
-                        <div class="hr-line-dashed"></div>
-                        <div class="form-group">
-                            <label class="col-sm-2 control-label">任务执行时间 :</label>
-                            <div class="col-sm-10">
-<pre>
-'*',        //每分钟
-'*:i',      //每小时 某分
-'H:i',      //每天 某时:某分
-'@-w H:i',  //每周-某天 某时:某分  0=周日
-'*-d H:i',  //每月-某天 某时:某分
-'m-d H:i',  //某月-某日 某时-某分
-'Y-m-d H:i',//某年-某月-某日 某时-某分
-</pre>
+                                <p>
+                                    <pre>
+                                    '*',        //每分钟
+                                    '*:i',      //每小时 某分
+                                    'H:i',      //每天 某时:某分
+                                    '@-w H:i',  //每周-某天 某时:某分  0=周日
+                                    '*-d H:i',  //每月-某天 某时:某分
+                                    'm-d H:i',  //某月-某日 某时-某分
+                                    'Y-m-d H:i',//某年-某月-某日 某时-某分
+                                    </pre>
+                                </p>
                             </div>
                         </div>
 
@@ -110,10 +97,7 @@
         </div>
     </div>
 </div>
-
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/validform.js"></script>
-<script src="static/frame/js/newvalidform.js"></script>
+<{include file='common/footer.tpl'}>
 <script type="text/javascript">
     var ns = <{$ns}>*1000;//数字要*1000，因为js是毫秒数！
     disptime(ns);

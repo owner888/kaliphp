@@ -1,18 +1,21 @@
 <?php
-// 自运行
-// php crond_test.php
-//require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use kaliphp\req;
+use kaliphp\kali;
 use kaliphp\util;
-use OpenApi\Logger;
-//use kaliphp\kali;
-//kali::registry();
+use kaliphp\lib\cls_swg_analyser;
+use OpenApi\Generator;
 
-$time_start = microtime(true);
+define('RUN_SHELL', true);
+defined('ENVPATH') or define('ENVPATH', __DIR__.'/../../../.env');
+defined('APPPATH') or define('APPPATH',  __DIR__.'/../');
+
+// 注册框架：初始化路径、DB ...
+kali::registry();
 
 // 支持参数获取，操作如下
-//php crond_test.php --name=kaka
+//php crond_test.php name=kaka
 //echo req::item('name')."\n";
 
 /*
@@ -59,25 +62,24 @@ if ( !util::lock($lock_key))
 
 echo "上锁成功，执行任务\n";
 
-// 执行完任务，解锁
-if ( util::unlock($lock_key))
-{
-    echo "解锁成功，任务完成\n";
-}
-
 //定时刷新下
 if (defined(SWG_DIR) && is_dir(SWG_DIR)) 
 {
     Logger::$debug_log = false;
     // 上线后要去掉旧项目的
     $path    = [APPPATH . '/control'];//指定多个也可以
-    $openapi = \OpenApi\scan($path);
-    $content = $openapi->toJson();
+    $openapi = Generator::scan($path,['analyser' => new cls_swg_analyser(), 'validate' => false]);
+    $content = $openapi->toJson();    
     file_put_contents(SWG_DIR . '/api.json', $content);
 
     echo "刷新到swg文件成功" . PHP_EOL;
 }
 
+// 执行完任务，解锁
+if ( util::unlock($lock_key) )
+{
+    echo "解锁成功，任务完成\n";
+}
 
 $size = memory_get_usage();
 $unit = array('b','kb','mb','gb','tb','pb'); 

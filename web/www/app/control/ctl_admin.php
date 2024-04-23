@@ -1,19 +1,18 @@
 <?php
 namespace control;
 
-use kaliphp\kali;
 use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
 use kaliphp\log;
-use kaliphp\config;
 use kaliphp\util;
+use kaliphp\kali;
 use kaliphp\lang;
-use kaliphp\lib\cls_msgbox;
+use kaliphp\config;
 use kaliphp\lib\cls_page;
 use kaliphp\lib\cls_menu;
-use model\mod_user;
-use model\mod_session;
+use kaliphp\lib\cls_msgbox;
+use model\mod_auth;
 
 /**
  * 用户管理
@@ -22,6 +21,7 @@ use model\mod_session;
  */
 class ctl_admin
 {
+    public static $table = '#PB#_admin';
     public static $group_options = array(0 => '用户组');
     public static $user_options = array(0 => '用户');
     public static $cur_group = null;
@@ -83,13 +83,8 @@ class ctl_admin
             $where[] = array( 'username', 'like', "%$keyword%" );
         }
 
-        $row = db::select('COUNT(*) AS `count`')
-            ->from('#PB#_admin')
-            ->where($where)
-            ->as_row()
-            ->execute();
-        
-        $pages = cls_page::make($row['count'], 10);
+        $count = db::select_count(self::$table, $where);
+        $pages = cls_page::make($count, 10);
 
         $list = db::select()
             ->from('#PB#_admin')
@@ -223,7 +218,13 @@ class ctl_admin
             tpl::assign('v', $v);
 
             req::set_redirect( req::forword() );
+            $new_status = 0;
+            if ( $v['status'] == 0 || kali::$auth->get_login_error24( $v['username'], 'username' ))
+            {
+                $new_status = 1;
+            }
 
+            tpl::assign('new_status', $new_status);
             tpl::assign('gourl', urlencode(req::forword()));
             tpl::display('admin.edit.tpl');
         }
@@ -236,7 +237,7 @@ class ctl_admin
         foreach ($ids as $id) 
         {
             // 删除用户SESSION信息, 让用户推出登录
-            mod_session::del_user_session($id);
+            mod_auth::del_user_session($id);
             kali::$auth::instance($id)->del_cache();
         }
 
@@ -278,7 +279,7 @@ class ctl_admin
             // 批量强制退出登录
             foreach ($ids as $id) 
             {
-                mod_session::del_user_session($id);
+                mod_auth::del_user_session($id);
                 kali::$auth::instance($id)->del_cache();
             }
             kali::$auth->save_admin_log("用户禁用 ".implode(",", $ids));
@@ -527,6 +528,8 @@ class ctl_admin
      * 清除用户的独立权限
      * 
      * @return void
+     * @author seatle <seatle@foxmail.com> 
+     * @created time :2016-08-29 22:41
      */
     public function purview_del()
     {

@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title><{$app_name}></title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <{include file='common/header.tpl'}>
 </head>
-
 <body>
-
 <div id="content">
     <div class="container-fluid">
         <div class="row">
@@ -63,25 +54,32 @@
                         </div>
 
                         <div class="hr-line-dashed"></div>
-
                         <div class="form-group">
-                            <label class="col-sm-2 control-label"><code>*</code> 变量值:</label>
+                            <label class="col-sm-2 control-label">变量类型:</label>
                             <div class="col-sm-10">
-                                <textarea type='input' name='value' class="form-control" datatype="*" nullmsg="请输入变量值" /><{$v.value}></textarea>
+                                <div class="radio" id="group-radio">
+                                    <label><input type='radio' name='type' value='string' <{if $v.type=='string'}>checked<{/if}> /> 字符串</label>
+                                    <label><input type='radio' name='type' value='number' <{if $v.type=='number'}>checked<{/if}> /> 数字</label>
+                                    <label><input type='radio' name='type' value='text' <{if $v.type=='text'}>checked<{/if}> /> 多行文本</label>
+                                    <label><input type='radio' name='type' value='bool'<{if $v.type=='bool'}>checked<{/if}> /> Bool(布尔变量)</label>
+                                    <label><input type='radio' name='type' value='json'<{if $v.type=='json'}>checked<{/if}> /> JSON格式</label>
+                                </div>
                             </div>
                         </div>
 
                         <div class="hr-line-dashed"></div>
 
                         <div class="form-group">
-                            <label class="col-sm-2 control-label">变量类型:</label>
-                            <div class="col-sm-10">
+                            <label class="col-sm-2 control-label"><code>*</code> 变量值:</label>
+                            <div class="col-sm-10" id="dynamic-varible">
+                                <{if $v.type=='bool'}>
                                 <div class="radio">
-                                    <label><input type='radio' name='type' value='string' <{if $v.type=='string'}>checked<{/if}> /> 字符串</label>
-                                    <label><input type='radio' name='type' value='number' <{if $v.type=='number'}>checked<{/if}> /> 数字</label>
-                                    <label><input type='radio' name='type' value='text' <{if $v.type=='text'}>checked<{/if}> /> 多行文本</label>
-                                    <label><input type='radio' name='type' value='bool'<{if $v.type=='bool'}>checked<{/if}> /> Bool(布尔变量)</label>
+                                    <label><input type='radio' name='value' value='1' <{if $v.value=='1'}>checked<{/if}> /> 是</label>
+                                    <label><input type='radio' name='value' value='0' <{if $v.value=='0'}>checked<{/if}> /> 否</label>
                                 </div>
+                                <{else}>
+                                <textarea type='input' name='value' class="form-control" datatype="*" nullmsg="请输入变量值"><{$v.value}></textarea>
+                                <{/if}>
                             </div>
                         </div>
 
@@ -107,11 +105,29 @@
         </div>
     </div>
 </div>
-
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/validform.js"></script>
-<script src="static/frame/js/newvalidform.js"></script>
-<script src="static/frame/js/main.js"></script>
-
+<{include file='common/footer.tpl'}>
+<script>
+    $(function(){
+        var tpl_textarea = `<textarea type='input' name='value' class="form-control" datatype="*" nullmsg="请输入变量值"><{$v.value}></textarea>`;
+        var tpl_raido = `<div class="radio"><label><input type='radio' name='value' value='1' <{if $v.value=='1'}>checked<{/if}> /> 是</label><label><input type='radio' name='value' value='0' <{if $v.value=='0'}>checked<{/if}> /> 否</label></div>`;
+    
+        $('#group-radio input').on('click', function(){
+            var type = $(this).val();
+            switch(type){
+                case 'bool':
+                    // 单选框
+                    $('#dynamic-varible').html(tpl_raido);
+                    break;
+                case 'json':
+                    // json.view 编辑器
+                    $('#dynamic-varible').html(tpl_textarea);
+                    break;
+                default:
+                    $('#dynamic-varible').html(tpl_textarea);
+                    break;
+            }
+        })
+    })
+    </script>
 </body>
 </html>

@@ -8,7 +8,7 @@
     <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
     <link href="static/css/animate.min.css" rel="stylesheet">
     <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <script src="static/js/jquery.min.js?v=2.1.4"></script>
 </head>
 
 <body>
@@ -86,8 +86,8 @@
 
 </div>
 
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/main.js<{$clear_cache}>"></script>
+<script src="static/js/bootstrap.min.js?v=3.3.6"></script>
+<script src="static/js/main.js<{$clear_cache}>"></script>
 
 </body>
 </html>

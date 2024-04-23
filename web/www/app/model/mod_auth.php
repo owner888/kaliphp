@@ -16,12 +16,14 @@ use kaliphp\db;
 use kaliphp\log;
 use kaliphp\req;
 use kaliphp\util;
-use kaliphp\config;
 use kaliphp\cache;
+use kaliphp\config;
 use kaliphp\session;
+use kaliphp\lib\cls_spam;
+use kaliphp\lib\cls_auth;
 use kaliphp\lib\cls_msgbox;
 use kaliphp\lib\cls_validate;
-use kaliphp\lib\cls_auth;
+use kaliphp\lib\cls_redis_lock;
 use Exception;
 
 /**
@@ -32,9 +34,9 @@ use Exception;
 class mod_auth extends cls_auth
 {
     // 缓存前缀
-    protected static $_cache_prefix = 'auth_user';
+    protected static $_cache_prefix = 'auth_admin';
     // 验证句柄
-    public static $auth_hand = 'auth_hand';
+    public static $auth_hand = 'auth_admin_hand';
     // 用户表
     public static $table_config = [
         'user'          => '#PB#_admin',            // 用户表
@@ -170,6 +172,24 @@ class mod_auth extends cls_auth
             throw new Exception('会员名格式不合法！');
         }
 
+        //并发请求直接返回频率过快，请稍后重试!
+        //1秒内同一个ip同一个账号只能一次
+        $lock_name = md5($account.'-'.req::ip());
+        $is_lock   = cls_redis_lock::lock("login_lock_{$lock_name}", 0, 1);
+        if(!$is_lock)
+        {
+            throw new \Exception("频率过快，请稍后重试！");
+        }
+
+        // 查mysql之前先判断spam
+        // 对应 spam_config.check_user.keys.account 的配置
+        $spam_key = "check_user:account:{$account}";
+        if( false == ($spam_status = cls_spam::check($spam_key, $spam_info, 0, true)) )
+        {
+            throw new \Exception('请求频繁，请稍后重试！');
+        }
+
+        cls_spam::add($spam_key, ['username' => $account]);//请求了就记录
         // 同一IP使用某帐号连续错误次数检测
         if( $this->get_login_error24( $account ) )
         {
@@ -440,7 +460,7 @@ class mod_auth extends cls_auth
         // 缓存
         $cache_key = static::$_cache_prefix.'_purview_mods'.'-'.$this->uid;
         $purviews  = cache::get($cache_key);
-        //$purviews  = false;
+        // $purviews  = false;
 
         // 源数据
         if( $purviews === false )
@@ -586,143 +606,41 @@ class mod_auth extends cls_auth
         return $rs;
     }
 
-    /**
-     * 检测用户24小时内连续输错密码次数是否已经超过
-     * @return bool 超过返回true, 正常状态返回false
-     */
-    public function get_login_error24( $username, $logintype = 'cli_hash' )
+    public static function del_user_session($uid)
     {
-        $error_num = 3;
-        $starttime = strtotime( date('Y-m-d 00:00:00', time()) );
-        if ( $logintype == 'cli_hash' ) 
-        {
-            $loginip  = req::ip();
-            $loginval = md5($username.'-'.$loginip);
-        }
-        else 
-        {
-            $loginval = $username;
-        }
-        $rows = db::select('loginsta')
-            ->from(static::$table_config['user_login'])
-            ->where($logintype, '=', $loginval)
-            ->where('logintime', '>', $starttime)
-            ->order_by('logintime', 'DESC')
-            ->limit($error_num)
+        $ret = db::select('uid,session_id')
+            ->from(static::$table_config['user'])
+            ->where('uid', $uid)
+            ->as_row()
             ->execute();
+        if (!empty($ret) && !empty($ret['session_id'])) 
+        {
+            session::destroy($ret['session_id']);
+        }
 
-        if( $rows === null || count($rows) < $error_num )
-        {
-            return false;
-        }
-        foreach ($rows as $row) 
-        {
-            // 最近3条有一条登录成功就不属于禁用账号
-            if( $row['loginsta'] > 0 ) 
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
-    public function del_login_error24()
+    public static function get_uid_by_token($uid)
     {
-        $error_num = 3;
-        $starttime = strtotime( date('Y-m-d 00:00:00', time()) );
-        $rows = db::select('id, loginsta')
-            ->from(static::$table_config['user_login'])
-            ->where('uid', '=', $this->uid)
-            ->where('logintime', '>', $starttime)
-            ->order_by('logintime', 'DESC')
-            ->limit($error_num)
-            ->execute();
+        $cache_key = self::$_cache_prefix . 'uid_token:' . $uid;
+        $uid = cache::get($cache_key);
+        return $uid;
+    }
 
-        if( $rows === null || count($rows) < $error_num )
+    public static function bind_token_uid($token, $uid, $expire = 1440)
+    {
+        if (empty($uid)) 
         {
             return false;
         }
 
-        foreach ($rows as $row) 
-        {
-            // 最近3条有一条登录成功就不属于禁用账号
-            if( $row['loginsta'] > 0 ) 
-            {
-                return false;
-            }
-        }
+        $cache_key = self::$_cache_prefix . 'uid_token:' . $uid;
 
-        foreach ($rows as $row) 
-        {
-            $id = $row['id'];
-            db::delete(static::$table_config['user_login'])
-                ->where('id', '=', $id)
-                ->execute();
-        }
+        $ret = cache::set($cache_key, $token, $expire);
 
-        return true;
+        return $ret;
     }
 
-    /**
-     * 保存历史登录记录
-     */
-    public function save_login_history( $row, $loginsta, $session_id = null )
-    {
-        $ltime = time();
-        $loginip  = req::ip();
-        $cli_hash = md5($row['username'].'-'.$loginip);
-        $row['uid'] = isset($row['uid']) ? $row['uid'] : 0;
-
-        if ( !empty($row['uid'])) 
-        {
-            db::update(static::$table_config['user'])
-                ->set([
-                    'session_id'   => $session_id, // 保存session_id到数据库，用于后台随时踢出
-                    'logintime'    => $ltime,
-                    'loginip'      => $loginip,
-                ])
-                ->where('uid', $row['uid'])
-                ->execute();
-        }
-
-        db::insert(static::$table_config['user_login'])
-            ->set([
-                'session_id'   => $session_id,
-                'uid'          => $row['uid'],
-                'username'     => $row['username'],
-                'agent'        => req::user_agent(),
-                'logintime'    => $ltime,
-                'loginip'      => $loginip,
-                'loginsta'     => $loginsta,
-                'cli_hash'     => $cli_hash,
-            ])
-            ->execute();
-        return true;
-    }
-
-    /**
-     * 获得用户上次登录时间和ip
-     * @return array
-     */
-    public function get_last_login()
-    {
-        $datas = db::select("loginip, logincountry, logintime")
-            ->from(static::$table_config['user_login'])
-            ->where('uid', $this->uid)
-            ->and_where('loginsta', 1)
-            ->order_by('logintime', 'desc')
-            ->limit(2)
-            ->offset(0)
-            ->execute();
-        if( isset($datas[1]) )
-        {
-            return $datas[1];
-        } 
-        else 
-        {
-            return array('loginip'=>'', 'logincountry'=>'-', 'logintime'=>0);
-        }
-    }
 }
 
 

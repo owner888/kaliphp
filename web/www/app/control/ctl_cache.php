@@ -20,9 +20,9 @@ use model\mod_cache;
 class ctl_cache
 {
     public static $cache_types = array(
-        'user' => '用户管理',
-        'task' => '任务管理',
-        'site' => '网址站群',
+        'user'   => '用户管理',
+        'task'   => '任务管理',
+        'site'   => '网址站群',
         'guonei' => '网址导航',
     );
 
@@ -97,11 +97,6 @@ class ctl_cache
     {
         $key  = req::item('key', '');
         $type = cls_redis::instance()->type($key);
-        //$types = array(
-            //'0' => 'set',
-            //'1' => 'string',
-            //'3' => 'list',
-        //);
 
         // 如果是队列
         if ($type == 3) 
@@ -112,14 +107,17 @@ class ctl_cache
         {
             $val = cls_redis::instance()->get($key);
         }
+
         if (empty($val)) 
         {
             exit("The value of {$key} does not exist");
         }
+
         if (util::is_json($val)) 
         {
             $val = cls_redis::instance()->decode($val);
         }
+
         echo '<pre>';print_r($val);echo '</pre>';
     }
 

@@ -1,25 +1,6 @@
 <?php
-// 数据库相关配置
-// mysql8.0 支持 php7.x 需要运行CREATE USER kaliphp@"%" identified with mysql_native_password by 'kaliphp';
-return [
-    'user'       => 'kaliphp',
-    'pass'       => 'kaliphp',
-    'name'       => 'kaliphp',
-    'charset'    => 'utf8mb4',
-    'collation'  => 'utf8mb4_general_ci',
-    'prefix'     => 'kali',
-    // 是否启用长链接，不要启用，mysqli的长链问题很多
-    'keep-alive' => false,
-    // 是否对SQL语句进行安全检查并处理，在插入十万条以上数据的时候会出现瓶颈
-    'safe_test'  => true,
-    // 慢查询阀值，秒
-    'slow_query' => 0.5,
-    'host' => [
-        'master' => '127.0.0.1:3306',
-        'slave'  => ['127.0.0.1:3306']
-    ],
-    'crypt_key' => 'key',
-    'crypt_fields' => [
-        //'kaliphp_member' => [ 'name', 'age', 'email', 'address' ],
-    ]
-];
+$configs = require APPPATH . '/../../common/config/'.basename(__FILE__);
+return array_merge($configs, [
+    // 需要增加或覆盖配置，写到下面即可
+    
+]);

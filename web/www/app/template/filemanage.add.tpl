@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><{$app_name}></title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <{include file='common/header.tpl'}>
 </head>
 
 <body>
@@ -47,23 +40,20 @@
                                 <input type="hidden" class="form-control file" datatype="file" nullmsg="请上传文件">
                             </div>
                         </div>
+
                         <div class="hr-line-dashed"></div>
+
                         <div class="form-group uploader-group" data-multiple="true" data-auto="true" data-len="" data-size="2" data-maxlen="3">
                             <label class="col-sm-2 control-label"><code>*</code> 文件2:</label>
                             <div class="col-sm-10">
                                 <div class="uploader-list"></div>
                                 <a class="btn btn-dark uploader-picker" data-file="file2"><i class="fa fa-upload"></i> 自动上传</a>
-
-                                <!--<button type="button" class="btn btn-dark uploader-btn" data-id="1">-->
-                                    <!--<i class="fa fa-upload"></i>-->
-                                    <!--开始上传-->
-                                <!--</button>-->
                             </div>
                             <div class="hidden-input col-sm-9 col-sm-offset-2">
                                 <input type="hidden" class="form-control file" datatype="file" nullmsg="请上传文件">
                             </div>
-                            llllll
                         </div>
+
                         <div class="hr-line-dashed"></div>
 
                         <div class="form-group uploader-group uploader-group-img" 
@@ -82,6 +72,7 @@
                                 <input type="hidden" class="form-control file" datatype="file" nullmsg="请上传文件">
                             </div>
                         </div>
+
                         <div class="hr-line-dashed"></div>
 
                         <div class="form-group uploader-group uploader-group-img"  
@@ -95,6 +86,7 @@
                                 <input type="hidden" class="form-control file" datatype="file" nullmsg="请上传文件">
                             </div>
                         </div>
+
                         <div class="hr-line-dashed"></div>
 
                         <div class="form-group uploader-group uploader-group-img" 
@@ -119,7 +111,9 @@
                                 <input type="hidden" class="form-control file" datatype="file" nullmsg="请上传文件">
                             </div>
                         </div>
+
                         <div class="hr-line-dashed"></div>
+
                         <div class="form-group uploader-group uploader-group-img" 
                             data-compress="true" 
                             data-auto="true" 
@@ -162,13 +156,7 @@
         </div>
     </div>
 </div>
-
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/webuploader/webuploader.min.js"></script>
-<script src="static/frame/js/webuploader.own.js<{$clear_cache}>"></script>
-<script src="static/frame/js/main.js"></script>
-<script src="static/frame/js/validform.js"></script>
-<script src="static/frame/js/newvalidform.js"></script>
+<{include file='common/footer.tpl'}>
 </body>
 </html>
 

@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><{$app_name}></title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <{include file='common/header.tpl'}>
     <style>
     div.uploader {
         background-image:none;
@@ -59,14 +52,7 @@
         </div>
     </div>
 </div>
-
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/plugins/validate/jquery.validate.min.js"></script>
-<script src="static/frame/js/plugins/validate/messages_zh.min.js"></script>
-<script src="static/frame/js/validate.js"></script>
-<script src="static/frame/js/main.js"></script>
-<link href="static/uploadify/uploadify.css" rel="stylesheet">
-<script src="static/uploadify/jquery.uploadify.min.js"></script>
+<{include file='common/footer.tpl'}>
 <script type="text/javascript">
     $(function() {
         $('#file_upload').uploadify({

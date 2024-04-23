@@ -266,7 +266,7 @@ kali::run();</code></pre>
     'csrf_exclude_uris' => [                    // csrf URL白名单
     ], 
 ]</code></pre>
-        <p>当csrf验证开启时，前端ajax请求需要预先加载引用<code>static/frame/js/main.js</code>文件，ajax提交时，系统会在请求头自动加上验证字段。</p>
+        <p>当csrf验证开启时，前端ajax请求需要预先加载引用<code>static/js/main.js</code>文件，ajax提交时，系统会在请求头自动加上验证字段。</p>
         <pre><code class="javascript">//ajax.js
 jQuery(document).ajaxSend(function(event, xhr, settings) {
     function getCookie(name) {
@@ -285,7 +285,7 @@ jQuery(document).ajaxSend(function(event, xhr, settings) {
 &lt;input type="text" name="_csrf" hidden value="&lt;{form_token type="token"}&gt;"/&gt;
 // 或直接传form参数通过smarty生成一个完整的input
 &lt;{form_token type="form"}&gt;</code></pre>
-        <p>同样也可以在js中获取（前提是引用<code>static/frame/js/main.js</code>JS文件），加在POST参数中即可。</p>
+        <p>同样也可以在js中获取（前提是引用<code>static/js/main.js</code>JS文件），加在POST参数中即可。</p>
         <pre><code class="javascript">var _csrf = getCookie('csrf_cookie_name');</code></pre>
         <h2 id="router-restful">Restful</h2>
         <p>KaliPHP 也同时支持restful协议的请求</p>

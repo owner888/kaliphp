@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>PHPCALL</title>
-    <link href="static/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
-    <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
-    <link href="static/css/animate.min.css" rel="stylesheet">
-    <link href="static/css/authentication.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <{include file='common/header.tpl'}>
 </head>
 <body id="authen">
 <div id="content">
@@ -16,7 +9,7 @@
         <div class="header-inner">
             <div class="pull-left">
                 <div class="img">
-                    <a href="/"><img src="static/frame/img/logo.svg" alt="" width="50px;"></a>
+                    <a href="/"><img src="static/img/logo.svg" alt="" width="50px;"></a>
                     <a href="/">PHPCALL</a>
                 </div>
             </div>
@@ -85,9 +78,6 @@
         </div>
     </footer>
 </div>
-
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/validform.js"></script>
-<script src="static/frame/js/newvalidform.js"></script>
+<{include file='common/footer.tpl'}>
 </body>
 </html>

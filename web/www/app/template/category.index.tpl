@@ -8,7 +8,7 @@
     <link href="static/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
     <link href="static/css/animate.min.css" rel="stylesheet">
     <link href="static/css/main.css" rel="stylesheet">
-    <script src="static/frame/js/jquery.min.js?v=2.1.4"></script>
+    <script src="static/js/jquery.min.js?v=2.1.4"></script>
 </head>
 
 <body>
@@ -63,8 +63,8 @@
                                     <td> <{$v.id}> </td>
                                     <td> <{$v.name}> </td>
                                     <td align="center"> <input type="text" name="sorts[<{$v.id}>]" value="<{$v.sort}>" class="form-control" style="width:80px" /> </td>
-                                    <td> <{$v.create_time|date_format:'%Y-%m-%d %H:%M:%S'}> </td>
-                                    <td> <{$v.update_time|date_format:'%Y-%m-%d %H:%M:%S'}> </td>
+                                    <td> <{$v.created_at}> </td>
+                                    <td> <{$v.updated_at}> </td>
                                     <td> 
                                         <a href="?ct=category&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_edit'}></a>
                                         <a onclick="plt.confirmAction(event)" data-href="?ct=category&ac=del&ids[]=<{$v.id}>" data-title="<{lang key='common_sure_delete'}>" data-tipmsg="确认删除" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i><{lang key='common_delete'}></a>
@@ -100,8 +100,8 @@
     </div>
 </div>
 
-<script src="static/frame/js/bootstrap.min.js?v=3.3.6"></script>
-<script src="static/frame/js/main.js<{$clear_cache}>"></script>
+<script src="static/js/bootstrap.min.js?v=3.3.6"></script>
+<script src="static/js/main.js<{$clear_cache}>"></script>
 <script>
 $(document).ready(function(){ 
 
