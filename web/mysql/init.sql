@@ -345,18 +345,6 @@ CREATE TABLE `kali_crond` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC COMMENT='计划任务表';
 
-LOCK TABLES `kali_crond` WRITE;
-/*!40000 ALTER TABLE `kali_crond` DISABLE KEYS */;
-
-INSERT INTO `kali_crond` (`id`, `sort`, `name`, `filename`, `runtime_format`, `lasttime`, `runtime`, `status`, `created_at`, `creator_id`, `updated_at`, `updator_id`, `deleted_at`, `deletor_id`)
-VALUES
-	(1,0,'定时获取国家首都天气','crond_get_country_weather.php','@-5 17:06',1588756022,'6.286',1,'2022-10-13 16:24:05',1,'2023-01-20 15:13:07',1,NULL,0),
-	(2,1,'定时采集新闻','crond_collect_news.php','*',0,'0',1,'2022-10-13 16:25:00',1,'2023-01-20 15:13:08',1,NULL,0);
-
-/*!40000 ALTER TABLE `kali_crond` ENABLE KEYS */;
-UNLOCK TABLES;
-
-
 # Dump of table kali_member
 # ------------------------------------------------------------
 

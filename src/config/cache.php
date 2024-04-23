@@ -2,20 +2,32 @@
 // 缓存相关配置
 return [
     'enable'     => true,
-    'prefix'     => 'mc_df_',
-    'cache_type' => 'redis',
+    'prefix'     => $_ENV['CACHE_PREFIX'] ?? 'kaliphp',
+    'cache_type' => 'redis',//redis file memcache
     'cache_time' => 7200,
-    'cache_name' => 'cfc_data',
+    'cache_name' => $_ENV['CACHE_NAME'] ?? 'kaliphp_data',
     // 开启redis自动序列化存储
     'serialize'  => true,
-    'memcache' => [
+    'memcache'   => [
         'servers' => [
-            ['host' => '127.0.0.1', 'port' => 11211, 'weight' => 1, 'keep-alive' => false, 'timeout' => 5],
+            [
+                'host'       => $_ENV['MEMCACHE_HOST'], 
+                'port'       => $_ENV['MEMCACHE_PORT'], 
+                'weight'     => 1, 
+                'keep-alive' => false
+            ],
         ]
     ],
     // redis目前只支持单台服务器，使用短连接，长链接在php7以上有问题，经常会被莫名回收
     'redis' => [
-        'server' => ['host' => '127.0.0.1', 'port' => 6379, 'pass' => '', 'keep-alive' => false, 'timeout' => 5, 'dbindex' => 1]
+        'server' => [
+            'host'       => $_ENV['REDIS_HOST'], 
+            'port'       => $_ENV['REDIS_PORT'], 
+            'pass'       => $_ENV['REDIS_PASSWORD'], 
+            'keep-alive' => false, 
+            'timeout'    => 5,
+            'dbindex'    => 1
+        ]
     ],
     'mqtt' => [
         'server' => [

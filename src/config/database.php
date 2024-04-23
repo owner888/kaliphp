@@ -2,28 +2,28 @@
 // 数据库相关配置
 // mysql8.0 支持 php7.x 需要运行CREATE USER kaliphp@"%" identified with mysql_native_password by 'kaliphp';
 return [
-    'user'       => 'kaliphp',
-    'pass'       => 'kaliphp',
-    'name'       => 'kaliphp',
+    'user'       => $_ENV['DB_USERNAME'],
+    'pass'       => $_ENV['DB_PASSWORD'],
+    'name'       => $_ENV['DB_DATABASE'],
     'charset'    => 'utf8mb4',
     'collation'  => 'utf8mb4_general_ci',
-    'prefix'     => 'kali',
+    'prefix'     => $_ENV['DB_PREFIX'],
     // 是否启用长链接，不要启用，mysqli的长链问题很多
     'keep-alive' => false,
-    'timeout'    => 5,
     // 是否对SQL语句进行安全检查并处理，在插入十万条以上数据的时候会出现瓶颈
     'safe_test'  => true,
     // 慢查询阀值，秒
     'slow_query' => 0.5,
-    'host' => [
-        'master' => '127.0.0.1:3306',
-        'slave'  => ['127.0.0.1:3306']
+    'timeout'    => $_ENV["DB_TIMEOUT"],
+    'host'       => [
+        'master' => $_ENV['DB_MASTER_HOST'] . ':' .$_ENV['DB_MASTER_PORT'],
+        'slave'  => [$_ENV['DB_SLAVE_HOST'] . ':' .$_ENV['DB_SLAVE_PORT']]
     ],
-    'crypt_key' => 'key',
+    'crypt_key'    => $_ENV['DB_CRYPT_KEY'],
     'crypt_fields' => [
-        //'kaliphp_member' => [ 'name', 'age', 'email', 'address' ],
-    ],
+        //$_ENV['DB_PREFIX'].'member' => [ 'name', 'age', 'email', 'address' ],
+    ]
     // 'json_fields' => [
-    //     'lrs_test' => ['json_field']
+    //     $_ENV['DB_PREFIX'].'test' => ['json_field']
     // ]
 ];

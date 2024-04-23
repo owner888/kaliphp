@@ -91,7 +91,7 @@ class tpl
     
     protected static function config ()
     {
-        self::$_instance->assign('app_name', $_ENV["APP_NAME"]);
+        self::$_instance->assign('app_name', $_ENV["APP_NAME"] ?? 'kaliapp');
         self::$_instance->assign('request', req::$forms);
         self::$_instance->assign('clear_cache', '?' . time());
     }

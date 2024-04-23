@@ -65,6 +65,7 @@ return [
         'user_ip'              => 'X_REAL_IP',
         'use_rewrite'          => false,
         'global_xss_filtering' => true,
+        'encrypt_key'          => $_ENV['CRYPT_KEY'],
     ],
 
     // COOKIE设置
