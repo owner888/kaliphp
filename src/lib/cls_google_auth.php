@@ -96,12 +96,22 @@ class cls_google_auth
         $width = !empty($params['width']) && (int) $params['width'] > 0 ? (int) $params['width'] : 200;
         $height = !empty($params['height']) && (int) $params['height'] > 0 ? (int) $params['height'] : 200;
         $level = !empty($params['level']) && array_search($params['level'], array('L', 'M', 'Q', 'H')) !== false ? $params['level'] : 'M';
-        $urlencoded = urlencode('otpauth://totp/'.$name.'?secret='.$secret.'');
-        if (isset($title)) 
+
+        $urlencoded = 'otpauth://totp/'.$name.'?secret='.$secret.'';
+        if (isset($title))
         {
-            $urlencoded .= urlencode('&issuer='.urlencode($title));
+            $urlencoded .= '&issuer='.$title;
         }
-        return 'https://chart.googleapis.com/chart?chs='.$width.'x'.$height.'&chld='.$level.'|0&cht=qr&chl='.$urlencoded.'';
+
+        return $urlencoded;
+        // 
+        // 被google启用了
+        // $urlencoded = urlencode('otpauth://totp/'.$name.'?secret='.$secret.'');
+        // if (isset($title)) 
+        // {
+        //     $urlencoded .= urlencode('&issuer='.urlencode($title));
+        // }
+        // return 'https://chart.googleapis.com/chart?chs='.$width.'x'.$height.'&chld='.$level.'|0&cht=qr&chl='.$urlencoded.'';
     }
 
     /**
