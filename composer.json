@@ -15,12 +15,15 @@
         }
     ],
     "require": {
-        "php" : "^8.0"
+        "php" : "^8.0",
+        "smarty/smarty": "^4.3",
+        "chillerlan/php-qrcode": "^5.0"
     },
     "require-dev": {
         "phpstan/phpstan": "2.0.x-dev",
         "pestphp/pest": "2.x-dev",
-        "pestphp/pest-plugin-stressless": "2.x-dev"
+        "pestphp/pest-plugin-stressless": "2.x-dev",
+        "mockery/mockery": "2.0.x-dev"
     },
     "autoload": {
         "psr-4": {
@@ -31,7 +34,7 @@
         ]
     },
     "autoload-dev": {
-        "psr-4": {"kaliphp\\tests\\": "tests"}
+        "psr-4": {"Tests\\": "tests"}
     },
     "minimum-stability": "dev",
     "config": {
@@ -40,7 +43,7 @@
         }
     },
     "scripts": {
-        "analyze": "phpstan",
+        "analyze": "phpstan analyse src",
         "test": "pest --colors=always"
     }
 }

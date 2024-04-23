@@ -1,4 +1,16 @@
 <?php
+use kaliphp\kali;
+
+define('SYS_DEBUG', true);
+define('SYS_ENV', 'dev');
+define('APPPATH', __DIR__);
+define('ENVPATH', __DIR__ .'/.env');
+
+//kali APPPATH下面要有data文件夹
+if ( !is_dir(APPPATH .'/data')  )
+{
+    @mkdir(APPPATH .'/data');
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -12,6 +24,7 @@
 */
 
 // uses(Tests\TestCase::class)->in('Feature');
+uses(Tests\TestCase::class)->in('Unit');
 
 /*
 |--------------------------------------------------------------------------
@@ -43,3 +56,4 @@ function something()
 {
     // ..
 }
+
