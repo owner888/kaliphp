@@ -12,11 +12,11 @@
 
 namespace kaliphp;
 
-use kaliphp\config;
 use kaliphp\req;
-use kaliphp\session;
 use kaliphp\cache;
 use kaliphp\event;
+use kaliphp\config;
+use kaliphp\session;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
 use extend\pub_define;
@@ -112,7 +112,11 @@ class kali
 
         // 设置一下路径，否则下面的control和model会找不到类
         autoloader::set_root_path(APPPATH);
-        pub_define::init();
+
+        if (class_exists('extend\\pub_define')) 
+        {
+            pub_define::init();
+        }
         self::define();
 
         if ( PHP_SAPI != 'cli' && !empty(self::$config['session_start']) ) 
