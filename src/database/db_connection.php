@@ -135,6 +135,11 @@ class db_connection
     protected $_order_by = array();
 
     /**
+     * @var  integer  $_max_select_limit
+     */
+    protected $_max_select_limit = 300;
+
+    /**
      * @var  integer  $_limit
      */
     protected $_limit = null;
@@ -1091,6 +1096,18 @@ class db_connection
     }
 
     /**
+     * 设置最大limit
+     * 特殊情况下可以单独调用
+     * @param    [type]     $number [description]
+     * @return   [type]             [description]
+     */
+    public function max_select_limit(int $number)
+    {
+        $this->_max_select_limit = $number;
+        return $this;
+    }
+
+    /**
      * Return up to "LIMIT ..." results
      *
      * @param   integer  $number  maximum results to return
@@ -1494,7 +1511,13 @@ class db_connection
             $this->_limit = 1;   
         }
 
-        if ($this->_limit !== NULL)
+        // select 查询 limit 需要做下限制
+        if (PHP_SAPI !== 'cli') 
+        {
+            $this->_limit = empty($this->_limit) ? $this->_max_select_limit : min($this->_limit, $this->_max_select_limit);
+        }
+
+        if ( ! empty($this->_limit))
         {
             // Add limiting
             $sql .= ' LIMIT '.$this->_limit;
@@ -1662,7 +1685,7 @@ class db_connection
             $sql .= ' '.$this->_compile_order_by($this->_order_by);
         }
 
-        if ($this->_limit !== null)
+        if ( ! empty($this->_limit))
         {
             // Add limiting
             $sql .= ' LIMIT '.$this->_limit;
@@ -1688,7 +1711,7 @@ class db_connection
             $sql .= ' '.$this->_compile_order_by($this->_order_by);
         }
 
-        if ($this->_limit !== null)
+        if ( ! empty($this->_limit))
         {
             // Add limiting
             $sql .= ' LIMIT '.$this->_limit;
@@ -3131,6 +3154,9 @@ class db_connection
         $this->_as_result  = false;
 
         $this->_parameters = array();
+
+        $this->_max_select_limit = 300;
+
         return $this;
     }
 
