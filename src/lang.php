@@ -81,12 +81,12 @@ class lang
         $idioms = array_unique([$idiom, $default_idiom, util::get_value(self::$config, 'fallback')]);
         foreach([$basepath, $common_path, $app_path] as $path)
         {
-            foreach($idioms as $idiom)
+            foreach($idioms as $k => $idiom)
             {
                 if( 
                     !empty($idiom) && //空的idom忽略
                     file_exists($filepath = $path. DS .$idiom . DS .$langfile ) &&
-                    !isset($loaded_files[$filepath]) //已经加载过的不需要加载
+                    ( $k == 0 || !isset($loaded_files[$filepath])) //系统配置的已经加载过的不需要加载
                 )
                 {
                     $lang = parse_ini_file($filepath);

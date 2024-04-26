@@ -122,7 +122,7 @@ class cache
     {
         if ( empty($value) ) 
         {
-            trigger_error('Cache value cannot be empty');
+            // trigger_error('Cache value cannot be empty');
             return false;
         }
 
