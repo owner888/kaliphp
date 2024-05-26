@@ -1130,7 +1130,7 @@ class db_connection
      */
     public function join($table, $type = NULL)
     {
-        if ($type !== '')
+        if (!empty($type))
         {
             $type = strtoupper(trim($type));
 
@@ -2464,7 +2464,7 @@ class db_connection
     {
         self::init_db($name, $config_file, $default_db);
         $_instance_name = self::get_instance_name($name);
-        if( !isset(self::$_instance[$instance_name['master']]) )
+        if( !isset(self::$_instance[$_instance_name['master']]) )
         {
             throw new Exception("instance:{$name} is not exit", 3001);
         }

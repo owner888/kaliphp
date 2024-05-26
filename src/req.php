@@ -278,7 +278,7 @@ class req
      *
      * @param   mixed $index
      * @param   mixed $default
-     * @return  array
+     * @return  mixed
      */
     public static function headers( $index = null, $default = null )
     {
@@ -329,7 +329,7 @@ class req
             $languages = array('Undefined');
         }
 
-        $lang = !in_array($languages[0], array("zh-cn", "zh-tw", "en", "km")) ? "zh-cn" : $languages[0];
+        $lang = !in_array($languages[0], array("zh-cn", "zh-tw", "en")) ? "zh-cn" : $languages[0];
         return $lang;
     }
 
@@ -402,7 +402,7 @@ class req
      * exp:
      * https://www.kaliphp.com
      */
-    public static function domain($domain = null)
+    public static function domain()
     {
         return self::protocol() . '://' . self::host();
     }
@@ -413,7 +413,7 @@ class req
      * exp:
      * https://www.kaliphp.com/home/
      */
-    public static function base_url($uri = '', $protocol = null)
+    public static function base_url($uri = '')
     {
         $url = req::url();
         // 排除 Query String 后的 URL
@@ -990,7 +990,7 @@ class req
         {
             self::$forms[$k] = $v;
 
-            //给值gets/posts
+            // 给值gets/posts
             if( strtoupper($method) == 'GET' ) 
             {
                 self::$gets[$k] = $v;

@@ -110,7 +110,7 @@ class kali
             exit(self::fmt_code(1007, [self::$cache_root]));
         }
 
-        // 设置一下路径，否则下面的control和model会找不到类
+        // 设置一下路径，让 use 类生效
         autoloader::set_root_path(APPPATH);
 
         if (class_exists('extend\\pub_define')) 
@@ -123,7 +123,7 @@ class kali
         {
             $token = $_SERVER['HTTP_TOKEN'] ?? $_REQUEST['token'] ?? '';
             $token && session_id($token);
-            // session接管
+            // SESSION 接管
             session::handle();
             session_start();
         }
@@ -136,6 +136,14 @@ class kali
      */
     private static function define()
     {
+        $http_encrypt = $_SERVER['HTTP_ENCRYPT'] ?? '0';
+        // 调用 req 之前处理下 use_encrypt
+        if (PHP_SAPI != 'cli' && $http_encrypt == '1') 
+        {
+            defined('REQUEST_ENCRYPT') or define('REQUEST_ENCRYPT', true);
+        }
+        defined('REQUEST_ENCRYPT') or define('REQUEST_ENCRYPT', false);
+
         // mvim://open?url=file://%file&line=%line
         // subl://open?url=file://%file&line=%line
         // idea://open?file=%file&line=%line

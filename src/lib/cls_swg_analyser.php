@@ -163,10 +163,7 @@ EOT;
                 {
                     @list($var, $def) = explode(':', $m['name'], 2);
                     $extr = [];
-                    if ( $def ) 
-                    {
-                        $extr[] = sprintf('default="%s"', $def);
-                    }
+                    $extr[] = sprintf('default="%s"', $def ?? '');
 
                     $extr_pattern = '#(?<key>[^\s=]+)=["\']?(?<val>[^\s=]+)["\']?#';
                     if ( 
@@ -247,11 +244,13 @@ EOT;
                         // }
                     }
 
+                    $m['desc'] = str_replace('*', ' ', $m['desc']);
+                    $m['desc'] = str_replace(PHP_EOL.'    ', PHP_EOL, $m['desc']);
                     $swg_data[] = sprintf(
                         $tpls['return'], 
                         $m['name'], 
                         $m['type'], 
-                        '<pre>'.str_replace("\"", "'", $m['desc']) . '</pre>'
+                        '<pre>'.str_replace(["\"",'    '], ["'", '&nbsp;&nbsp;'], $m['desc']) . '</pre>'
                     );
                 }
             }

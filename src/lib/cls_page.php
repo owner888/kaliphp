@@ -36,7 +36,7 @@ class cls_page
         $url_prefix = '?'.http_build_query($prefix);
 
         // 当前页数,至少为1
-        $current_page = req::item($page_name, 1);
+        $current_page = max(1, req::item($page_name, 1));
         $offset = ( $current_page - 1 ) * $page_size;
 
         // 总页数
