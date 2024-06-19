@@ -698,30 +698,34 @@ class util
         );
 
         $str = highlight_string('<?php '.$str.' ?>', TRUE);
-
         $str = preg_replace(
             array(
                 '/<span style="color: #([A-Z0-9]+)">&lt;\?php(&nbsp;| )/i',
-                '/(<span style="color: #[A-Z0-9]+">.*?)\?&gt;<\/span>\n<\/span>\n<\/code>/is',
+                '/(<span style="color: #[A-Z0-9]+">.*?)\?&gt;<\/span>/is',
                 '/<span style="color: #[A-Z0-9]+"\><\/span>/i'
             ),
             array(
                 '<span style="color: #$1">',
-                "$1</span>\n</span>\n</code>",
+                "$1</span>",
                 ''
             ),
             $str
         );
 
         return str_replace(
-            array('phptagopen', 'phptagclose', 'asptagopen', 'asptagclose', 'backslashtmp', 'scriptclose'),
-            array('&lt;?', '?&gt;', '&lt;%', '%&gt;', '\\', '&lt;/script&gt;'),
+            array('phptagopen', 'phptagclose', 'asptagopen', 'asptagclose', 'backslashtmp', 'scriptclose','<pre>','</pre>'),
+            array('&lt;?', '?&gt;', '&lt;%', '%&gt;', '\\', '&lt;/script&gt;','<code>','</code>'),
             $str
         );
     }
 
     public static function remove_invisible_characters($str, $url_encoded = TRUE)
     {
+        if (empty($str)) 
+        {
+            return $str;
+        }
+
         $non_displayables = array();
 
         // every control character except newline (dec 10),
@@ -738,6 +742,10 @@ class util
         do
         {
             $str = preg_replace($non_displayables, '', $str, -1, $count);
+            if (empty($str))
+            {
+                break;
+            }
         }
         while ($count);
 
