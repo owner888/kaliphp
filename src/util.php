@@ -698,6 +698,13 @@ class util
         );
 
         $str = highlight_string('<?php '.$str.' ?>', TRUE);
+        // 8.3版本highlight_string返回的格式有点变化
+        $str = preg_replace(
+            '/<pre><code style="color: #([A-Z0-9]+)">(.*)<\/code><\/pre>/',
+            '<code><span style="color: #$1">$2</span></code>',
+            $str
+        );
+
         $str = preg_replace(
             array(
                 '/<span style="color: #([A-Z0-9]+)">&lt;\?php(&nbsp;| )/i',
@@ -712,9 +719,10 @@ class util
             $str
         );
 
+
         return str_replace(
-            array('phptagopen', 'phptagclose', 'asptagopen', 'asptagclose', 'backslashtmp', 'scriptclose','<pre>','</pre>'),
-            array('&lt;?', '?&gt;', '&lt;%', '%&gt;', '\\', '&lt;/script&gt;','<code>','</code>'),
+            array('phptagopen', 'phptagclose', 'asptagopen', 'asptagclose', 'backslashtmp', 'scriptclose'),
+            array('&lt;?', '?&gt;', '&lt;%', '%&gt;', '\\', '&lt;/script&gt;'),
             $str
         );
     }
