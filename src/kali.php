@@ -19,7 +19,6 @@ use kaliphp\config;
 use kaliphp\session;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
-use extend\pub_define;
 
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);
 
@@ -44,7 +43,6 @@ ini_set('display_errors', 'On');
  */
 class kali
 {
-    // app配置数组
     public static $config = [];
     public static $base_root;
     public static $data_root;
@@ -74,6 +72,7 @@ class kali
         self::$config = $config;
 
         defined('ENVPATH') or define('ENVPATH', '.env');
+
         if (file_exists(ENVPATH) && ($envs = parse_ini_file(ENVPATH))) 
         {
             foreach ($envs as $k => $v) 
@@ -113,10 +112,6 @@ class kali
         // 设置一下路径，让 use 类生效
         autoloader::set_root_path(APPPATH);
 
-        if (class_exists('extend\\pub_define')) 
-        {
-            pub_define::init();
-        }
         self::define();
 
         if ( PHP_SAPI != 'cli' && !empty(self::$config['session_start']) ) 
@@ -138,7 +133,7 @@ class kali
     {
         $http_encrypt = $_SERVER['HTTP_ENCRYPT'] ?? '0';
         // 调用 req 之前处理下 use_encrypt
-        if (PHP_SAPI != 'cli' && $http_encrypt == '1') 
+        if ( PHP_SAPI != 'cli' && $http_encrypt == '1' ) 
         {
             defined('REQUEST_ENCRYPT') or define('REQUEST_ENCRYPT', true);
         }
@@ -147,13 +142,13 @@ class kali
         // mvim://open?url=file://%file&line=%line
         // subl://open?url=file://%file&line=%line
         // idea://open?file=%file&line=%line
-        defined('SYS_EDITOR') or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
-
-        // 定义保护
-        defined('SYS_DEBUG') or define('SYS_DEBUG', false);
-        defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
-
-        defined('SYS_ENV') or define('SYS_ENV', 'pub');
+        defined('SYS_EDITOR')  or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
+        // 是否打开调试功能
+        defined('SYS_DEBUG')   or define('SYS_DEBUG', $_ENV['APP_DEBUG'] ?? false);
+        // 打印 Chrome console 日志，需要安装 Chrome Logger 插件: https://chrome.google.com/webstore/detail/chrome-logger/noaneddfkdjfnfdakjjmocngnfkfehhd
+        defined('SYS_CONSOLE') or define('SYS_CONSOLE', $_ENV['APP_CONSOLE'] ?? false);
+        // 系统环境
+        defined('SYS_ENV') or define('SYS_ENV', $_ENV['APP_ENV'] ?? 'pub');
         defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
         defined('ENV_PRE') or define('ENV_PRE', SYS_ENV === 'pre');
         defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
@@ -169,15 +164,15 @@ class kali
         defined('KALI_START_MEM')  or define('KALI_START_MEM',  memory_get_usage());
         defined('KALI_TIMESTAMP')  or define('KALI_TIMESTAMP',  time());
 
-        // event 默认事件
+        // Event default action
         defined('beforeAction') or define('beforeAction', 1);
-        defined('afterAction') or define('afterAction', 2);
-        defined('onException') or define('onException', 3);
-        defined('onError') or define('onError', 4);
-        defined('onRequest') or define('onRequest', 5);
-        defined('onResponse') or define('onResponse', 6);
-        defined('onFilter') or define('onFilter', 7);
-        defined('onSql') or define('onSql', 'onSql');
+        defined('afterAction')  or define('afterAction', 2);
+        defined('onException')  or define('onException', 3);
+        defined('onError')      or define('onError', 4);
+        defined('onRequest')    or define('onRequest', 5);
+        defined('onResponse')   or define('onResponse', 6);
+        defined('onFilter')     or define('onFilter', 7);
+        defined('onSql')        or define('onSql', 'onSql');
     }
 
     /**
@@ -194,13 +189,10 @@ class kali
 
         event::start();
 
-        if ( PHP_SAPI != 'cli' ) 
+        if ( PHP_SAPI != 'cli' )
         {
-            // 客户端IP
-            defined('IP') or define('IP', req::ip());
-            // 客户端语言
-            defined('LANG') or define('LANG', req::language());
-            // 客户端国家
+            defined('IP')      or define('IP', req::ip());
+            defined('LANG')    or define('LANG', req::language());
             defined('COUNTRY') or define('COUNTRY', req::country());
 
             // 触发过滤事件，可对IP，访问国家进行过滤处理
@@ -224,7 +216,7 @@ class kali
         if ( $req_data ) 
         {
             // Websocket 方式，Workerman、Swoole 环境
-            if ( req::method() == 'CLI' ) 
+            if ( PHP_SAPI != 'cli' ) 
             {
                 // 清空上一个请求数据，避免数据污染
                 req::$forms = req::$gets = [];
@@ -241,7 +233,7 @@ class kali
         event::trigger(onRequest);
 
         // 检查权限，Workerman环境先自己检查，后面再实现 
-        if( req::method() != 'CLI' && isset(self::$config['check_purview_handle']) )
+        if( PHP_SAPI != 'cli' && isset(self::$config['check_purview_handle']) )
         {
             kali::$auth = call_user_func_array(self::$config['check_purview_handle'], [$ct, $ac]);
         }
@@ -250,7 +242,7 @@ class kali
         //禁止 _ 开头的方法
         if( $ac[0]=='_' )
         {
-            if ( req::method() != 'CLI' ) 
+            if ( PHP_SAPI != 'cli' ) 
             {
                 throw new \Exception('', 2004);
             } 
@@ -262,7 +254,7 @@ class kali
         }
 
         // 验证token，Websocket 方式，Workerman、Swoole 环境排除
-        if ( req::method() != 'CLI' ) 
+        if ( PHP_SAPI != 'cli' ) 
         {
             cls_security::csrf_verify();
         }
@@ -274,7 +266,7 @@ class kali
 
         if ( !class_exists($controller) )
         {
-            if ( req::method() != 'CLI' ) 
+            if ( PHP_SAPI != 'cli' ) 
             {
                 throw new \Exception($ctl, 2001);
             } 
@@ -289,7 +281,7 @@ class kali
 
         if ( !method_exists($instance, $ac) )
         {
-            if ( req::method() != 'CLI' ) 
+            if ( PHP_SAPI != 'cli' ) 
             {
                 throw new \Exception(serialize([$ac, $ctl]), 2002);
             } 
@@ -328,7 +320,7 @@ class kali
 
         echo "\n" . date('Y-m-d H:i', time()), "\n\n";
         $size = memory_get_usage();
-        $unit = array('b','kb','mb','gb','tb','pb'); 
+        $unit = ['b','kb','mb','gb','tb','pb']; 
         $memory = @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i]; 
         echo "Start in $memory\n\n\n";
 
@@ -373,7 +365,7 @@ class kali
                     $runtime = number_format(microtime(true) - $runtime_start, 3);
 
                     cache::set($keys['crond_lasttime'], $lasttime, $cache_time);
-                    cache::set($keys['crond_runtime'], $runtime, $cache_time);
+                    cache::set($keys['crond_runtime'],  $runtime,  $cache_time);
                     // 这里用0表示子进程正常退出
                     exit(0);
                 }
@@ -385,14 +377,14 @@ class kali
                 $runtime = number_format(microtime(true) - $runtime_start, 3);
 
                 cache::set($keys['crond_lasttime'], $lasttime, $cache_time);
-                cache::set($keys['crond_runtime'], $runtime, $cache_time);
+                cache::set($keys['crond_runtime'],  $runtime,  $cache_time);
             }
 
             echo "\n\n";
         }
 
         $size = memory_get_usage();
-        $unit = array('b','kb','mb','gb','tb','pb'); 
+        $unit = ['b','kb','mb','gb','tb','pb']; 
         $memory = @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i]; 
         $time = microtime(true) - $index_time_start;
         echo "All done in $time seconds\t $memory\n";
@@ -417,10 +409,10 @@ class kali
      */
     public static function app_total()
     {
-        return array(
+        return [
             microtime(true) - KALI_START_TIME,
             memory_get_peak_usage() - KALI_START_MEM,
-        );
+        ];
     }
 }
 
