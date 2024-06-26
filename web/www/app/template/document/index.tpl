@@ -1028,7 +1028,6 @@ use kaliphp\req;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-define('RUN_SHELL', true);
 define('SYS_DEBUG', true);
 define('SYS_ENV', 'dev');
 

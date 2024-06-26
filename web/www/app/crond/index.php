@@ -7,7 +7,6 @@ use kaliphp\log;
 use kaliphp\kali;
 use kaliphp\config;
 
-define('RUN_SHELL', true);
 define('ENVPATH', __DIR__.'/../../../.env');
 define('APPPATH', __DIR__.'/../');
 

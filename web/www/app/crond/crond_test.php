@@ -5,7 +5,6 @@ use kaliphp\req;
 use kaliphp\util;
 use kaliphp\kali;
 
-define('RUN_SHELL', true);
 defined('ENVPATH') or define('ENVPATH', __DIR__.'/../../../.env');
 defined('APPPATH') or define('APPPATH',  __DIR__.'/../');
 

@@ -150,7 +150,6 @@ class kali
         defined('SYS_EDITOR') or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
 
         // 定义保护
-        defined('RUN_SHELL') or define('RUN_SHELL', false);
         defined('SYS_DEBUG') or define('SYS_DEBUG', false);
         defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
 

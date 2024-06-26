@@ -7,7 +7,6 @@ use kaliphp\util;
 use kaliphp\lib\cls_swg_analyser;
 use OpenApi\Generator;
 
-define('RUN_SHELL', true);
 defined('ENVPATH') or define('ENVPATH', __DIR__.'/../../../.env');
 defined('APPPATH') or define('APPPATH',  __DIR__.'/../');
 
