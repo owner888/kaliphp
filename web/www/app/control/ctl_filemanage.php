@@ -37,9 +37,8 @@ class ctl_filemanage
             $filename = end($arr);
             $list[] = array(
                 'name'      => $filename,
-                'filesize'  => util::convert(filesize(PATH_UPLOADS.'/file/'.$filename)),
-                'url'       => URL_UPLOADS.'/file/'.$filename,
-                'bcdn_url'  => 'http://bcdn.yiipol.com/'.$filename,
+                'filesize'  => util::convert(filesize(self::$config['filepath'].'/file/'.$filename)),
+                'url'       => self::$config['filelink'].'/file/'.$filename,
                 'filemtime' => date("Y-m-d H:i:s", filemtime($file)),
             );
         }
@@ -62,7 +61,7 @@ class ctl_filemanage
         $names = req::item('names', array());
         foreach ($names as $name) 
         {
-            $filename = PATH_UPLOADS.'/file/'.$name;
+            $filename = self::$config['filepath'].'/file/'.$name;
             unlink($filename);
         }
 

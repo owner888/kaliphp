@@ -216,7 +216,7 @@ class kali
         if ( $req_data ) 
         {
             // Websocket 方式，Workerman、Swoole 环境
-            if ( PHP_SAPI != 'cli' ) 
+            if ( PHP_SAPI == 'cli' ) 
             {
                 // 清空上一个请求数据，避免数据污染
                 req::$forms = req::$gets = [];
