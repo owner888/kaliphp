@@ -26,10 +26,15 @@ it('fmt_code', function (){
     expect($ret)->toBeString();
 });
 
-
 it('app_total', function (){
 	$ret = kali::app_total();
     expect($ret)->toBeArray();
+});
+
+it('ENV', function (){
+    expect(SYS_ENV)->toBe('dev');
+    expect(SYS_DEBUG)->toBe(true);
+    expect(SYS_CONSOLE)->toBe(false);
 });
 
 

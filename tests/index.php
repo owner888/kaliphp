@@ -5,10 +5,6 @@ use kaliphp\req;
 use kaliphp\kali;
 use kaliphp\util;
 
-define('SYS_DEBUG', true);
-define('SYS_CONSOLE', false);
-define('APP_NAME', 'kali test');
-define('SYS_ENV', 'dev'); // dev || pre || pub
 define('APPPATH', __DIR__);
 define('ENVPATH', __DIR__ .'/.env');
 
