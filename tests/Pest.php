@@ -1,8 +1,6 @@
 <?php
 use kaliphp\kali;
 
-define('SYS_DEBUG', true);
-define('SYS_ENV', 'dev');
 define('APPPATH', __DIR__);
 define('ENVPATH', __DIR__ .'/.env');
 

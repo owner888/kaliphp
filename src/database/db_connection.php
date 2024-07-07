@@ -2284,7 +2284,7 @@ class db_connection
                         $ff    = is_array($ff) ? addslashes(json_encode((object)$ff, JSON_UNESCAPED_UNICODE)) : $ff;
                         //string的才加‘’,否则不加
                         // $ff    = is_string($ff) || !$ff ? "'{$ff}'" : $ff;
-                        $tmp[] = "'$.{$f}', " . $this->_get_chr_value($ff);
+                        $tmp[] = "'$.\"{$f}\"', " . $this->_get_chr_value($ff);
                     }
 
                     $value = 'JSON_SET(' . implode(", ", $tmp) . ')';
@@ -2880,7 +2880,7 @@ class db_connection
                         $ff    = is_array($ff) ? addslashes(json_encode((object)$ff, JSON_UNESCAPED_UNICODE)) : $ff;
                         //string的才加‘’,否则不加
                         // $ff    = is_string($ff) || !$ff ? "'{$ff}'" : $ff;
-                        $tmp[] = "'$.{$f}', " . $this->_get_chr_value($ff);
+                        $tmp[] = "'$.\"{$f}\"', " . $this->_get_chr_value($ff);
                     }
 
                     $value = 'JSON_SET('.implode(", ", $tmp).')';

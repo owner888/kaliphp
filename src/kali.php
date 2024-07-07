@@ -144,9 +144,9 @@ class kali
         // idea://open?file=%file&line=%line
         defined('SYS_EDITOR')  or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
         // 是否打开调试功能
-        defined('SYS_DEBUG')   or define('SYS_DEBUG', $_ENV['APP_DEBUG'] ?? false);
+        defined('SYS_DEBUG')   or define('SYS_DEBUG',  (bool) ($_ENV['APP_DEBUG'] ?? false));
         // 打印 Chrome console 日志，需要安装 Chrome Logger 插件: https://chrome.google.com/webstore/detail/chrome-logger/noaneddfkdjfnfdakjjmocngnfkfehhd
-        defined('SYS_CONSOLE') or define('SYS_CONSOLE', $_ENV['APP_CONSOLE'] ?? false);
+        defined('SYS_CONSOLE') or define('SYS_CONSOLE', (bool) ($_ENV['APP_CONSOLE'] ?? false));
         // 系统环境
         defined('SYS_ENV') or define('SYS_ENV', $_ENV['APP_ENV'] ?? 'pub');
         defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
