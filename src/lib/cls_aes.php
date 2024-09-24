@@ -76,6 +76,10 @@ class cls_aes
         {
             // 计算需要填充的位数
             $pad = self::$blocksize - ($len % self::$blocksize);
+            // 遵循标准，位数刚好的情况下再填充一样的位数
+            if ($pad == 0) {
+                $pad = self::$blocksize;
+            }
             // 获得补位所用的字符
             $str .= str_repeat(chr($pad), $pad);
         }
@@ -93,14 +97,14 @@ class cls_aes
         // 获得补位所用的字符，计算它的ASCII码，得到补码的长度
         $pad = ord(substr($str, -1));
         // 补码的长度超过或者等于补码块大小，说明明文是完整没有经过补码的
-        if ($pad < 1 || $pad >= self::$blocksize)                                    
+        if ($pad < 1 || $pad > self::$blocksize)                                
         {
             $pad = 0;
         }
         // 获得补位所用的字符，检查这个字符是否在这个区间出现的次数跟它的数值相等
         if( strspn($str, chr($pad), strlen($str) - $pad) != $pad )
         {
-            $pad = 0;
+            throw new \Exception("数据被串改");
         }
         // 去掉补码，返回数据
         return substr($str, 0, (strlen($str) - $pad));          

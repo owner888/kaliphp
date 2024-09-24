@@ -33,17 +33,10 @@ class cls_crypt
             throw new Exception($msg);
         }
 
-        if ( $type == 'kali' && function_exists('kali_encrypt') ) 
-        {
-            $value = kali_encrypt($value, $key);
-        }
-        else 
-        {
-            cls_aes::instance()->set_key(substr($key, 0, 16));
-            cls_aes::instance()->set_iv(substr($key, 16, 16));
-            $value = cls_aes::instance()->encrypt($value);
-        }
-
+        cls_aes::instance()->set_key(substr($key, 0, 16));
+        cls_aes::instance()->set_iv(substr($key, 16, 16));
+        $value = cls_aes::instance()->encrypt($value);
+    
         $value = self::safe_b64encode($value);
         return $value;
     }
@@ -66,18 +59,10 @@ class cls_crypt
         }
 
         $value = self::safe_b64decode($value);
-
-        if ( $type == 'kali' && function_exists('kali_encrypt') ) 
-        {
-            $value = kali_decrypt($value, $key);
-        }
-        else 
-        {
-            cls_aes::instance()->set_key(substr($key, 0, 16));
-            cls_aes::instance()->set_iv(substr($key, 16, 16));
-            $value = cls_aes::instance()->decrypt($value);
-            $value = preg_replace('/[\x00-\x1F\x80-\x9F]/u', '', trim($value));
-        }
+        cls_aes::instance()->set_key(substr($key, 0, 16));
+        cls_aes::instance()->set_iv(substr($key, 16, 16));
+        $value = trim(cls_aes::instance()->decrypt($value));
+        
         return $value;
     }
 
