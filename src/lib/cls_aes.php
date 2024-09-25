@@ -72,17 +72,14 @@ class cls_aes
     public function pkcs7_pad($str)
     {
         $len = strlen($str);
-        if ($len % self::$blocksize != 0)
-        {
-            // 计算需要填充的位数
-            $pad = self::$blocksize - ($len % self::$blocksize);
-            // 遵循标准，位数刚好的情况下再填充一样的位数
-            if ($pad == 0) {
-                $pad = self::$blocksize;
-            }
-            // 获得补位所用的字符
-            $str .= str_repeat(chr($pad), $pad);
+        // 计算需要填充的位数
+        $pad = self::$blocksize - ($len % self::$blocksize);
+        // 遵循标准，位数刚好的情况下再填充一样的位数
+        if ($pad == 0) {
+            $pad = self::$blocksize;
         }
+        // 获得补位所用的字符
+        $str .= str_repeat(chr($pad), $pad);
         return $str;
     }
  
@@ -100,11 +97,6 @@ class cls_aes
         if ($pad < 1 || $pad > self::$blocksize)                                
         {
             $pad = 0;
-        }
-        // 获得补位所用的字符，检查这个字符是否在这个区间出现的次数跟它的数值相等
-        if( strspn($str, chr($pad), strlen($str) - $pad) != $pad )
-        {
-            throw new \Exception("数据被串改");
         }
         // 去掉补码，返回数据
         return substr($str, 0, (strlen($str) - $pad));          
