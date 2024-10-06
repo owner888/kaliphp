@@ -1,10 +1,10 @@
 <?php
-use kaliphp\kali;
+
+namespace Tests;
 
 define('APPPATH', __DIR__);
 define('ENVPATH', __DIR__ .'/.env');
 
-//kali APPPATH下面要有data文件夹
 if ( !is_dir(APPPATH .'/data')  )
 {
     @mkdir(APPPATH .'/data');
@@ -21,8 +21,8 @@ if ( !is_dir(APPPATH .'/data')  )
 |
 */
 
-// uses(Tests\TestCase::class)->in('Feature');
-uses(Tests\TestCase::class)->in('Unit');
+// uses(TestCase::class)->in('Feature');
+uses(TestCase::class)->in('Unit');
 
 /*
 |--------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 <?php
-namespace control;
+
+namespace Tests;
 
 use kaliphp\req;
 use kaliphp\kali;
