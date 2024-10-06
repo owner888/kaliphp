@@ -12,6 +12,12 @@ composer require owner888/kaliphp
 composer require smarty/smarty
 ```
 
+## Test
+
+```
+composer test
+```
+
 ## Basic Usage
 
 ### DB 
