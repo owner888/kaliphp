@@ -642,10 +642,10 @@ class req
      * 客户端是否请求JSON编码内容 
      * Accept 属于请求头，表示客户端希望接收到的数据内容
      * Content-Type 属于实体头，表示客户端发送到服务端的数据内容
-     * 
-     * @return bool
+     *
+     * @return	bool
      */
-    public static function is_json()
+    public static function is_json(): bool
     {
         if (self::item('is_json', 0, 'int'))
         {
@@ -657,13 +657,18 @@ class req
             return true;
         }
 
-        $http_accept = (string)req::server('HTTP_ACCEPT');
+        $http_accept = (string) req::server('HTTP_ACCEPT');
         $http_accepts = explode(';', $http_accept);
         $http_accept = $http_accepts[0];
         $http_accepts = explode(',', $http_accept);
         return in_array('application/json', $http_accepts);
     }
 
+    /**
+     * 检查运行环境是否命令行
+     *
+     * @return	bool
+     */
     public static function is_cli()
     {
         return self::method() === 'CLI';
@@ -671,13 +676,14 @@ class req
 
     /**
      * jquery 发出 ajax 请求时，会在请求头部添加一个名为X-Requested-With的信息，信息内容为 XMLHttpRequest
+     *
      * js 需要如下处理
-     * var xmlhttp=new XMLHttpRequest(); 
-     * xmlhttp.open("GET","test.php",true); 
-     * xmlhttp.setRequestHeader("X-Requested-With","XMLHttpRequest"); 
+     * var xmlhttp = new XMLHttpRequest(); 
+     * xmlhttp.open("GET", "test.php", true); 
+     * xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest"); 
      * xmlhttp.send();
      * 
-     * @return bool
+     * @return	bool
      */
     public static function is_ajax()
     {
@@ -745,7 +751,6 @@ class req
      * 
      * @param mixed $url
      * @return void
-     * @created time :2018-06-29 12:03
      */
     public static function forword($gourl = '')
     {
@@ -962,10 +967,12 @@ class req
     /**
      * 检查文件后缀是否为指定值
      *
+     * @param	string	$formname
      * @param	array	$subfix
+     * @param	string	$item
      * @return	bool
      */
-    public static function check_subfix($formname, array $subfix = ['csv'], $item = '')
+    public static function check_subfix(string $formname, array $subfix = [], string $item = ''): bool
     {
         if( !in_array(self::get_shortname($formname, $item), $subfix))
         {
@@ -1218,7 +1225,6 @@ class req
                 }
             }
         }
-
 
         // 开启过滤
         if ( self::$config['global_xss_filtering'] ) 
