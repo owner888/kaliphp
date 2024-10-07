@@ -5,9 +5,9 @@ namespace Tests;
 define('APPPATH', __DIR__);
 define('ENVPATH', __DIR__ .'/.env');
 
-if ( !is_dir(APPPATH .'/data')  )
+if ( !is_dir(APPPATH .'/app/data')  )
 {
-    @mkdir(APPPATH .'/data');
+    @mkdir(APPPATH .'/app/data');
 }
 
 /*

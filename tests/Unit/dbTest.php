@@ -1,6 +1,9 @@
 <?php
 
 use kaliphp\db;
+use kaliphp\kali;
+
+kali::registry();
 
 $table = 'test';
 

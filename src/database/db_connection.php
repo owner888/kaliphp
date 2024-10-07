@@ -2520,7 +2520,7 @@ class db_connection
     {
         if ($table !== null)
         {
-            $table = str_replace('#PB#', self::$config[$this->_db_name]['prefix'], trim($table));
+            $table = str_replace('#PB#', self::$config[$this->_db_name]['prefix'] ?? '', trim($table));
             $table = str_replace('#!PB#', '#PB#', $table);
             return $table;
         }
