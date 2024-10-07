@@ -12,7 +12,6 @@
 
 namespace kaliphp;
 
-use kaliphp\kali;
 use kaliphp\lib\cls_cli;
 use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_crypt;
@@ -33,37 +32,37 @@ class req
     public static $config = [];
 
     // $_COOKIE 变量
-    public static $cookies = array();
+    public static $cookies = [];
 
     // $_SESSION 变量
-    public static $sessions = array();
+    public static $sessions = [];
 
     // Returns all of the GET, POST, PUT, PATCH or DELETE array's，like $_REQUEST
-    public static $forms = array();
+    public static $forms = [];
 
     // $_GET 变量
-    public static $gets = array();
+    public static $gets = [];
 
     // $_POST 变量
-    public static $posts = array();
+    public static $posts = [];
 
     // All PUT input
-    public static $puts = array();
+    public static $puts = [];
 
     // All DELETE input
-    public static $deletes = array();
+    public static $deletes = [];
 
     // All PATCH input
-    public static $patchs = array();
+    public static $patchs = [];
 
     // parsed request body as json
-    public static $jsons = array();
+    public static $jsons = [];
 
     // parsed request body as xml
-    public static $xmls = array();
+    public static $xmls = [];
 
     // 文件变量
-    public static $files = array();
+    public static $files = [];
 
     // 不允许保存的文件
     public static $filter_filename = '/\.(php|pl|sh|js)$/i';
@@ -129,12 +128,12 @@ class req
     /**
      * Returns PHP's raw input
      *
-     * @return  array
+     * @return  string
      */
-    public static function raw()
+    public static function raw(): string
     {
         // get php raw input
-        return file_get_contents('php://input');
+        return (string) file_get_contents('php://input');
     }
 
     /**
@@ -318,7 +317,7 @@ class req
             return $lang;
         }
 
-        $languages = array();
+        $languages = [];
         if ( !empty(self::server('HTTP_ACCEPT_LANGUAGE')) )
         {
             $languages = explode(',', preg_replace('/(;\s?q=[0-9\.]+)|\s/i', '', strtolower(trim(self::server('HTTP_ACCEPT_LANGUAGE')))));
@@ -506,7 +505,7 @@ class req
                 return "HK";
             }
             $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
-            $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
+            $records = $db->lookup($ip, [cls_ip2location::COUNTRY_CODE]);
             return strtoupper($records['countryCode']);
         }
 
@@ -537,7 +536,7 @@ class req
             }
             $ip = self::ip();
             $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
-            $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
+            $records = $db->lookup($ip, [cls_ip2location::COUNTRY_CODE]);
             return strtoupper($records['countryCode']);
         }
     }
@@ -963,11 +962,10 @@ class req
     /**
      * 检查文件后缀是否为指定值
      *
-     * @param  string  $subfix
-     *
-     * @return bool
+     * @param	array	$subfix
+     * @return	bool
      */
-    public static function check_subfix($formname, $subfix = array('csv'), $item = '')
+    public static function check_subfix($formname, array $subfix = ['csv'], $item = '')
     {
         if( !in_array(self::get_shortname($formname, $item), $subfix))
         {
@@ -979,7 +977,7 @@ class req
     /**
      * 把指定数据转化为路由数据
      *
-     * @param  $data    数据列表 array( key => value, ... ) )
+     * @param  $data    数据列表 [ key => value, ... ] )
      * @param  $method  方法
      *
      * @return bool
@@ -1094,7 +1092,7 @@ class req
             array_pop($blocks);
 
             // loop data blocks
-            $php_input = array();
+            $php_input = [];
             foreach ($blocks as $block)
             {
                 // skip empty blocks
@@ -1152,9 +1150,7 @@ class req
             $method = null;
         }
 
-        $magic_quotes_gpc = ini_get('magic_quotes_gpc');
-
-        //命令行模式
+        // 命令行模式
         if( $method === 'cli' ) 
         {
             // 把命令行参数转化为get参数
@@ -1170,40 +1166,34 @@ class req
             }
         }
 
-        //上传的文件处理
+        // 上传的文件处理
         if( isset($_FILES) && count($_FILES) > 0 )
         {
             self::filter_files($_FILES);
         }
 
-        // 处理get
+        // 处理 get
         if( count($_GET) > 0 )
         {
-            // if (self::$config['global_xss_filtering']) $_GET = cls_security::xss_clean($_GET);
             self::$gets = $_GET;
         }
      
-        // 处理post
+        // 处理 post
         if( count($_POST) > 0 )
         {
-            // if (self::$config['global_xss_filtering']) $_POST = cls_security::xss_clean($_POST);
             self::$posts = $_POST;
         }
 
-        // 处理cookie
+        // 处理 cookie
         if( count($_COOKIE) > 0 )
         {
-            // if (self::$config['global_xss_filtering']) $_COOKIE = cls_security::xss_clean($_COOKIE);
             self::$cookies = $_COOKIE;
         }
 
-        // 处理request
+        // 处理 request
         if( self::$gets || self::$posts )
         {
-            // if( !$magic_quotes_gpc ) $_REQUEST = self::add_s( $_REQUEST );
-            // if (self::$config['global_xss_filtering']) $_REQUEST = cls_security::xss_clean($_REQUEST);
-            // self::$forms = $_REQUEST;
-            // 修改成gets和posts的集合，更适合一点
+            // 修改成 gets 和 posts 的集合，更适合一点
             self::$forms = array_merge(self::$gets, self::$posts);
         }
     
@@ -1216,46 +1206,9 @@ class req
         {
             self::${$method.'s'} = !is_array($php_input) ? json_decode($php_input, true) : $php_input;
         }
-
-        // base64上传的内容转到files中，防止保存日志或者记录日志的时候，数据文件太大
-        if ( defined('BASE64_UPLOAD_FLAG') && BASE64_UPLOAD_FLAG ) 
-        {
-            $flag_len = strlen(BASE64_UPLOAD_FLAG);
-            foreach(self::$posts as $field => $value)
-            {
-                if ( substr($field, 0, $flag_len) === BASE64_UPLOAD_FLAG ) 
-                {
-                    $is_base64 = is_array($value);
-                    if ( $is_base64 ) 
-                    {
-                        foreach($value as $k => $v)
-                        {
-                            if ( !is_numeric($k) || !is_string($v) ) 
-                            {
-                                $is_base64 = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    $real_field = substr($field, $flag_len);
-                    if ( $is_base64 ) 
-                    {
-                        self::$files[$real_field] = $value;
-                    }
-                    else
-                    {
-                        self::$posts[$real_field] = !empty(self::$posts[$field][0]['value']) ? 
-                        self::$posts[$field][0]['value'] : $value;
-                    }
-          
-                    unset(self::$posts[$field], self::$forms[$field]);
-                }
-            }
-        }
-        
+ 
         // 开启过滤
-        if ( !$magic_quotes_gpc && !empty(self::$config['use_magic_quotes']) ) 
+        if ( !ini_get('magic_quotes_gpc') && !empty(self::$config['use_magic_quotes']) ) 
         {
             foreach(['forms', 'gets', 'posts', 'puts', 'patchs', 'jsons', 'deletes', 'xmls'] as $f)
             {
