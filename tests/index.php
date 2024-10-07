@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests;
-
 use kaliphp\req;
 use kaliphp\kali;
 use kaliphp\util;

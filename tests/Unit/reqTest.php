@@ -1,9 +1,11 @@
 <?php
+
 use kaliphp\req;
 use kaliphp\util;
-use kaliphp\kali;
+// use kaliphp\kali;
 use kaliphp\lib\cls_crypt;
 use kaliphp\lib\cls_security;
+
 // 在测试开始之前启动 Web 服务
 beforeAll(function () {
     echo "Starting PHP built-in server...";
@@ -11,6 +13,7 @@ beforeAll(function () {
     shell_exec('php -S localhost:8000 ' . $router . ' > /dev/null 2>&1 & echo $! > server.pid');
     sleep(1); // 给服务器一点时间来启动
 });
+
 // 在所有测试结束之后关闭 Web 服务
 afterAll(function () {
     echo "Stopping PHP built-in server.";
@@ -18,7 +21,9 @@ afterAll(function () {
     shell_exec('kill ' . $pid);
     unlink('server.pid');
 });
-kali::registry();
+
+// kali::registry();
+
 // 测试 req.php
 it('run in web', function () {
     //发送请求

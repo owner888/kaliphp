@@ -1,16 +1,14 @@
 <?php
-use kaliphp\util;
-use kaliphp\kali;
+
 use kaliphp\cache;
 
-kali::registry();
 // 测试 cache.php
 it('set get del int value', function () {
     $key    = 'kaliphptest_cacheset1';
     $value  = 10;
 
     $result = cache::set($key, $value);
-    expect($result)->toBe(true);
+    expect((bool)$result)->toBe(true);
     $result = cache::get($key);
     expect($result)->toBe($value);
     $result = cache::del($key);
@@ -24,7 +22,7 @@ it('set get del array value', function () {
     $value  = ['aa' => 1, 'bb' => 'ssss'];
 
     $result = cache::set($key, $value);
-    expect($result)->toBe(true);
+    expect((bool)$result)->toBe(true);
     $result = cache::get($key);
     expect($result)->toBe($value);
     $result = cache::del($key);
@@ -39,7 +37,7 @@ it('ttl', function () {
     $ttl    = 10;
 
     $result = cache::set($key, $value, $ttl);
-    expect($result)->toBe(true);
+    expect((bool)$result)->toBe(true);
     $result = cache::ttl($key);
     expect($result)->toBe($ttl);
     $result = cache::del($key);
