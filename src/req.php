@@ -74,6 +74,9 @@ class req
      */
     public static $throw_error = false;
 
+    // 使用加密
+    public static $use_encrypt = false;
+
     /**
      * 初始化用户请求
      * 对于 post、get 的数据，会转到 selfforms 数组， 并删除原来数组
@@ -84,6 +87,7 @@ class req
     public static function _init()
     {
         self::$config = config::instance('config')->get('request');
+        self::$use_encrypt = self::$config['use_encrypt'] ?? false;
 
         // 匹配全局输入数据 $_SESSION、$_COOKIE、$_POST、$_GET ...
         self::hydrate();
@@ -1027,27 +1031,19 @@ class req
         // fetch the raw input data
         $php_input = self::raw();
 
-        // 是否开启加密 是否忽略部分ct ac
-        $encrypt            = self::headers('ENCRYPT', '');
-        $no_encrypt_actions = self::$config['no_encrypt_actions'] ?? [];
-        $must_encrypt       = !empty(self::$config['encrypt_key']) && 
-            (!empty($encrypt) || !empty(self::$config['use_encrypt']));
-        if (
-            $must_encrypt && 
-            isset($_GET['ct']) && 
-            isset($_GET['ac']) && 
-            in_array(sprintf("%s:%s", $_GET['ct'], $_GET['ac']), $no_encrypt_actions)
-        ) 
+        // 是否开启加密，客户端要求加密 或者 配置强制加密
+        if (REQUEST_ENCRYPT || self::$use_encrypt) 
         {
-            $must_encrypt = false;
-        }
-
-        if ( $must_encrypt )
-        {
-            // 加密逻辑 依赖 resp类处理
             $encrypt_key = self::$config['encrypt_key'];
+            if (empty($encrypt_key)) 
+            {
+                resp::response(-1, [], 'Encrypt key undefined');
+            }
+
+            // 加密逻辑 依赖 resp 类处理
             resp::set_encrypt(true);
             resp::set_encrypt_key($encrypt_key);
+
             $php_input = cls_crypt::decode($php_input, $encrypt_key);
             $data = json_decode($php_input, true);
 
@@ -1056,20 +1052,21 @@ class req
                 resp::response(-1, [], 'descrypt error: ' . json_last_error());
             }
 
-            //直接覆盖所有的$_POST 值
             $php_input = '';
-
             $_GET = $_POST = $_REQUEST = [];
-            //上传的文件处理
+            // 上传的文件处理
             if( isset($_FILES) && count($_FILES) > 0 )
             {
                 self::filter_files($_FILES);
             }
 
+            // 覆盖 $_POST 值
             self::assign_values($data, 'POST');
-            return;//加密的请求后面的过滤不需要处理了，处理了反而操作大部分字符串数据要反向操作下
+            return;
         }
-        elseif ( $content_type == 'application/x-www-form-urlencoded' )
+
+        // 非加密逻辑
+        if ( $content_type == 'application/x-www-form-urlencoded' )
         {
             // double-check if max_input_vars is not exceeded,
             // it doesn't always give an E_WARNING it seems...
@@ -1139,7 +1136,7 @@ class req
  
             self::$jsons         = $php_input;
             self::${$method.'s'} = $php_input;
-            //json的也放一份到$_REQUEST
+            // json的也放一份到$_REQUEST
             $_REQUEST = array_merge($php_input, $_REQUEST);
         }
 
