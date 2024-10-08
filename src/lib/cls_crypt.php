@@ -11,6 +11,7 @@
  */
 
 namespace kaliphp\lib;
+
 use kaliphp\log;
 use Exception;
 
@@ -19,12 +20,11 @@ class cls_crypt
     /**
      * encode
      * 
-     * @param mixed $value
-     * @param string $key
-     * @param string $type kali|aes
-     * @return void
+     * @param	string	$value
+     * @param	string	$key
+     * @return	string
      */
-    public static function encode($value, $key = '', $type = 'aes')
+    public static function encode(string $value, string $key) :string
     {
         if ( strlen($key) != 32 ) 
         {
@@ -36,20 +36,18 @@ class cls_crypt
         cls_aes::instance()->set_key(substr($key, 0, 16));
         cls_aes::instance()->set_iv(substr($key, 16, 16));
         $value = cls_aes::instance()->encrypt($value);
-    
-        $value = self::safe_b64encode($value);
+
         return $value;
     }
 
     /**
      * decode
      * 
-     * @param mixed $value
-     * @param string $key
-     * @param string $type kali|aes
-     * @return void
+     * @param	string	$value
+     * @param	string	$key
+     * @return	string
      */
-    public static function decode($value, $key = '', $type = 'aes')
+    public static function decode(string $value, string $key) :string
     {
         if ( strlen($key) != 32 ) 
         {
@@ -58,7 +56,6 @@ class cls_crypt
             throw new Exception($msg);
         }
 
-        $value = self::safe_b64decode($value);
         cls_aes::instance()->set_key(substr($key, 0, 16));
         cls_aes::instance()->set_iv(substr($key, 16, 16));
         $value = trim(cls_aes::instance()->decrypt($value));

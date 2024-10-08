@@ -21,8 +21,8 @@ class ctl_index
         echo req::item('username');
     }
 
-    public function test()
+    public function encrypt()
     {
-        echo "test\n";
+        echo "encrypt\n";
     }
 }

@@ -1,14 +1,14 @@
 <?php
 return [
     'request' => [
-        'no_encrypt_actions' => [
+        'no_encrypt_actions' => [ // 容许不加密的 ct ac, 比如上传接口
             'test:swg',
             'upload:upload',
             'upload:upload_chunked'
-        ], // 容许不加密的ct ac 比如上传接口
-        // 'encrypt_key' => $_ENV['CRYPT_KEY'],//
+        ],
+        'use_encrypt' => true, // 是否强制加密
+        'encrypt_key' => $_ENV['CRYPT_KEY'],
     ],
-    // 'crypt_key' => $_ENV['CRYPT_KEY'], //加密key
     'spam_config' => [ //spam 的锁定时长默认为cache.php里面cache_time的值
         'phone_code' => [
             'label' => '手机验证码',
