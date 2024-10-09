@@ -1018,7 +1018,6 @@ class req
      */
     protected static function hydrate()
     {
-        var_dump('hydrate');
         // get the input method and unify it
         $method = strtolower(self::method());
 
@@ -1032,7 +1031,6 @@ class req
         // fetch the raw input data
         $php_input = self::raw();
 
-        var_dump(self::headers());
         // var_dump(self::headers('ENCRYPT', ''));
         // 是否开启加密，客户端要求加密 或者 配置强制加密
         if (!empty(self::headers('ENCRYPT', '')) || self::$use_encrypt) 

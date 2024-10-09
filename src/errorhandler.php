@@ -158,12 +158,13 @@ class errorhandler
      */
     public static function xhprof_handler()
     {
-        if( PHP_SAPI !== 'cli' && function_exists('xhprof_enable') && DEBUG_MODE === true )
+        if( PHP_SAPI !== 'cli' && function_exists('xhprof_enable') && SYS_DEBUG )
         {
-            $xhprof_data = xhprof_disable();
+            defined('PATH_LIBRARY') or define('PATH_LIBRARY',   './lib');
+            $xhprof_data = \xhprof_disable();
             include PATH_LIBRARY. "/debug/xhprof_lib/utils/xhprof_lib.php";
             include PATH_LIBRARY. "/debug/xhprof_lib/utils/xhprof_runs.php";
-            $xhprof_runs = new XHProfRuns_Default();
+            $xhprof_runs = new \XHProfRuns_Default();
             $run_id = $xhprof_runs->save_run($xhprof_data, "xhprof_foo");
             echo "<div style='font-size:11px;padding-bottom:10px;position:fixed;bottom:2px;left:21px;' align='center'><a target='_blank' href='/core/library/debug/xhprof_html/index.php?run=$run_id&source=xhprof_foo'>xhprof性能日志</a></div>";
         }
@@ -328,12 +329,12 @@ class errorhandler
     /**
      * 格式化代码为字符串
      *
-     * @param int $code
-     * @param array $params
+     * @param  int     $code
+     * @param  string  $errstr
      *
      * @return string
      */
-    public static function fmt_code($errno, $errstr)
+    public static function fmt_code(int $errno, string $errstr = '') :string
     {
         $msgtpl = config::instance('exception')->get($errno);
         if ( empty($msgtpl)) 

@@ -26,7 +26,7 @@ defined('DS') or define('DS', DIRECTORY_SEPARATOR);
 error_reporting( E_ALL );
 ini_set('display_errors', 'On');
 
-//if( DEBUG_MODE === true || $_debug_safe_ip )
+//if( SYS_DEBUG === true || $_debug_safe_ip )
 //{
     //ini_set('display_errors', 'On');
 //}
