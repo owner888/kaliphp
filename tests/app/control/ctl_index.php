@@ -14,7 +14,7 @@ class ctl_index
 
     public function index()
     {
-        echo "index";
+        echo "ok";
     }
 
     public function check_auth()
@@ -24,6 +24,6 @@ class ctl_index
 
     public function encrypt()
     {
-        resp::response(0, ['username' => 'test']);
+        resp::response(0, ['username' => req::item('username')]);
     }
 }

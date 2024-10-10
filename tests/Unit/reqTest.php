@@ -23,7 +23,7 @@ afterAll(function () {
 it('run in web', function () {
     // 发送请求
     $ret = @file_get_contents('http://localhost:8000');
-    expect($ret)->toEqual('index');
+    expect($ret)->toEqual('ok');
 });
 
 it('json request', function () {
@@ -39,18 +39,19 @@ it('json request', function () {
     ]);
 
     $body = $ret['body'] ?? '';
+    // print_r($body);
 
     expect($body)->toEqual($data['username']);
 });
 
 it('encrypt request', function () {
     $url  = 'http://localhost:8000';
-    $data = [
+    $req_data = [
         'ac' => 'encrypt',
         'username' => 'username',
         'password' => 'password',
     ];
-    $json = json_encode($data);
+    $json = json_encode($req_data);
     $encrypt_str = cls_crypt::encode($json, $_ENV['CRYPT_KEY']);
     $ret = util::http_request([
         'url'    => $url,
@@ -65,5 +66,6 @@ it('encrypt request', function () {
 
     expect($data['code'])->toEqual(0);
     expect($data['msg'])->toEqual('successful');
+    expect($data['data']['username'])->toEqual($req_data['username']);
 });
 
