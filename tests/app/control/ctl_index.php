@@ -2,6 +2,7 @@
 namespace control;
 
 use kaliphp\req;
+use kaliphp\resp;
 
 class ctl_index
 {
@@ -23,6 +24,6 @@ class ctl_index
 
     public function encrypt()
     {
-        echo "encrypt";
+        resp::response(0, ['username' => 'test']);
     }
 }

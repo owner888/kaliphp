@@ -20,28 +20,28 @@ afterAll(function () {
     unlink('server.pid');
 });
 
-// it('run in web', function () {
-//     // 发送请求
-//     $ret = @file_get_contents('http://localhost:8000');
-//     expect($ret)->toEqual('index');
-// });
-//
-// it('json request', function () {
-//     $url  = 'http://localhost:8000?ac=check_auth';
-//     $data = [
-//         'username' => 'username',
-//         'password' => 'password',
-//     ];
-//     $ret = util::http_request([
-//         'url'    => $url,
-//         'post'   => json_encode($data),
-//         'header' => ['Content-Type:application/json'] // 不传这个不会走 req 的 json 解析
-//     ]);
-//
-//     $body = $ret['body'] ?? '';
-//
-//     expect($body)->toEqual($data['username']);
-// });
+it('run in web', function () {
+    // 发送请求
+    $ret = @file_get_contents('http://localhost:8000');
+    expect($ret)->toEqual('index');
+});
+
+it('json request', function () {
+    $url  = 'http://localhost:8000?ac=check_auth';
+    $data = [
+        'username' => 'username',
+        'password' => 'password',
+    ];
+    $ret = util::http_request([
+        'url'    => $url,
+        'post'   => json_encode($data),
+        'header' => ['Content-Type:application/json'] // 不传这个不会走 req 的 json 解析
+    ]);
+
+    $body = $ret['body'] ?? '';
+
+    expect($body)->toEqual($data['username']);
+});
 
 it('encrypt request', function () {
     $url  = 'http://localhost:8000';
@@ -59,12 +59,11 @@ it('encrypt request', function () {
     ]);
 
     $body = $ret['body'] ?? '';
-    print_r($body);
+    $body = cls_crypt::decode($body, $_ENV['CRYPT_KEY']);
+    // print_r($body);
+    $data = @json_decode($body, true);
 
-    expect($body)->toEqual('encrypt');
-
-    // 不需要解密了测试方法没有对数据加密返回
-    // $ret['body'] = cls_crypt::decode($ret['body'], $_ENV['CRYPT_KEY']);
-    // $body = @json_decode($ret['body'], true);
+    expect($data['code'])->toEqual(0);
+    expect($data['msg'])->toEqual('successful');
 });
 

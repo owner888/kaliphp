@@ -22,10 +22,10 @@ use kaliphp\lib\cls_ip2location;
 /**
  * 处理外部请求变量的类
  *
- * 禁止此文件以外的文件出现 $_POST、$_GET、$_FILES变量 以及 eval函数(用 req::myeval )
+ * 禁止此文件以外的文件出现 $_POST、$_GET、$_FILES 变量 以及 eval函数(用 req::myeval )
  * 以便于对主要黑客攻击进行防范
  *
- * @version 2.0
+ * @version 3.0
  */
 class req
 {
@@ -37,7 +37,7 @@ class req
     // $_SESSION 变量
     public static $sessions = [];
 
-    // Returns all of the GET, POST, PUT, PATCH or DELETE array's，like $_REQUEST
+    // Returns all of the GET, POST array's，like $_REQUEST
     public static $forms = [];
 
     // $_GET 变量
@@ -45,21 +45,6 @@ class req
 
     // $_POST 变量
     public static $posts = [];
-
-    // All PUT input
-    public static $puts = [];
-
-    // All DELETE input
-    public static $deletes = [];
-
-    // All PATCH input
-    public static $patchs = [];
-
-    // parsed request body as json
-    public static $jsons = [];
-
-    // parsed request body as xml
-    public static $xmls = [];
 
     // 文件变量
     public static $files = [];
@@ -147,16 +132,15 @@ class req
      */
     public static function all()
     {
-        return array_merge(self::$gets, self::$posts, self::$puts, self::$patchs, self::$deletes);
+        return array_merge(self::$gets, self::$posts);
     }
 
     /**
-     * 获得指定表单值
-     * 
-     * @param mixed $formname       表单名
-     * @param string $defaultvalue  默认值
-     * @param string $formattype    格式化类型
-     * @return mixed $return        返回值
+     * Gets the specified GET、POST variable.
+     *
+     * @param   string  $index    The index to get
+     * @param   string  $default  The default value
+     * @return  string|array
      */
     public static function item( $index = null, $default = null, $filter_type = '' )
     {   
@@ -187,71 +171,6 @@ class req
     public static function post( $index = null, $default = null, $filter_type = '' )
     {   
         $value = (func_num_args() === 0) ? self::$posts : cls_arr::get(self::$posts, $index, $default);
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * Fetch an item from the php://input for put arguments
-     *
-     * @param   string  $index    The index key
-     * @param   mixed   $default  The default value
-     * @return  string|array
-     */
-    public static function put( $index = null, $default = null, $filter_type = '' )
-    {
-        $value = (func_num_args() === 0) ? self::$puts : cls_arr::get(self::$puts, $index, $default);
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * Fetch an item from the php://input for patch arguments
-     *
-     * @param   string  $index    The index key
-     * @param   mixed   $default  The default value
-     * @return  string|array
-     */
-    public static function patch( $index = null, $default = null, $filter_type = '' )
-    {
-        $value = (func_num_args() === 0) ? self::$patchs : cls_arr::get(self::$patchs, $index, $default);
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * Fetch an item from the php://input for delete arguments
-     *
-     * @param   string  $index    The index key
-     * @param   mixed   $default  The default value
-     * @return  string|array
-     */
-    public static function delete( $index = null, $default = null, $filter_type = '' )
-    {
-        $value = (func_num_args() === 0) ? self::$deletes : cls_arr::get(self::$deletes, $index, $default);
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * Get the request body interpreted as JSON.
-     *
-     * @param   mixed  $index
-     * @param   mixed  $default
-     * @return  array  parsed request body content.
-     */
-    public static function json( $index = null, $default = null, $filter_type = '' )
-    {
-        $value = (func_num_args() === 0) ? self::$jsons : cls_arr::get(self::$jsons, $index, $default);
-        return cls_filter::filter($value, $filter_type, self::$throw_error);
-    }
-
-    /**
-     * Get the request body interpreted as XML.
-     *
-     * @param   mixed  $index
-     * @param   mixed  $default
-     * @return  array  parsed request body content.
-     */
-    public static function xml( $index = null, $default = null, $filter_type = '' )
-    {
-        $value = (func_num_args() === 0) ? self::$xmls : cls_arr::get(self::$xmls, $index, $default);
         return cls_filter::filter($value, $filter_type, self::$throw_error);
     }
 
@@ -490,7 +409,7 @@ class req
     {
         $tmp = config::instance('areacode')->get();
         $map = array_column($tmp, null, 2); // 以第 2 个作为 key
-        return $map[self::country($ip)][0] ?? ' - ';
+        return $map[self::country($ip)][0] ?? '-';
     }
 
     /**
@@ -506,7 +425,7 @@ class req
         {
             if (!file_exists(APPPATH.'/../../IP-COUNTRY-ISP.BIN')) 
             {
-                return "HK";
+                return "-";
             }
             $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
             $records = $db->lookup($ip, [cls_ip2location::COUNTRY_CODE]);
@@ -1009,6 +928,30 @@ class req
                 self::$posts[$k] = $v;
             }
         }
+         
+        // 开启过滤
+        if ( !ini_get('magic_quotes_gpc') && !empty(self::$config['use_magic_quotes']) ) 
+        {
+            foreach(['gets', 'posts'] as $f)
+            {
+                if( self::${$f} )
+                {
+                    self::${$f} = self::add_s(self::${$f});
+                }
+            }
+        }
+
+        // 开启过滤
+        if ( self::$config['global_xss_filtering'] ) 
+        {
+            foreach(['gets', 'posts'] as $f)
+            {
+                if( self::${$f} )
+                {
+                    self::${$f} = cls_security::xss_clean(self::${$f});
+                }
+            }
+        }
     }
 
     /**
@@ -1142,16 +1085,14 @@ class req
                 parse_str($php_input, $php_input);
             }
  
-            self::$jsons         = $php_input;
             self::${$method.'s'} = $php_input;
-            // json的也放一份到$_REQUEST
-            $_REQUEST = array_merge($php_input, $_REQUEST);
         }
 
         // handle xml input
         elseif ($content_type == 'application/xml' or $content_type == 'text/xml')
         {
-            self::$xmls = $php_input = self::xml_to_array(new \SimpleXMLElement($php_input));
+            $php_input = self::xml_to_array(new \SimpleXMLElement($php_input));
+            self::${$method.'s'} = $php_input;
         }
 
         // unknown input format
@@ -1222,7 +1163,7 @@ class req
         // 开启过滤
         if ( !ini_get('magic_quotes_gpc') && !empty(self::$config['use_magic_quotes']) ) 
         {
-            foreach(['forms', 'gets', 'posts', 'puts', 'patchs', 'jsons', 'deletes', 'xmls'] as $f)
+            foreach(['forms', 'gets', 'posts'] as $f)
             {
                 if( self::${$f} )
                 {
@@ -1234,7 +1175,7 @@ class req
         // 开启过滤
         if ( self::$config['global_xss_filtering'] ) 
         {
-            foreach(['forms', 'gets', 'posts', 'puts', 'patchs', 'jsons', 'deletes', 'xmls'] as $f)
+            foreach(['forms', 'gets', 'posts'] as $f)
             {
                 if( self::${$f} )
                 {

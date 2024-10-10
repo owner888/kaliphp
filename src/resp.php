@@ -26,22 +26,22 @@ class resp
 
     public static $config = [];
 
-    public static function set_encrypt($encrypt = false)
+    public static function set_encrypt(bool $encrypt = false)
     {
         self::$_encrypt = $encrypt;
     }
 
-    public static function set_encrypt_key($encrypt_key = '')
+    public static function set_encrypt_key(string $encrypt_key = '')
     {
         self::$_encrypt_key = $encrypt_key;
     }
 
-    public static function response_error($code = -1, $msg = 'faild')
+    public static function response_error(int $code = -1, string $msg = 'faild')
     {
         self::response($code, [], $msg);
     }
 
-    public static function response($code = 0, $data = [], $msg = 'successful')
+    public static function response(int $code = 0, array $data = [], string $msg = 'successful')
     {
         header('Content-Type: application/json; charset=utf-8');
 
