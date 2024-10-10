@@ -23,6 +23,6 @@ class ctl_index
 
     public function encrypt()
     {
-        echo "encrypt\n";
+        echo "encrypt";
     }
 }
