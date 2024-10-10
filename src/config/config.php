@@ -49,7 +49,7 @@ return [
         'app_name'   => 'default',
     ],
 
-    //请求配置
+    // 请求配置
     'request' => [
         'csrf_token_on'     => false,               // 是否开启令牌验证
         'csrf_token_name'   => 'csrf_token_name',   // 令牌验证的表单隐藏字段名称
@@ -65,6 +65,7 @@ return [
         'user_ip'              => 'X_REAL_IP',
         'use_rewrite'          => false,
         'global_xss_filtering' => true,
+        'use_encrypt'          => $_ENV['USE_ENCRYPT'], // 是否强制加密
         'encrypt_key'          => $_ENV['CRYPT_KEY'],
     ],
 
@@ -127,9 +128,9 @@ return [
     // 默认需要转化的时区 
     'to_timezone' => 'Asia/Shanghai',
 
-    //异常配置
+    // 异常配置
     'exception' => [
-        //返回页面
+        // 返回页面
         'exception_tpl' => 'error/exception',
         'error_tpl' => 'error/msg',
 

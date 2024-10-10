@@ -87,7 +87,7 @@ class req
     public static function _init()
     {
         self::$config = config::instance('config')->get('request');
-        self::$use_encrypt = self::$config['use_encrypt'] ?? false;
+        self::$use_encrypt = (bool) self::$config['use_encrypt'] ?? false;
 
         // 匹配全局输入数据 $_SESSION、$_COOKIE、$_POST、$_GET ...
         self::hydrate();
@@ -993,7 +993,7 @@ class req
      *
      * @return bool
      */
-    public static function assign_values(array &$data, $method = 'GET')
+    public static function assign_values(array $data, $method = 'GET')
     {
         foreach($data as $k => $v)
         {
@@ -1022,6 +1022,8 @@ class req
         if (!$is_terminal) 
         {
             // print_r($_SERVER);
+            // var_dump(self::$use_encrypt);
+            // exit;
         }
 
         // get the input method and unify it
@@ -1037,7 +1039,6 @@ class req
         // fetch the raw input data
         $php_input = self::raw();
 
-        // var_dump(self::headers('ENCRYPT', ''));
         // 是否开启加密，客户端要求加密 或者 配置强制加密
         if (!empty(self::headers('ENCRYPT', '')) || self::$use_encrypt) 
         {
@@ -1068,7 +1069,7 @@ class req
             }
 
             // 覆盖 $_POST 值
-            self::assign_values($data, 'POST');
+            self::assign_values((array) $data, 'POST');
             return;
         }
 
