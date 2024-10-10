@@ -938,30 +938,6 @@ class req
                 self::$posts[$k] = $v;
             }
         }
-         
-        // 开启过滤
-        if ( !ini_get('magic_quotes_gpc') && !empty(self::$config['use_magic_quotes']) ) 
-        {
-            foreach(['gets', 'posts'] as $f)
-            {
-                if( self::${$f} )
-                {
-                    self::${$f} = self::add_s(self::${$f});
-                }
-            }
-        }
-
-        // 开启过滤
-        if ( self::$config['global_xss_filtering'] ) 
-        {
-            foreach(['gets', 'posts'] as $f)
-            {
-                if( self::${$f} )
-                {
-                    self::${$f} = cls_security::xss_clean(self::${$f});
-                }
-            }
-        }
     }
 
     /**
@@ -992,7 +968,7 @@ class req
         $php_input = self::raw();
 
         // 是否开启加密，客户端要求加密 或者 配置强制加密
-        if (!empty(self::headers('ENCRYPT', '')) || self::$use_encrypt) 
+        if ( !empty(self::headers('ENCRYPT', '')) || self::$use_encrypt ) 
         {
             $encrypt_key = self::$config['encrypt_key'];
             if (empty($encrypt_key)) 
@@ -1012,21 +988,15 @@ class req
                 resp::response(-1, [], 'descrypt error: ' . json_last_error());
             }
 
+            // 清空请求数据
             $php_input = '';
             $_GET = $_POST = $_REQUEST = [];
-            // 上传的文件处理
-            if( isset($_FILES) && count($_FILES) > 0 )
-            {
-                self::filter_files($_FILES);
-            }
 
             // 覆盖 $_POST 值
             self::assign_values((array) $data, 'POST');
-            return;
         }
-
-        // 非加密逻辑
-        if ( $content_type == 'application/x-www-form-urlencoded' )
+        // handle application/x-www-form-urlencoded input
+        else if ( $content_type == 'application/x-www-form-urlencoded' )
         {
             // double-check if max_input_vars is not exceeded,
             // it doesn't always give an E_WARNING it seems...
@@ -1080,7 +1050,6 @@ class req
                 }
             }
         }
-
         // handle json input
         elseif ($content_type == 'application/json')
         {
@@ -1096,14 +1065,12 @@ class req
  
             self::${$method.'s'} = $php_input;
         }
-
         // handle xml input
         elseif ($content_type == 'application/xml' or $content_type == 'text/xml')
         {
             $php_input = self::xml_to_array(new \SimpleXMLElement($php_input));
             self::${$method.'s'} = $php_input;
         }
-
         // unknown input format
         elseif ($php_input and ! is_array($php_input))
         {
@@ -1159,9 +1126,7 @@ class req
             self::$forms = array_merge(self::$gets, self::$posts);
         }
     
-        unset($_GET);
-        unset($_POST);
-        unset($_REQUEST);
+        $_GET = $_POST = $_REQUEST = [];
 
         // store the parsed data based on the request method
         if ( $php_input && ($method == 'put' or $method == 'patch' or $method == 'delete') )
