@@ -11,7 +11,7 @@
  */
 
 namespace kaliphp;
-use kaliphp\kali;
+
 use kaliphp\cache;
 use kaliphp\db;
 use kaliphp\util;
@@ -190,7 +190,7 @@ class config
             unset($this->_cfg_caches[$this->_source][$this->_module][$key]);
         }
 
-        return cls_arr::delete($this->_cfg_caches[$this->_source][$this->_module], $key);
+        return cls_arr::del($this->_cfg_caches[$this->_source][$this->_module], $key);
     }
 
     /**

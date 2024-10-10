@@ -45,7 +45,7 @@ it('json request', function () {
 });
 
 it('encrypt request', function () {
-    $compress = true;
+    $compress = $_ENV['USE_COMPRESS'];
     $url  = 'http://localhost:8000';
     $req_data = [
         'ac' => 'encrypt',

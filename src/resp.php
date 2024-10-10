@@ -21,15 +21,15 @@ use kaliphp\lib\cls_crypt;
  */
 class resp
 {
-    private static $_encrypt = false;  // 是否加解密
-    private static $_encrypt_key = ''; // 加解密 KEY
-    private static $_use_gzip = false; // 是否压缩数据
+    private static $_encrypt = false;      // 是否加解密
+    private static $_encrypt_key = '';     // 加解密 KEY
+    private static $_use_compress = false; // 是否压缩数据
 
     public static $config = [];
 
-    public static function set_use_gzip(bool $use_gzip = false)
+    public static function set_use_compress(bool $use_compress = false)
     {
-        self::$_use_gzip = $use_gzip;
+        self::$_use_compress = $use_compress;
     }
 
     public static function set_encrypt(bool $encrypt = false)
@@ -104,7 +104,7 @@ class resp
             $json = cls_crypt::encode($json, self::$_encrypt_key);
         }
 
-        if ( self::$_use_gzip ) 
+        if ( self::$_use_compress ) 
         {
             $json = gzcompress($json, 9);
         }

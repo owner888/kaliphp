@@ -63,7 +63,7 @@ class req
     public static $use_encrypt = false;
 
     // 客户端请求使用 GZIP
-    public static $use_gzip = false;
+    public static $use_compress = false;
 
     /**
      * 初始化用户请求
@@ -969,7 +969,7 @@ class req
         if ( $accept_encoding == 'gzip' )
         {
             // 通知 response 返回 gzip 压缩数据
-            resp::set_use_gzip(true);
+            resp::set_use_compress(true);
         }
 
         // get the content type from the header, strip optional parameters
