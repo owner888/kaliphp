@@ -62,6 +62,9 @@ class req
     // 使用加密
     public static $use_encrypt = false;
 
+    // 客户端请求使用 GZIP
+    public static $use_gzip = false;
+
     /**
      * 初始化用户请求
      * 对于 post、get 的数据，会转到 selfforms 数组，并删除原来数组
@@ -947,15 +950,27 @@ class req
      */
     protected static function hydrate()
     {
-        if (self::is_terminal()) 
+        if (!self::is_terminal()) 
         {
-            // print_r($_SERVER);
-            // var_dump(self::$use_encrypt);
+            // print_r($_SERVER['HTTP_ACCEPT_ENCODING']);
+            // var_dump(self::headers('Accept-Encoding', ''));
             // exit;
         }
 
         // get the input method and unify it
         $method = strtolower(self::method());
+
+        // get the accept encoding from the header, strip optional parameters
+        $encoding_header = self::headers('Accept-Encoding', '');
+        if (($accept_encoding = strstr($encoding_header, ',', true)) === false)
+        {
+            $accept_encoding = $encoding_header;
+        }
+        if ( $accept_encoding == 'gzip' )
+        {
+            // 通知 response 返回 gzip 压缩数据
+            resp::set_use_gzip(true);
+        }
 
         // get the content type from the header, strip optional parameters
         $content_header = self::headers('Content-Type', '');

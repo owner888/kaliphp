@@ -14,7 +14,7 @@ namespace kaliphp;
 use kaliphp\kali;
 use kaliphp\lib\cls_redis;
 use kaliphp\lib\cls_redis_lock;
-use kaliphp\lib\cls_snowflake;
+// use kaliphp\lib\cls_snowflake;
 
 /**
  * 实用函数集合
@@ -115,9 +115,10 @@ class util
         {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_HEADER, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_ACCEPT_ENCODING, 'gzip');
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
             $content = curl_exec($ch);
             curl_close($ch);
@@ -175,18 +176,20 @@ class util
     /**
      * utf8编码模式的中文截取2，单字节截取模式
      * 这里不使用mbstring扩展
+     *
      * @return string
      */
-    public static function utf8_substr($str, $slen, $startdd=0)
+    public static function utf8_substr($str, $slen, $startdd = 0)
     {
         return mb_substr($str , $startdd , $slen , 'UTF-8');
     }
 
     /**
      * utf-8中文截取，按字数截取模式
+     *
      * @return string
      */
-    public static function utf8_substr_num($str, $length, $start=0)
+    public static function utf8_substr_num($str, $length)
     {
         preg_match_all('/./su', $str, $ar);
         if( count($ar[0]) <= $length ) 
@@ -395,7 +398,7 @@ class util
     public static function scandir($dir)
     {
         // 定义用于存储文件名的数组
-        $array_file = array();
+        $array_file = [];
         $handle = @opendir($dir);
         if ( !$handle) 
         {
@@ -439,7 +442,7 @@ class util
     // 16位
     public static function order_id($num = 7)
     {
-        //return cls_snowflake::instance(0, 1)->nextid();
+        // return cls_snowflake::instance(0, 1)->nextid();
         return date("ymdHis").trim(self::uniqid('numeric', $num), '"');
     }
 
@@ -505,12 +508,12 @@ class util
 
     /**
      * 根据指定的时间，获取时间戳
-     * @Author han
-     * @param  datetime $datetime    时间格式
-     * @param  mixed    $from_timezone 可使用UTC或者GMT格式或Europe/Andorra，不填根据IP判断
+     * 
+     * @param  string   $datetime    时间格式
+     * @param  string   $from_timezone 可使用UTC或者GMT格式或Europe/Andorra，不填根据IP判断
      * @return int      返回时间戳
      */
-    public static function get_timestamp($datetime, $from_timezone = null)
+    public static function get_timestamp(string $datetime, string $from_timezone = null)
     {
         $from_timezone = $from_timezone ?? config::instance('timezone')->get(COUNTRY);
         $date_obj      = new \DateTime($datetime, new \DateTimeZone($from_timezone));
@@ -520,15 +523,15 @@ class util
     /**
      * 获取不重复的ID(只是保证当前字典中不重复，所以订单号加上当前的年月日时分秒就肯定不会重复)
      * 比如：date("ymdHis").self::uniqid()
-     * @Author han
+     *
      * @param  string  $type   类型
      * @param  integer $num    随机位数
      * @param  string  $action get/create
-     * @return mix  返回唯一ID
+     * @return string  返回唯一ID
      */
-    public static function uniqid($type = 'numeric', $num = 7, $action = 'get')
+    public static function uniqid($type = 'numeric', $num = 7, $action = 'get'): string
     {
-        $max_num = 1000; //一次创建唯一ID数量
+        $max_num = 1000; // 一次创建唯一ID数量
         $key = sprintf('%s:%s_ %d', __FUNCTION__, $type, $num);
         $lock_name = 'lock:'.$key;
 
@@ -655,7 +658,7 @@ class util
                 break;
 
             case 'uuid':
-                $pool = array('8', '9', 'a', 'b');
+                $pool = ['8', '9', 'a', 'b'];
                 return sprintf('%s-%s-4%s-%s%s-%s',
                     static::random('hexdec', 8),
                     static::random('hexdec', 4),
@@ -795,7 +798,7 @@ class util
 
     public static function get_soap_client($url) 
     {
-        libxml_disable_entity_loader(false);
+        // libxml_disable_entity_loader(false);
         $opts = array(
             'http' => array(
                 'user_agent' => 'PHPSoapClient'
@@ -838,7 +841,7 @@ class util
             if( $referer_url != '' )  curl_setopt($ch, CURLOPT_REFERER, $referer_url);
             curl_setopt($ch, CURLOPT_USERAGENT, self::$user_agent);
             $result = curl_exec($ch);
-            $errno  = curl_errno($ch);
+            // $errno  = curl_errno($ch);
             curl_close($ch);
             return $result;
         }
@@ -878,7 +881,7 @@ class util
      * @param $referer_url=''
      * @return string
      */
-    public static function http_post($url, $query_str, $timeout=30, $referer_url='')
+    public static function http_post(string $url, $query_str, $timeout=30, $referer_url = '')
     {
         $startt = time();
         if( function_exists('curl_init') )
@@ -889,9 +892,10 @@ class util
             curl_setopt($ch, CURLOPT_POSTFIELDS, $query_str);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_REFERER, $referer_url);
             curl_setopt($ch, CURLOPT_USERAGENT, self::$user_agent );
             $result = curl_exec($ch);
-            $errno  = curl_errno($ch);
+            // $errno  = curl_errno($ch);
             curl_close($ch);
             //echo " $url & $query_str <hr /> $errno , $result ";
             return $result;
@@ -932,15 +936,16 @@ class util
      * @param $referer_url=''
      * @return string
      */
-    public static function http_post_file($url, $files, $fields, $timeout=30, $referer_url='')
+    public static function http_post_file($url, $files, $fields, $timeout = 30, string $referer_url = '')
     {
-        $startt = time();
+        // $startt = time();
         if( function_exists('curl_init') )
         {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+            curl_setopt($ch, CURLOPT_REFERER, $referer_url);
             curl_setopt($ch, CURLOPT_USERAGENT, self::$user_agent );
             $need_class = class_exists('\CURLFile') ? true : false;
             foreach($files as $k => $v)
@@ -965,7 +970,7 @@ class util
 
     /**
      * curl 函数
-     * @Author han
+     *
      * @param  [type]  $data  请求参数
      * data支持下面参数（只有url是必须的，其他都是可选的）
      * url     url地址
@@ -976,9 +981,10 @@ class util
      * cookie  传递cookie
      * cookie_file cookie路径
      * save_cookie cookie保存路径
-     * proxy   代理信息
-     * header  http请求头 
-     * debug   是否开启调试
+     * proxy    代理信息
+     * header   http请求头 
+     * debug    是否开启调试
+     * compress 是否开启数据压缩传输
      * $tmp = util::http_request(['url' => 'http://www.taobao.com']);
      * $tmp['body']就是返回的内容
      * @param  boolean $multi 是否并发模式
@@ -999,9 +1005,9 @@ class util
             $curl_multi = function_exists('curl_multi_init') && 
             strpos(ini_get('disable_functions'), 'curl_multi_init') === false;
             
+            // curl并发模式
             if($curl_multi && $multi)
             {
-                //curl并发模式
                 $mch = curl_multi_init();
                 
                 $ch = $ret = $error = array();
@@ -1102,16 +1108,18 @@ class util
             }
         }
         
-        $data['post'] = isset($data['post']) ? (is_array($data['post']) ? http_build_query($data['post']) : $data['post']) : '';
-        $data['cookie'] = isset($data['cookie']) ? $data['cookie'] : '';
-        $data['ip'] = isset($data['ip']) ? $data['ip'] : '';
-        $data['timeout'] = isset($data['timeout']) ? $data['timeout'] : 15;
-        $data['block'] = isset($data['block']) ? $data['block'] : true;
-        $data['referer'] = isset($data['referer']) ? $data['referer'] : '';
-        $data['connection'] = isset($data['connection']) ? $data['connection'] : 'close';
-        $data['header'] = isset($data['header']) ? (array)$data['header'] : array();
+        $data['post']       = isset($data['post']) ? (is_array($data['post']) ? http_build_query($data['post']) : $data['post']) : '';
+        $data['compress']   = $data['compress'] ?? false;
+        $data['debug']      = $data['debug'] ?? false;
+        $data['cookie']     = $data['cookie'] ?? '';
+        $data['ip']         = $data['ip'] ?? '';
+        $data['timeout']    = $data['timeout'] ?? 15;
+        $data['block']      = $data['block'] ?? true;
+        $data['referer']    = $data['referer'] ?? '';
+        $data['connection'] = $data['connection'] ?? 'close';
+        $data['header']     = isset($data['header']) ? (array)$data['header'] : [];
         
-        if(function_exists('curl_init'))
+        if ( function_exists('curl_init') )
         {
             $ch = curl_init($data['url']);
             
@@ -1126,23 +1134,27 @@ class util
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array("X-FORWARDED-FOR:{$x_forwarded_for}", "CLIENT-IP:{$client}"));
             }
 
-            if(!empty($data['debug']))
+            if( $data['debug'] )
             {
                 curl_setopt($ch, CURLOPT_VERBOSE, true);
                 $fp = fopen($data['debug'], 'a');
                 curl_setopt($ch, CURLOPT_STDERR, $fp);
-                //fclose($fp);
+                // fclose($fp);
             }
-            //curl_setopt($ch, CURLOPT_ENCODING, 'none');
+
+            if ( $data['compress'] ) 
+            {
+                curl_setopt($ch, CURLOPT_ENCODING, "gzip,deflate");
+            }
             
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($data['header'], array(
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($data['header'], [
                 'Connection: '. $data['connection']
-            )));
+            ]));
             
             if(stripos($data['url'], 'https://') === 0)
             {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER , false);
-                //curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             }
             
             if(!empty($data['referer'])) curl_setopt($ch, CURLOPT_REFERER, $data['referer']);
@@ -1168,7 +1180,7 @@ class util
             
             $ret = curl_exec($ch);
             
-            $errno = curl_errno($ch);//var_dump($errno);
+            $errno = curl_errno($ch);
             
             $header = curl_getinfo($ch);
             if( !empty($data['return_head']) ) 
@@ -1183,24 +1195,32 @@ class util
                 
                 $s = "$data[url]|$errno|$error";
                 log::error($s);
-                
-                return array('head' => $header, 'body' => null, 'info' => array(
-                    'errno' => $errno,
-                    'error' => $error
-                ));
+
+                return [
+                    'head' => $header, 
+                    'body' => null, 
+                    'info' => [
+                        'errno' => $errno,
+                        'error' => $error
+                    ]
+                ];
             }
             
-            //$tmp = explode("\r\n\r\n", $ret, 2);
-            //print_r($ret);
-            //unset($ret);
+            // $tmp = explode("\r\n\r\n", $ret, 2);
+            // print_r($ret);
+            // unset($ret);
             
             $info = curl_getinfo($ch);
             
             curl_close($ch);
-            
-            return array('head' => $header, 'body' => $ret, 'info' => array(
-                'status' => $info['http_code']
-            ));
+
+            return [
+                'head' => $header, 
+                'body' => $ret, 
+                'info' => [
+                    'status' => $info['http_code']
+                ]
+            ];
         }
     }
 
@@ -1333,8 +1353,8 @@ class util
         if (!is_file($sourceFile)) {
             die("<b>404 File not found!</b>");
         }
-        $len = filesize($sourceFile); //获取文件大小
-        $filename = basename($sourceFile); //获取文件名字
+        // $len = filesize($sourceFile); //获取文件大小
+        // $filename = basename($sourceFile); //获取文件名字
         $outFile_extension = strtolower(substr(strrchr($sourceFile, "."), 1)); //获取文件扩展名
         //var_dump($outFile_extension);exit();exit();
 
@@ -1394,7 +1414,7 @@ class util
             但是服务器可以忽略此请求头，如果无条件GET包含Range请求头，响应会以状态码206（PartialContent）返回而不是以200 （OK）。
              */
             // 断点后再次连接 $_SERVER['HTTP_RANGE'] 的值 bytes=4390912-
-            list ($a, $range) = explode("=", $_SERVER['HTTP_RANGE']);
+            [, $range] = explode("=", $_SERVER['HTTP_RANGE']);
             //if yes, download missing part
             $range  = explode('-', $range);
             $start = $range[0];
@@ -1470,8 +1490,8 @@ class util
     }
 
     /**
-     * @author han 
      * 尝试从数组/对象中获取值
+     *
      * @param mixed $src 源
      * @param string $key 键 array支持 keypath
      * @param mixed $default 默认值
@@ -1538,8 +1558,8 @@ class util
     }
 
     /**
-      * @author han
       * 加原子锁并进程结束后自动解锁
+      *
       * @param  [type]  $name     锁的标识名
       * @param  integer $timeout  循环获取锁的等待超时时间，在此时间内会一直尝试获取锁直到超时，为0表示失败后直接返回不等待
       * @param  integer $expire   当前锁的最大生存时间(秒)，必须大于0，如果超过生存时间锁仍未被释放，则系统会自动强制释放
@@ -1639,7 +1659,7 @@ class util
 
     /**
      * 变量替换
-     * @Author han
+     *
      * @param  string $format_data 带{xxx}的字符串
      * @param  array  $params      key value数组
      */

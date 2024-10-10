@@ -45,6 +45,7 @@ it('json request', function () {
 });
 
 it('encrypt request', function () {
+    $compress = true;
     $url  = 'http://localhost:8000';
     $req_data = [
         'ac' => 'encrypt',
@@ -56,16 +57,21 @@ it('encrypt request', function () {
     $ret = util::http_request([
         'url'    => $url,
         'post'   => $encrypt_str,
+        'compress' => $compress,
         'header' => ['encrypt: 1']
     ]);
 
     $body = $ret['body'] ?? '';
+    if ( $compress ) 
+    {
+        $body = @gzuncompress($body);
+    }
     $body = cls_crypt::decode($body, $_ENV['CRYPT_KEY']);
     // print_r($body);
     $data = @json_decode($body, true);
 
-    expect($data['code'])->toEqual(0);
-    expect($data['msg'])->toEqual('successful');
-    expect($data['data']['username'])->toEqual($req_data['username']);
+    expect($data['code'] ?? 0)->toEqual(0);
+    expect($data['msg'] ?? '')->toEqual('successful');
+    expect($data['data']['username'] ?? '')->toEqual($req_data['username']);
 });
 
