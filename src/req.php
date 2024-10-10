@@ -64,9 +64,9 @@ class req
 
     /**
      * 初始化用户请求
-     * 对于 post、get 的数据，会转到 selfforms 数组， 并删除原来数组
+     * 对于 post、get 的数据，会转到 selfforms 数组，并删除原来数组
      * 对于 cookie 的数据，会转到 cookies 数组，但不删除原来数组
-     * 对于 session 的数据，只做XSS过滤处理
+     * 对于 session 的数据，只做 XSS 过滤处理
      * 本方法内不允许抛出异常，因为 errorhandler.php 里面调用了当前类，会进入死循环
      */
     public static function _init()
@@ -598,6 +598,16 @@ class req
     }
 
     /**
+     * 检查运行环境是否终端
+     *
+     * @return	bool
+     */
+    public static function is_terminal()
+    {
+        return defined("STDERR") && is_resource(STDERR) && function_exists('posix_isatty') && posix_isatty(STDERR);    
+    }
+
+    /**
      * jquery 发出 ajax 请求时，会在请求头部添加一个名为X-Requested-With的信息，信息内容为 XMLHttpRequest
      *
      * js 需要如下处理
@@ -961,8 +971,7 @@ class req
      */
     protected static function hydrate()
     {
-        $is_terminal = defined("STDERR") && is_resource(STDERR) && function_exists('posix_isatty') && posix_isatty(STDERR);    
-        if (!$is_terminal) 
+        if (self::is_terminal()) 
         {
             // print_r($_SERVER);
             // var_dump(self::$use_encrypt);
