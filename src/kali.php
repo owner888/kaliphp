@@ -99,6 +99,11 @@ class kali
             exit(self::fmt_code(1001, [self::$base_root]));
         }
 
+        if ( !is_writable(self::$data_root) && !@mkdir(self::$data_root) )
+        {
+            exit(self::fmt_code(1007, [self::$data_root]));
+        }
+
         if ( !is_writable(self::$log_root) && !@mkdir(self::$log_root) )
         {
             exit(self::fmt_code(1007, [self::$log_root]));

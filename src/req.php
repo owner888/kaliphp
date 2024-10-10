@@ -1018,6 +1018,12 @@ class req
      */
     protected static function hydrate()
     {
+        $is_terminal = defined("STDERR") && is_resource(STDERR) && function_exists('posix_isatty') && posix_isatty(STDERR);    
+        if (!$is_terminal) 
+        {
+            // print_r($_SERVER);
+        }
+
         // get the input method and unify it
         $method = strtolower(self::method());
 

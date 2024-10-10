@@ -5,11 +5,6 @@ namespace Tests;
 define('APPPATH', __DIR__);
 define('ENVPATH', __DIR__ .'/.env');
 
-if ( !is_dir(APPPATH .'/app/data')  )
-{
-    @mkdir(APPPATH .'/app/data');
-}
-
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -22,7 +17,7 @@ if ( !is_dir(APPPATH .'/app/data')  )
 */
 
 // uses(TestCase::class)->in('Feature');
-uses(TestCase::class)->in('Unit');
+// uses(TestCase::class)->in('Unit');
 
 /*
 |--------------------------------------------------------------------------

@@ -8,6 +8,7 @@ kali::registry();
 
 // 在测试开始之前启动 Web 服务
 beforeAll(function () {
+    echo "beforeAll\n";
     $router = __DIR__ .'/../index.php';
     shell_exec('php -S localhost:8000 ' . $router . ' > /dev/null 2>&1 & echo $! > server.pid');
     sleep(1); // 给服务器一点时间来启动
@@ -15,6 +16,7 @@ beforeAll(function () {
 
 // 在所有测试结束之后关闭 Web 服务
 afterAll(function () {
+    echo "afterAll\n";
     $pid = (string) @file_get_contents('server.pid');
     shell_exec('kill ' . $pid);
     unlink('server.pid');
@@ -44,6 +46,7 @@ afterAll(function () {
 // });
 
 it('encrypt request', function () {
+    echo "encrypt request\n";
     $url  = 'http://localhost:8000?ac=encrypt';
     $data = [
         'username' => 'username',
@@ -59,7 +62,7 @@ it('encrypt request', function () {
 
     $body = $ret['body'] ?? '';
 
-    // expect($body)->toEqual('index');
+    expect($body)->toEqual('index');
 
     // 不需要解密了测试方法没有对数据加密返回
     // $ret['body'] = cls_crypt::decode($ret['body'], $_ENV['CRYPT_KEY']);
