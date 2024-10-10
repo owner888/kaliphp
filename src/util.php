@@ -482,13 +482,13 @@ class util
     /**
      * 时区转换
      * 
-     * @param mixed $datetime           KALI_TIMESTAMP, 可以是时间戳或者时间格式
+     * @param mixed $datetime           FRAME_TIMESTAMP, 可以是时间戳或者时间格式
      * @param string $format            '', 格式化输出字符串。默认为Y-m-d H:i:s
      * @param string $from_timezone     'ETC/GMT-7', 默认为系统设置的时区，即 ETC/GMT
      * @param string $to_timezone       'ETC/GMT-8', 转换成为的时区，默认获取用户所在国家对应时区
      * @return string
      */
-    public static function to_timezone($datetime = KALI_TIMESTAMP, $format = 'Y-m-d H:i:s', $from_timezone = null, $to_timezone = null) 
+    public static function to_timezone($datetime = FRAME_TIMESTAMP, $format = 'Y-m-d H:i:s', $from_timezone = null, $to_timezone = null) 
     {
         // 如果没有传时区，用国家代码从配置文件获取对应时区
         $to_timezone   = $to_timezone   ?: config::instance('timezone')->get(COUNTRY);

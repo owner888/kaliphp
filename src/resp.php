@@ -54,7 +54,7 @@ class resp
             'code'      => (int) $code,
             'msg'       => (string) $msg,
             'data'      => $data,
-            'timestamp' => KALI_TIMESTAMP,
+            'timestamp' => FRAME_TIMESTAMP,
         ];
 
         // if(defined('SYS_DEBUG') && SYS_DEBUG)

@@ -412,7 +412,7 @@ class cls_security
         if( $data['action'] == 'save' )
         {
             $spams[$key]['total']++;
-            $spams[$key]['timestamp'] = KALI_TIMESTAMP;
+            $spams[$key]['timestamp'] = FRAME_TIMESTAMP;
             if(isset($data['data']))
             {
                 $spams[$key]['data'] = $data['data'];

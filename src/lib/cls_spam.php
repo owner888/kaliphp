@@ -125,7 +125,7 @@ class cls_spam
         if( 
             !empty($interval) &&
             !empty(self::$spam_data[$_key]['timestamp']) &&
-            (KALI_TIMESTAMP - self::$spam_data[$_key]['timestamp'] <= $interval) )
+            (FRAME_TIMESTAMP - self::$spam_data[$_key]['timestamp'] <= $interval) )
         {
             $ret = NULL; //区别于触发阀值
         }
@@ -167,7 +167,7 @@ class cls_spam
             0 : self::$spam_data[$_key]['total'];
         self::$spam_data[$_key]['total']++;
         self::$spam_data[$_key]['data'] = $data;
-        self::$spam_data[$_key]['timestamp'] = KALI_TIMESTAMP;
+        self::$spam_data[$_key]['timestamp'] = FRAME_TIMESTAMP;
 
         $ret = cls_security::spam([
             'key'    => $_key, 

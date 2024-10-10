@@ -165,9 +165,9 @@ class kali
         defined('ERROR')   or define('ERROR',   400);
 
         // Get the start time and memory for use later
-        defined('KALI_START_TIME') or define('KALI_START_TIME', microtime(true));
-        defined('KALI_START_MEM')  or define('KALI_START_MEM',  memory_get_usage());
-        defined('KALI_TIMESTAMP')  or define('KALI_TIMESTAMP',  time());
+        defined('FRAME_START_TIME') or define('FRAME_START_TIME', microtime(true));
+        defined('FRAME_START_MEM')  or define('FRAME_START_MEM',  memory_get_usage());
+        defined('FRAME_TIMESTAMP')  or define('FRAME_TIMESTAMP',  time());
 
         // Event default action
         defined('beforeAction') or define('beforeAction', 1);
@@ -258,7 +258,7 @@ class kali
             }
         }
 
-        // 验证token，Websocket 方式，Workerman、Swoole 环境排除
+        // 验证 token，Websocket 方式，Workerman、Swoole 环境排除
         if ( PHP_SAPI != 'cli' ) 
         {
             cls_security::csrf_verify();
@@ -351,19 +351,19 @@ class kali
 
             $cache_time = 86400;
             $runtime_start = microtime(true);
-            if( function_exists('pcntl_fork') )//支持多进程优先使用，防止某个crond中断导致其他的无法执行
+            if( function_exists('pcntl_fork') ) // 支持多进程优先使用，防止某个crond中断导致其他的无法执行
             {
-                $pid = pcntl_fork();    //创建子进程
-                if( $pid == -1 ) //错误处理：创建子进程失败时返回-1.
+                $pid = pcntl_fork();  // 创建子进程
+                if( $pid == -1 )      // 错误处理：创建子进程失败时返回 -1
                 {
                     die('Could not fork');
                 } 
-                else if( $pid ) //父进程会得到子进程号，所以这里是父进程执行的逻辑
+                else if( $pid ) // 父进程会得到子进程号，所以这里是父进程执行的逻辑
                 {
-                    //如果不需要阻塞进程，而又想得到子进程的退出状态，则可以注释掉pcntl_wait($status)语句，或写成：
-                    pcntl_wait($status, WNOHANG); //等待子进程中断，防止子进程成为僵尸进程。
+                    // 如果不需要阻塞进程，而又想得到子进程的退出状态，则可以注释掉pcntl_wait($status)语句，或写成：
+                    pcntl_wait($status, WNOHANG); // 等待子进程中断，防止子进程成为僵尸进程。
                 } 
-                else //执行子进程逻辑
+                else // 执行子进程逻辑
                 {
                     include $path_file;
                     $lasttime = ceil($runtime_start);
@@ -397,8 +397,9 @@ class kali
 
     /**
      * 格式化代码为字符串
-     * @param int $code
-     * @param array $params
+     * 
+     * @param  int    $code
+     * @param  array  $params
      * @return string
      */
     public static function fmt_code($code, $params=[])
@@ -410,13 +411,13 @@ class kali
     /**
      * APP统计
      *
-     * @return array()
+     * @return array
      */
     public static function app_total()
     {
         return [
-            microtime(true) - KALI_START_TIME,
-            memory_get_peak_usage() - KALI_START_MEM,
+            microtime(true) - FRAME_START_TIME,
+            memory_get_peak_usage() - FRAME_START_MEM,
         ];
     }
 }
