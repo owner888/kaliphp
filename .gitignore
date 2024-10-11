@@ -1,6 +1,7 @@
 /vendor/
 .DS_Store
 /.vscode
+/composer.lock
 /phpstan.neon
 /phpunit.xml
 /tests/data

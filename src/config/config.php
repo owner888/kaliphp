@@ -65,9 +65,9 @@ return [
         'user_ip'              => 'X_REAL_IP',
         'use_rewrite'          => false,
         'global_xss_filtering' => true,
-        'use_compress'         => $_ENV['USE_COMPRESS'], // 是否压缩数据
-        'use_encrypt'          => $_ENV['USE_ENCRYPT'],  // 是否强制加密
-        'encrypt_key'          => $_ENV['CRYPT_KEY'],
+        'use_compress'         => false, // 是否压缩数据
+        'use_encrypt'          => false, // 是否强制加密
+        'encrypt_key'          => '',
     ],
 
     // COOKIE设置

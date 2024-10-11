@@ -38,7 +38,10 @@ abstract class cls_singleton
      *
 	 * @return void
 	 */
-	final private function __clone() {}
+    final protected function __clone() 
+    {
+        trigger_error('Clone is not allowed !');
+    }
 
     /**
 	 * Similar to a get_called_class() for a child class to invoke.

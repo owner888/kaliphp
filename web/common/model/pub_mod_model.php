@@ -2,9 +2,7 @@
 namespace common\model;
 
 use common\extend\pub_func;
-use kaliphp\core;
 use kaliphp\db;
-use kaliphp\lang;
 use kaliphp\lib\cls_arr;
 use kaliphp\log;
 use kaliphp\req;
@@ -13,6 +11,7 @@ use kaliphp\cache;
 use kaliphp\config;
 use kaliphp\lib\cls_filter;
 use kaliphp\lib\cls_bbcode;
+
 /**
  * 这个类一般都作为基类被继承(数据库相关操作，尽量用里面的函数，避免每个人一套，造成日后维护艰难)
  * **************************************常用操作***************************************
@@ -224,7 +223,6 @@ use kaliphp\lib\cls_bbcode;
  * 每个函数的想起参数请移步到相关函数
  ******************************************end**************************************
 **/
-
 
 /**
  * 基础类
@@ -2225,7 +2223,7 @@ class pub_mod_model
     }
 
     //获取分年的表名
-    public static function t($table, $timestamp = CORE_TIMESTAMP, $format = 'Y')
+    public static function t($table, $timestamp = FRAME_TIMESTAMP, $format = 'Y')
     {
         $year = date($format, $timestamp);
         return $table .'_'. $year;
