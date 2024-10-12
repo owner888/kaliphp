@@ -22,9 +22,10 @@ class cls_crypt
      * 
      * @param	string	$value
      * @param	string	$key
+     * @param	bool	$need_base64
      * @return	string
      */
-    public static function encode(string $value, string $key) :string
+    public static function encode(string $value, string $key, bool $need_base64 = false): string
     {
         if ( strlen($key) != 32 ) 
         {
@@ -37,6 +38,11 @@ class cls_crypt
         cls_aes::instance()->set_iv(substr($key, 16, 16));
         $value = cls_aes::instance()->encrypt($value);
 
+        if ($need_base64)
+        {
+            $value = self::safe_b64encode($value);
+        }
+
         return $value;
     }
 
@@ -45,15 +51,21 @@ class cls_crypt
      * 
      * @param	string	$value
      * @param	string	$key
+     * @param	bool	$need_base64
      * @return	string
      */
-    public static function decode(string $value, string $key) :string
+    public static function decode(string $value, string $key, bool $need_base64 = false): string
     {
         if ( strlen($key) != 32 ) 
         {
             $msg = '加密Key必须满足32位';
             log::error($msg, __method__);
             throw new Exception($msg);
+        }
+
+        if ($need_base64)
+        {
+            $value = self::safe_b64decode($value);
         }
 
         cls_aes::instance()->set_key(substr($key, 0, 16));

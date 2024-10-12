@@ -340,7 +340,7 @@ class req
      */
     public static function base_url($uri = '')
     {
-        $url = req::url();
+        $url = self::url();
         // 排除 Query String 后的 URL
         $url = strpos($url, '?') ? strstr($url, '?', true) : $url;
         return $uri ? self::domain() . $uri : $url;
@@ -556,7 +556,7 @@ class req
     // 是否请求中文数据
     public static function is_cn()
     {
-        if (req::server('HTTP_ACCEPT_LANGUAGE') == 'zh-cn') 
+        if (self::server('HTTP_ACCEPT_LANGUAGE') == 'zh-cn') 
         {
             return true;
         }
@@ -578,12 +578,12 @@ class req
             return true;
         }
 
-        if (req::server('HTTP_CONTENT_TYPE') == 'application/json') 
+        if (self::server('HTTP_CONTENT_TYPE') == 'application/json') 
         {
             return true;
         }
 
-        $http_accept = (string) req::server('HTTP_ACCEPT');
+        $http_accept = (string) self::server('HTTP_ACCEPT');
         $http_accepts = explode(';', $http_accept);
         $http_accept = $http_accepts[0];
         $http_accepts = explode(',', $http_accept);
@@ -931,7 +931,7 @@ class req
         {
             self::$forms[$k] = $v;
 
-            // 给值gets/posts
+            // 给值 gets/posts
             if( strtoupper($method) == 'GET' ) 
             {
                 self::$gets[$k] = $v;
