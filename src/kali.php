@@ -136,13 +136,10 @@ class kali
      */
     private static function define()
     {
-        $http_encrypt = $_SERVER['HTTP_ENCRYPT'] ?? '0';
-        // 调用 req 之前处理下 use_encrypt
-        if ( PHP_SAPI != 'cli' && $http_encrypt == '1' ) 
-        {
-            defined('REQUEST_ENCRYPT') or define('REQUEST_ENCRYPT', true);
-        }
-        defined('REQUEST_ENCRYPT') or define('REQUEST_ENCRYPT', false);
+        defined('USE_BASE64')   or define('USE_BASE64',   (bool) ($_ENV['USE_BASE64'] ?? false));
+        defined('USE_COMPRESS') or define('USE_COMPRESS', (bool) ($_ENV['USE_COMPRESS'] ?? false));
+        defined('USE_CRYPT')    or define('USE_CRYPT',    (bool) ($_ENV['USE_CRYPT'] ?? false));
+        defined('CRYPT_KEY')    or define('CRYPT_KEY',    (string) ($_ENV['CRYPT_KEY'] ?? ''));
 
         // mvim://open?url=file://%file&line=%line
         // subl://open?url=file://%file&line=%line
