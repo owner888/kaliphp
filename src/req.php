@@ -12,6 +12,12 @@
 
 namespace kaliphp;
 
+// 解决单独使用时找不到定义问题
+defined('USE_BASE64')   or define('USE_BASE64',   (bool) ($_ENV['USE_BASE64'] ?? false));
+defined('USE_COMPRESS') or define('USE_COMPRESS', (bool) ($_ENV['USE_COMPRESS'] ?? false));
+defined('USE_CRYPT')    or define('USE_CRYPT',    (bool) ($_ENV['USE_CRYPT'] ?? false));
+defined('CRYPT_KEY')    or define('CRYPT_KEY',    (string) ($_ENV['CRYPT_KEY'] ?? ''));
+
 use kaliphp\lib\cls_cli;
 use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_crypt;
@@ -59,11 +65,10 @@ class req
      */
     public static $throw_error = false;
 
-    // 使用加密
-    public static $use_encrypt = false;
-
-    // 客户端请求使用 GZIP
-    public static $use_compress = false;
+    private static $_encrypt = false;      // 使用加密
+    private static $_encrypt_key = '';     // 加解密 KEY
+    private static $_use_compress = false; // 客户端请求使用 GZIP
+    private static $_use_base64 = false;   // 使用 BASE64
 
     /**
      * 初始化用户请求
@@ -74,11 +79,54 @@ class req
      */
     public static function _init()
     {
-        self::$config = config::instance('config')->get('request');
-        self::$use_encrypt = (bool) self::$config['use_encrypt'] ?? false;
+        req::set_encrypt(USE_CRYPT);
+        req::set_encrypt_key(CRYPT_KEY);
+        req::set_use_compress(USE_COMPRESS);
+        req::set_use_base64(USE_BASE64);
 
+        self::$config = config::instance('config')->get('request');
         // 匹配全局输入数据 $_SESSION、$_COOKIE、$_POST、$_GET ...
         self::hydrate();
+    }
+
+    public static function set_use_compress(bool $use_compress = false)
+    {
+        self::$_use_compress = $use_compress;
+    }
+
+    public static function set_use_base64(bool $use_base64 = false)
+    {
+        self::$_use_base64 = $use_base64;
+    }
+
+    public static function set_encrypt(bool $encrypt = false)
+    {
+        self::$_encrypt = $encrypt;
+    }
+
+    public static function set_encrypt_key(string $encrypt_key = '')
+    {
+        self::$_encrypt_key = $encrypt_key;
+    }
+
+    public static function get_use_compress(): bool
+    {
+        return self::$_use_compress;
+    }
+
+    public static function get_use_base64(): bool
+    {
+        return self::$_use_base64;
+    }
+
+    public static function get_encrypt(): bool
+    {
+        return self::$_encrypt;
+    }
+
+    public static function get_encrypt_key(): string
+    {
+        return self::$_encrypt_key;
     }
 
     /**
@@ -960,17 +1008,23 @@ class req
         // get the input method and unify it
         $method = strtolower(self::method());
 
-        // get the accept encoding from the header, strip optional parameters
-        $encoding_header = self::headers('Accept-Encoding', '');
-        if (($accept_encoding = strstr($encoding_header, ',', true)) === false)
-        {
-            $accept_encoding = $encoding_header;
-        }
-        if ( $accept_encoding == 'gzip' )
-        {
-            // 通知 response 返回 gzip 压缩数据
-            resp::set_use_compress(true);
-        }
+        // // get the accept encoding from the header, strip optional parameters
+        // $encoding_header = self::headers('Accept-Encoding', '');
+        // if (($accept_encoding = strstr($encoding_header, ',', true)) === false)
+        // {
+        //     $accept_encoding = $encoding_header;
+        // }
+        // if ( $accept_encoding == 'gzip' )
+        // {
+        //     // 通知 response 返回 gzip 压缩数据
+        //     self::set_use_compress(true);
+        // }
+
+        // echo "use_base64 - ".self::get_use_base64()."\n";
+        // echo "use_compress - ".self::get_use_compress()."\n";
+        // echo "use_crypt - ".self::get_encrypt()."\n";
+        // echo "crypt_key - ".self::get_encrypt_key()."\n";
+        // exit;
 
         // get the content type from the header, strip optional parameters
         $content_header = self::headers('Content-Type', '');
@@ -983,22 +1037,17 @@ class req
         $php_input = self::raw();
 
         // 是否开启加密，客户端要求加密 或者 配置强制加密
-        if ( !empty(self::headers('ENCRYPT', '')) || self::$use_encrypt ) 
+        if ( self::$_encrypt ) 
         {
-            $encrypt_key = self::$config['encrypt_key'];
-            if (empty($encrypt_key)) 
+            if ( empty(self::$_encrypt_key) ) 
             {
-                resp::response(-1, [], 'Encrypt key undefined');
+                exit('Encrypt key undefined');
             }
 
-            // 加密逻辑 依赖 resp 类处理
-            resp::set_encrypt(true);
-            resp::set_encrypt_key($encrypt_key);
-
-            $php_input = cls_crypt::decode($php_input, $encrypt_key);
+            $php_input = cls_crypt::decode($php_input, self::$_encrypt_key, self::$_use_base64);
             $data = json_decode($php_input, true);
 
-            if (json_last_error() != JSON_ERROR_NONE)
+            if ( json_last_error() != JSON_ERROR_NONE )
             {
                 resp::response(-1, [], 'descrypt error: ' . json_last_error());
             }

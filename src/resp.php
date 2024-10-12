@@ -21,27 +21,6 @@ use kaliphp\lib\cls_crypt;
  */
 class resp
 {
-    private static $_encrypt = false;      // 是否加解密
-    private static $_encrypt_key = '';     // 加解密 KEY
-    private static $_use_compress = false; // 是否压缩数据
-
-    public static $config = [];
-
-    public static function set_use_compress(bool $use_compress = false)
-    {
-        self::$_use_compress = $use_compress;
-    }
-
-    public static function set_encrypt(bool $encrypt = false)
-    {
-        self::$_encrypt = $encrypt;
-    }
-
-    public static function set_encrypt_key(string $encrypt_key = '')
-    {
-        self::$_encrypt_key = $encrypt_key;
-    }
-
     public static function response_error(int $code = -1, string $msg = 'faild')
     {
         self::response($code, [], $msg);
@@ -99,15 +78,16 @@ class resp
         //     $json = cls_crypt::encode($json, kali::$auth->aes_key);
         // }
 
-        if (self::$_encrypt) 
+        if (req::get_encrypt()) 
         {
-            $json = cls_crypt::encode($json, self::$_encrypt_key);
+            $json = cls_crypt::encode($json, req::get_encrypt_key(), req::get_use_base64());
         }
 
-        if ( self::$_use_compress ) 
+        if ( req::get_use_compress() ) 
         {
             $json = gzcompress($json, 9);
         }
+
         exit($json);
     }
 }
