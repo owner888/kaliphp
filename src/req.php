@@ -998,33 +998,8 @@ class req
      */
     protected static function hydrate()
     {
-        if (!self::is_terminal()) 
-        {
-            // print_r($_SERVER['HTTP_ACCEPT_ENCODING']);
-            // var_dump(self::headers('Accept-Encoding', ''));
-            // exit;
-        }
-
         // get the input method and unify it
         $method = strtolower(self::method());
-
-        // // get the accept encoding from the header, strip optional parameters
-        // $encoding_header = self::headers('Accept-Encoding', '');
-        // if (($accept_encoding = strstr($encoding_header, ',', true)) === false)
-        // {
-        //     $accept_encoding = $encoding_header;
-        // }
-        // if ( $accept_encoding == 'gzip' )
-        // {
-        //     // 通知 response 返回 gzip 压缩数据
-        //     self::set_use_compress(true);
-        // }
-
-        // echo "use_base64 - ".self::get_use_base64()."\n";
-        // echo "use_compress - ".self::get_use_compress()."\n";
-        // echo "use_crypt - ".self::get_encrypt()."\n";
-        // echo "crypt_key - ".self::get_encrypt_key()."\n";
-        // exit;
 
         // get the content type from the header, strip optional parameters
         $content_header = self::headers('Content-Type', '');
@@ -1044,8 +1019,18 @@ class req
                 exit('Encrypt key undefined');
             }
 
-            $php_input = cls_crypt::decode($php_input, self::$_encrypt_key, self::$_use_base64);
-            $data = json_decode($php_input, true);
+            $php_input = cls_crypt::decode(
+                $php_input, 
+                self::$_encrypt_key, 
+                self::$_use_base64
+            );
+
+            if (self::$_use_compress)
+            {
+                $php_input = gzinflate($php_input);
+            }
+
+            $data = (array) json_decode($php_input, true);
 
             if ( json_last_error() != JSON_ERROR_NONE )
             {
@@ -1057,7 +1042,7 @@ class req
             $_GET = $_POST = $_REQUEST = [];
 
             // 覆盖 $_POST 值
-            self::assign_values((array) $data, 'POST');
+            self::assign_values($data, 'POST');
         }
         // handle application/x-www-form-urlencoded input
         else if ( $content_type == 'application/x-www-form-urlencoded' )

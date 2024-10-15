@@ -78,14 +78,14 @@ class resp
         //     $json = cls_crypt::encode($json, kali::$auth->aes_key);
         // }
 
+        if ( req::get_use_compress() ) 
+        {
+            $json = gzdeflate($json, 9);
+        }
+
         if (req::get_encrypt()) 
         {
             $json = cls_crypt::encode($json, req::get_encrypt_key(), req::get_use_base64());
-        }
-
-        if ( req::get_use_compress() ) 
-        {
-            $json = gzcompress($json, 9);
         }
 
         exit($json);
