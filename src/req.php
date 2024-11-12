@@ -13,10 +13,7 @@
 namespace kaliphp;
 
 // 解决单独使用时找不到定义问题
-defined('USE_BASE64')   or define('USE_BASE64',   (bool) ($_ENV['USE_BASE64'] ?? false));
-defined('USE_COMPRESS') or define('USE_COMPRESS', (bool) ($_ENV['USE_COMPRESS'] ?? false));
-defined('USE_CRYPT')    or define('USE_CRYPT',    (bool) ($_ENV['USE_CRYPT'] ?? false));
-defined('CRYPT_KEY')    or define('CRYPT_KEY',    (string) ($_ENV['CRYPT_KEY'] ?? ''));
+defined('CRYPT_KEY') or define('CRYPT_KEY', (string) ($_ENV['CRYPT_KEY'] ?? ''));
 
 use kaliphp\lib\cls_cli;
 use kaliphp\lib\cls_arr;
@@ -65,11 +62,6 @@ class req
      */
     public static $throw_error = false;
 
-    private static $_encrypt = false;      // 使用加密
-    private static $_encrypt_key = '';     // 加解密 KEY
-    private static $_use_compress = false; // 客户端请求使用 GZIP
-    private static $_use_base64 = false;   // 使用 BASE64
-
     /**
      * 初始化用户请求
      * 对于 post、get 的数据，会转到 selfforms 数组，并删除原来数组
@@ -79,54 +71,35 @@ class req
      */
     public static function _init()
     {
-        req::set_encrypt(USE_CRYPT);
-        req::set_encrypt_key(CRYPT_KEY);
-        req::set_use_compress(USE_COMPRESS);
-        req::set_use_base64(USE_BASE64);
-
         self::$config = config::instance('config')->get('request');
         // 匹配全局输入数据 $_SESSION、$_COOKIE、$_POST、$_GET ...
         self::hydrate();
     }
 
-    public static function set_use_compress(bool $use_compress = false)
+    public static function get_use_compress(): bool   
     {
-        self::$_use_compress = $use_compress;
-    }
+        $value = self::server('HTTP_ACCEPT_ENCODING', '');
 
-    public static function set_use_base64(bool $use_base64 = false)
-    {
-        self::$_use_base64 = $use_base64;
-    }
-
-    public static function set_encrypt(bool $encrypt = false)
-    {
-        self::$_encrypt = $encrypt;
-    }
-
-    public static function set_encrypt_key(string $encrypt_key = '')
-    {
-        self::$_encrypt_key = $encrypt_key;
-    }
-
-    public static function get_use_compress(): bool
-    {
-        return self::$_use_compress;
+        return (bool) strstr($value, 'gzip');
     }
 
     public static function get_use_base64(): bool
     {
-        return self::$_use_base64;
+        $value = self::server('HTTP_ACCEPT_BASE64', '');
+
+        return $value == '1';
     }
 
-    public static function get_encrypt(): bool
+    public static function get_use_encrypt(): bool
     {
-        return self::$_encrypt;
+        $value = self::server('HTTP_ACCEPT_ENCRYPT', '');
+
+        return $value == '1';
     }
 
     public static function get_encrypt_key(): string
     {
-        return self::$_encrypt_key;
+        return CRYPT_KEY;
     }
 
     /**
@@ -1011,30 +984,41 @@ class req
         // fetch the raw input data
         $php_input = self::raw();
 
+        // var_dump(self::get_encrypt_key(), self::get_use_encrypt(), self::get_use_base64(), self::get_use_compress()); exit;
+
         // 是否开启加密，客户端要求加密 或者 配置强制加密
-        if ( self::$_encrypt ) 
+        if ( self::get_use_encrypt() ) 
         {
-            if ( empty(self::$_encrypt_key) ) 
+            if ( empty(self::get_encrypt_key()) ) 
             {
                 exit('Encrypt key undefined');
             }
 
             $php_input = cls_crypt::decode(
                 $php_input, 
-                self::$_encrypt_key, 
-                self::$_use_base64
+                self::get_encrypt_key(), 
+                self::get_use_base64()
             );
 
-            if (self::$_use_compress)
+            if (self::get_use_compress())
             {
-                $php_input = gzinflate($php_input);
+                if (@gzinflate($php_input) === false)
+                {
+                    resp::response(-1, [], 'gzinflate error');
+                }
+                else
+                {
+                    $php_input = gzinflate($php_input);
+                }
             }
+            log::debug($php_input,'test');
+            // var_dump($php_input);exit;
 
             $data = (array) json_decode($php_input, true);
 
             if ( json_last_error() != JSON_ERROR_NONE )
             {
-                resp::response(-1, [], 'descrypt error: ' . json_last_error());
+                resp::response(-1, [], 'decrypt error: ' . json_last_error());
             }
 
             // 清空请求数据

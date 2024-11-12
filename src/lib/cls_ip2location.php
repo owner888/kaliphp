@@ -19,7 +19,7 @@
  *
  */
 
-//namespace IP2Location;
+// namespace IP2Location;
 namespace kaliphp\lib;
 
 /**

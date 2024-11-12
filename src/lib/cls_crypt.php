@@ -84,8 +84,7 @@ class cls_crypt
     protected static function safe_b64encode($value)
     {
         $value = base64_encode($value);
-        $value = str_replace(array('+', '/', '='), array('-', '_', ''), $value);
-        return $value;
+        return str_replace(['+', '/', '='], ['-', '_', ''], $value);
     }
 
     /**
@@ -96,7 +95,7 @@ class cls_crypt
      */
     protected static function safe_b64decode($value)
     {
-        $value = str_replace(array('-', '_'), array('+', '/'), $value);
+        $value = str_replace(['-', '_'], ['+', '/'], $value);
         $mod4 = strlen($value) % 4;
         if ($mod4)
         {
