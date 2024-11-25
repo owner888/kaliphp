@@ -25,7 +25,7 @@ class cls_crypt
      * @param	bool	$need_base64
      * @return	string
      */
-    public static function encode(string $value, string $key, bool $need_base64 = false): string
+    public static function encode(string $value, string $key, bool $is_gzip = false, bool $is_base64 = false): string
     {
         if ( strlen($key) != 32 ) 
         {
@@ -34,11 +34,19 @@ class cls_crypt
             throw new Exception($msg);
         }
 
+        // 压缩
+        if ($is_gzip)
+        {
+            $value = zlib_encode($value, ZLIB_ENCODING_DEFLATE, 9);
+        }
+
+        // 加密
         cls_aes::instance()->set_key(substr($key, 0, 16));
         cls_aes::instance()->set_iv(substr($key, 16, 16));
         $value = cls_aes::instance()->encrypt($value);
 
-        if ($need_base64)
+        // BASE64
+        if ($is_base64)
         {
             $value = self::safe_b64encode($value);
         }
@@ -54,7 +62,7 @@ class cls_crypt
      * @param	bool	$need_base64
      * @return	string
      */
-    public static function decode(string $value, string $key, bool $need_base64 = false): string
+    public static function decode(string $value, string $key, bool $is_gzip = false, bool $is_base64 = false): string
     {
         if ( strlen($key) != 32 ) 
         {
@@ -63,15 +71,28 @@ class cls_crypt
             throw new Exception($msg);
         }
 
-        if ($need_base64)
+        // BASE64
+        if ($is_base64)
         {
             $value = self::safe_b64decode($value);
         }
 
+        // 解密
         cls_aes::instance()->set_key(substr($key, 0, 16));
         cls_aes::instance()->set_iv(substr($key, 16, 16));
-        $value = trim(cls_aes::instance()->decrypt($value));
-        
+        $value = cls_aes::instance()->decrypt($value);
+
+        // 解压
+        if ($is_gzip) 
+        {
+            if (@zlib_decode($value) === false)
+            {
+                return '';
+            }
+
+            $value = zlib_decode($value);
+        }
+
         return $value;
     }
 

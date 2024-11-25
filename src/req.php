@@ -997,22 +997,14 @@ class req
             $php_input = cls_crypt::decode(
                 $php_input, 
                 self::get_encrypt_key(), 
+                self::get_use_compress(),
                 self::get_use_base64()
             );
 
-            if (self::get_use_compress())
+            if (empty($php_input)) 
             {
-                if (@gzinflate($php_input) === false)
-                {
-                    resp::response(-1, [], 'gzinflate error');
-                }
-                else
-                {
-                    $php_input = gzinflate($php_input);
-                }
+                resp::response(-1, [], 'gzinflate error');
             }
-            log::debug($php_input,'test');
-            // var_dump($php_input);exit;
 
             $data = (array) json_decode($php_input, true);
 

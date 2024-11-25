@@ -45,7 +45,10 @@ it('json request', function () {
 });
 
 it('encrypt request', function () {
-    $compress = $_ENV['USE_COMPRESS'];
+    $isEncrypt = true;
+    $isGzip = true;
+    $isBase64 = false;
+
     $url  = 'http://localhost:8000';
     $req_data = [
         'ac' => 'encrypt',
@@ -53,20 +56,19 @@ it('encrypt request', function () {
         'password' => 'password',
     ];
     $json = json_encode($req_data);
-    $encrypt_str = cls_crypt::encode($json, $_ENV['CRYPT_KEY']);
+    $encrypt_str = cls_crypt::encode($json, $_ENV['CRYPT_KEY'], $isGzip, $isBase64);
     $ret = util::http_request([
         'url'    => $url,
         'post'   => $encrypt_str,
-        'compress' => $compress,
-        'header' => ['encrypt: 1']
+        'header' => [
+            'Accept-Encrypt: '.$isEncrypt ? '1' : '0',
+            'Accept-Encoding: '.$isGzip ? '1' : '0',
+            'Accept-Base64: '.$isBase64 ? '1' : '0',
+        ]
     ]);
 
     $body = $ret['body'] ?? '';
-    if ( $compress ) 
-    {
-        $body = @gzuncompress($body);
-    }
-    $body = cls_crypt::decode($body, $_ENV['CRYPT_KEY']);
+    $body = cls_crypt::decode($body, $_ENV['CRYPT_KEY'], $isGzip, $isBase64);
     // print_r($body);
     $data = @json_decode($body, true);
 

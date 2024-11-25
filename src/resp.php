@@ -47,16 +47,12 @@ class resp
 
         // var_dump(req::get_encrypt_key(), req::get_use_encrypt(), req::get_use_base64(), req::get_use_compress()); exit;
 
-        if ( req::get_use_compress() ) 
-        {
-            $json = gzdeflate($json, 9);
-        }
-
         if (req::get_use_encrypt()) 
         {
             $json = cls_crypt::encode(
                 $json, 
                 req::get_encrypt_key(), 
+                req::get_use_compress(),
                 req::get_use_base64()
             );
         }

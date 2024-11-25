@@ -1410,16 +1410,16 @@ class db_connection
         return $real ?  $this->convert_back_sql($sql) : $sql;
     }
 
-    public function get_compiled_select($reset = TRUE)
+    public function get_compiled_select()
     {
         // Callback to quote identifiers
-        $quote_ident = array($this, 'quote_identifier');
+        $quote_ident = [$this, 'quote_identifier'];
 
         // Callback to quote tables
-        $quote_table = array($this, 'quote_table');
+        $quote_table = [$this, 'quote_table'];
 
         // Callback to quote tables
-        $quote_field = array($this, 'quote_field');
+        $quote_field = [$this, 'quote_field'];
 
         // Start a selection query
         $sql = 'SELECT ';
@@ -1557,7 +1557,7 @@ class db_connection
         return $delay . $ignore;
     }
 
-    public function get_compiled_insert($reset = TRUE)
+    public function get_compiled_insert()
     {
         $table = $this->table_prefix($this->_table);
         // Start an insertion query
@@ -1651,7 +1651,7 @@ class db_connection
         return $this;
     }
 
-    public function get_compiled_update($reset = TRUE)
+    public function get_compiled_update()
     {
         // Start an update query
         $sql = 'UPDATE '. $this->_get_compiled_atts() .
@@ -1694,7 +1694,7 @@ class db_connection
         return $sql;
     }
 
-    public function get_compiled_delete($reset = TRUE)
+    public function get_compiled_delete()
     {
         // Start a deletion query
         $sql = 'DELETE ' .$this->_get_compiled_atts(). ' FROM ' .$this->table_prefix($this->_table);
@@ -1829,7 +1829,7 @@ class db_connection
         {
             foreach ($pairs as $column => $value)
             {
-                $this->_set[] = array($column, $value);
+                $this->_set[] = [$column, $value];
             }
         }
 
@@ -1855,14 +1855,14 @@ class db_connection
     /**
      * Set the value of a single column.
      *
-     * @param   mixed  $column  table name or array($table, $alias) or object
+     * @param   mixed  $column  field name or [$table, $alias] or object
      * @param   mixed  $value   column value
      *
      * @return  $this
      */
     public function value($column, $value)
     {
-        $this->_set[] = array($column, $value);
+        $this->_set[] = [$column, $value];
 
         return $this;
     }

@@ -93,13 +93,8 @@ class cls_aes
     {
         // 获得补位所用的字符，计算它的ASCII码，得到补码的长度
         $pad = ord(substr($str, -1));
-        // 补码的长度超过或者等于补码块大小，说明明文是完整没有经过补码的
-        if ($pad < 1 || $pad > self::$blocksize)                                
-        {
-            $pad = 0;
-        }
         // 去掉补码，返回数据
-        return substr($str, 0, (strlen($str) - $pad));          
+        return substr($str, 0, (strlen($str) - $pad));
     }
 
 }
