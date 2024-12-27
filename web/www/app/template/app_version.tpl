@@ -27,7 +27,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='content_category_search_txt'}>" />
+                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='search_tips'}>" />
                         </div>
                         <div class="form-group">
                             <button type="submit" class="btn btn-white"><{lang key='common_search'}></button>
@@ -61,7 +61,7 @@
                             </tr>
                             <{foreachelse}>
                             <tr>
-                                <td colspan="10">暂无数据</td>
+                                <td colspan="10"><{lang key='nullrecord_tips'}></td>
                             </tr>
                             <{/foreach}>
                             <tr>

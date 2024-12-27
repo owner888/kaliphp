@@ -28,11 +28,10 @@
                         <input type="hidden" name="ct" value="<{request_em key='ct'}>" />
                         <input type="hidden" name="ac" value="<{request_em key='ac'}>" />
                         <div class="form-group">
-                            <!--<label>关键字</label>-->
                             <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="请输入名称" />
                         </div>
                         <div class="form-group">
-                            <button type="submit" class="btn btn-white">搜索</button>
+                            <button type="submit" class="btn btn-white"><{lang key='search'}></button>
                         </div>
                     </form>
                 </div>

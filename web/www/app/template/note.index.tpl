@@ -29,7 +29,7 @@
                     <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="请输入标题" />
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="btn btn-white">搜索</button>
+                    <button type="submit" class="btn btn-white"><{lang key='search'}></button>
                 </div>
             </form>
 

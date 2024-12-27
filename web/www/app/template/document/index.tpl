@@ -1092,8 +1092,6 @@ $worker->onMessage = function($connection, $data) use ($worker)
     req::assign_values($req_data);
     // 运行MVC框架
     kali::run();
-    // 要清空，否则下次请求还继续带着上次的数据呢
-    $_GET = req::$gets = [];
 };
 
 $worker->onClose = function($connection) use ($worker)

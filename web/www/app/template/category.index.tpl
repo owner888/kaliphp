@@ -13,8 +13,6 @@
 
 <body>
 
-<!--<{lang key='common_list' defaultvalue='' replace=['name'=>'owner', 'age' => 10]}>-->
-
 <div id="content">
     <div class="container-fluid">
         <div class="row">
@@ -32,8 +30,7 @@
                         <input type="hidden" name="ct" value="<{request_em key='ct'}>" />
                         <input type="hidden" name="ac" value="<{request_em key='ac'}>" />
                         <div class="form-group">
-                            <!--<label>关键字</label>-->
-                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='content_category_search_txt'}>" />
+                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='search_tips'}>" />
                         </div>
                         <div class="form-group">
                             <button type="submit" class="btn btn-white"><{lang key='common_search'}></button>
@@ -66,7 +63,7 @@
                                     <td> <{$v.created_at}> </td>
                                     <td> <{$v.updated_at}> </td>
                                     <td> 
-                                        <a href="?ct=category&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_edit'}></a>
+                                        <a href="?ct=category&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_modify'}></a>
                                         <a onclick="plt.confirmAction(event)" data-href="?ct=category&ac=del&ids[]=<{$v.id}>" data-title="<{lang key='common_sure_delete'}>" data-tipmsg="确认删除" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i><{lang key='common_delete'}></a>
                                     </td>
                                 </tr>

@@ -34,16 +34,14 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <!--<label>关键字</label>-->
-                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="请输入关键字搜索" />
+                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='search_tips'}>" />
                         </div>
                         <div class="form-group">
-                            <button type="submit" class="btn btn-white">搜索</button>
+                            <button type="submit" class="btn btn-white"><{lang key='search'}></button>
                         </div>
                         <div class="form-group fr ctrl-group">
-                            <span class="table-ctrl-btn" onclick="Metheds.openIfram()" title="设置列表字段"
-                            ><i class="fa fa-gear"></i></span>
-                            <!--data-container="body" data-toggle="popover" data-placement="top" data-content="设置列表字段" --> 
+                            <span class="btn-operate" onclick="Metheds.openIfram()" data-container="body" data-toggle="popover" data-placement="top" data-content="<{lang key='columns_settings'}>"
+                            ><i class="layui-icon layui-icon-cols"></i></span>
                         </div>
                     </form>
                 </div>

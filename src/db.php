@@ -143,7 +143,7 @@ class db
      * @param array|null $columns
      * @return db_connection
      */
-    public static function insert($table = null, array $columns = null)
+    public static function insert($table = null, array $columns = [])
     {
         return db_connection::instance()->insert($table, $columns);
     }

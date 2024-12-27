@@ -3,7 +3,7 @@
 <head>
     <{include file='common/header.tpl'}>
 
-    <link href="static/ui/css/style.css?v20240311.1" rel="stylesheet">
+    <link href="static/ui/css/style.css?d=20241211" rel="stylesheet">
     <link href="static/css/jquery.gritter.css" rel="stylesheet">
 </head>
 

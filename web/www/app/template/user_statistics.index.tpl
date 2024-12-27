@@ -40,7 +40,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <button type="submit" class="btn btn-white">搜索</button>
+                            <button type="submit" class="btn btn-white"><{lang key='search'}></button>
                         </div>
                     </form>
                 </div>

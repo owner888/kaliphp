@@ -11,7 +11,7 @@
 
                 <div class="widget-content p-b-none">
                     <div class="btn-outline-wrap">
-                        <a href="?ct=content&ac=add" class="btn btn-info btn-outline"><i class="fa fa-plus-circle"></i><{lang key='common_add'}></a>
+                        <a href="?ct=content&ac=add" class="btn btn-info btn-outline"><i class="fa fa-plus-circle"></i><{lang key='common_create'}></a>
                         <!--<a class="btn btn-outline btn-danger"><i class="fa fa-trash-o"></i><{lang key='common_trash'}></a>-->
                     </div>
                 </div>
@@ -27,8 +27,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <!--<label>关键字</label>-->
-                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='content_category_search_txt'}>" />
+                            <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="<{lang key='search_tips'}>" />
                         </div>
                         <div class="form-group">
                             <button type="submit" class="btn btn-white"><{lang key='common_search'}></button>
@@ -57,7 +56,7 @@
                                 <td> <{$v.updated_at}> </td>
                                 <td> 
                                     <a href="?ct=content&ac=info&id=<{$v.id}>" class="btn btn-success btn-xs"><i class="fa fa-search"></i><{lang key='common_view'}></a>
-                                    <a href="?ct=content&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_edit'}></a>
+                                    <a href="?ct=content&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_modify'}></a>
                                     <a onclick="plt.confirmAction(event)" data-href="?ct=content&ac=del&ids[]=<{$v.id}>" data-title="<{lang key='common_system_hint'}>" data-tipmsg="<{lang key='common_sure_delete'}>" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i><{lang key='common_delete'}></a>
                                 </td>
                             </tr>

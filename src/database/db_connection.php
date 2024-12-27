@@ -437,7 +437,7 @@ class db_connection
      * @param bool $instance
      * @return db
      */
-    public static function instance($name = null, array $config = null)
+    public static function instance($name = null, ?array $config = null)
     {
         if ($name === null)
         {
@@ -1742,7 +1742,7 @@ class db_connection
     //-------------------------------------------------------------
     // INSERT
     //-------------------------------------------------------------
-    public function insert($table = null, array $columns = null)
+    public function insert($table = null, ?array $columns = null)
     {
         $this->_type = db::INSERT;
 

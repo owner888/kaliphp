@@ -50,7 +50,7 @@ class errorhandler
         E_USER_ERROR      => "<font color='#D63107'>用户错误</font>",
         E_USER_WARNING    => "<font color='#CDA93A'>用户警告</font>",
         E_USER_NOTICE     => "<font color='#CDA93A'>用户提示</font>",
-        E_STRICT          => "<font color='#D63107'>运行时错误</font>",
+        // E_STRICT          => "<font color='#D63107'>运行时错误</font>",
         E_ERROR           => "致命错误",
         E_PARSE           => "解析错误",
         E_CORE_ERROR      => "核心致命错误",

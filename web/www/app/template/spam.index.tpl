@@ -34,11 +34,10 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <!--<label>关键字</label>-->
                             <input type='text' name='keyword' class='form-control' value="<{request_em key='keyword'}>" placeholder="请输入spam内容" />
                         </div>
                         <div class="form-group">
-                            <button type="button" class="btn btn-white search_btn">搜索</button>
+                            <button type="button" class="btn btn-white search_btn"><{lang key='search'}></button>
                         </div>
                     </form>
                 </div>

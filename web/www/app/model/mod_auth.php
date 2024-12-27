@@ -265,7 +265,7 @@ class mod_auth extends cls_auth
      *
      * @return mix array|false
      */
-    public function get_user( string $account = null, string $ftype = 'uid', bool $use_cache = true )
+    public function get_user( ?string $account = null, string $ftype = 'uid', bool $use_cache = true )
     {
         if ( $account === null ) 
         {
@@ -514,7 +514,7 @@ class mod_auth extends cls_auth
         return $purviews;
     }
 
-    public function get_group_purviews( array $groupids = null )
+    public function get_group_purviews( ?array $groupids = null )
     {
         if ( !$groupids ) 
         {
@@ -537,7 +537,7 @@ class mod_auth extends cls_auth
         return $purviews;
     }
 
-    public function get_groupname( array $groupids = null )
+    public function get_groupname( ?array $groupids = null )
     {
         if ( !$groupids ) 
         {

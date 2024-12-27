@@ -452,7 +452,7 @@ class util
      * @param array $arr
      * @return bool
      */
-    public static function is_ordinal_array( array $arr = null )
+    public static function is_ordinal_array( ?array $arr = null )
     {
         if ( $arr === null )
         {
@@ -513,7 +513,7 @@ class util
      * @param  string   $from_timezone 可使用UTC或者GMT格式或Europe/Andorra，不填根据IP判断
      * @return int      返回时间戳
      */
-    public static function get_timestamp(string $datetime, string $from_timezone = null)
+    public static function get_timestamp(string $datetime, ?string $from_timezone = null)
     {
         $from_timezone = $from_timezone ?? config::instance('timezone')->get(COUNTRY);
         $date_obj      = new \DateTime($datetime, new \DateTimeZone($from_timezone));

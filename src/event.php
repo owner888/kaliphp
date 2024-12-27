@@ -290,7 +290,7 @@ class event
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 
-    public static function on_sql($event, string $sql = null, string $db_name = null, $query_time = 0)
+    public static function on_sql($event, ?string $sql = null, ?string $db_name = null, $query_time = 0)
     {
         // log::info(sprintf('SQL Query [%s]: %s (%ss)', $db_name, $sql, $query_time));
 

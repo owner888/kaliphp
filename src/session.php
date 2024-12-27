@@ -24,7 +24,7 @@ use kaliphp\kali;
  *
  * @version $Id$  
  */   
-class session
+class session implements \SessionHandlerInterface
 {
     // session类型 default || cache
     public static $session_type = '';
@@ -50,10 +50,7 @@ class session
 
         if ( self::$session_type == 'cache' ) 
         {
-            session_set_save_handler(
-                "kaliphp\session::init", "kaliphp\session::close", "kaliphp\session::read", 
-                "kaliphp\session::write", "kaliphp\session::destroy", "kaliphp\session::gc"
-            );
+            session_set_save_handler(new self(), true);
         }
         else 
         {
@@ -69,7 +66,7 @@ class session
      * @param string $session_name  session 名称
      * @return bool
      */
-    public static function init(string $save_path, string $session_name = 'PHPSESSID'): bool
+    public function open(string $save_path, string $session_name = 'PHPSESSID'): bool
     {
         // 必须返回true/false
         return true;
@@ -82,11 +79,11 @@ class session
      *
      * @return string       SESSION DATA
      */
-    public static function read(string $id): string
+    public function read(string $id) :string
     {
         // 必须返回string
         $value = cache::get('session_'.$id);
-        return (string)$value;
+        return (string) $value;
     }
 
     /**
@@ -97,13 +94,14 @@ class session
      *
      * @return bool         TRUE/FALSE  
      */
-    public static function write($id, $sess_data): bool
+    public function write($id, $sess_data): bool
     {
         // 针对不同用户不同设置不同的过期时间
         if ( !empty(kali::$auth->user['session_expire']) )
         {
             self::$session_expire = kali::$auth->user['session_expire'];
         }
+        
         if ( $sess_data ) 
         {
             cache::set('session_'.$id, $sess_data, self::$session_expire);
@@ -125,7 +123,8 @@ class session
      *
      * @return bool             true/false
      */
-    public static function gc($max_lifetime)
+    #[\ReturnTypeWillChange]
+    public function gc($max_lifetime)
     {
         return true;
     }
@@ -137,7 +136,7 @@ class session
      *
      * @return bool     true/false
      */
-    public static function destroy($id)
+    public function destroy($id) : bool
     {
         self::del($id);
 
@@ -149,7 +148,7 @@ class session
      *
      * @return bool     true/false
      */
-    public static function close()
+    public function close() :bool
     {
         // 这里千万不能关闭缓存，因为后面可能还有代码需要用到缓存
         //cache::free();
@@ -181,7 +180,7 @@ class session
      * 
      * @return bool     true/false
      */
-    public static function add(string $id, string $key = null, $value): bool
+    public static function add(string $id, string $key, $value): bool
     {
         $sess_data = self::decode(self::read($id));
         $sess_data[$key] = $value;
@@ -196,7 +195,7 @@ class session
      * 
      * @return mixed
      */
-    public static function get(string $id, string $key = null)
+    public static function get(string $id, ?string $key = null)
     {
         if( strlen($id) == 0 )
         {

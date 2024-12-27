@@ -776,7 +776,7 @@ input[type='file'] {
     display: none;
   }
   .nav>li.active ul li.active {
-    background: #59cafd;
+    background: transparent;
   }
   .collapse {
     display: none;

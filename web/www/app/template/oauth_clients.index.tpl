@@ -58,7 +58,7 @@
                         <td> <{$v.domain}> </td>
                         <td> <{$v.ip}> </td>
                         <td> 
-                            <a href="?ct=oauth_clients&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_edit'}></a>
+                            <a href="?ct=oauth_clients&ac=edit&id=<{$v.id}>" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i><{lang key='common_modify'}></a>
                             <a onclick="plt.confirmAction(event)" data-href="?ct=oauth_clients&ac=del&ids[]=<{$v.id}>" data-title="<{lang key='common_sure_delete'}>" data-tipmsg="确认删除" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i><{lang key='common_delete'}></a>
                         </td>
                     </tr>
