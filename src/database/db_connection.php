@@ -179,7 +179,7 @@ class db_connection
     private $_handler;
 
     /**
-     * @var  resource  $_result raw result resource
+     * @var  \mysqli_result  $_result raw result resource
      */
     private $_result;
 
@@ -514,39 +514,6 @@ class db_connection
         return $this;
     }
 
-    public function crypt_key($key = null)
-    {
-        if ($key !== null)
-        {
-            $this->_crypt_key = $key;
-        }
-
-        return $this;
-    }
-
-    public function crypt_fields($fields)
-    {
-        $table = $this->_table;
-
-        if (is_string($fields))
-        {
-            $fields = explode(',', $fields);
-        }
-
-        foreach ($fields as $val)
-        {
-            if ($val !== '')
-            {
-                $this->_crypt_fields[$table][] = $val;
-            }
-        }
-
-        // 去重复
-        $this->_crypt_fields[$table] = array_unique($this->_crypt_fields[$table]);
-
-        return $this;
-    }
-
     public function query($sql, array $params = [])
     {
         // Change #PB# to db_prefix
@@ -559,7 +526,7 @@ class db_connection
             // 如果没有？号直接将params传给parameters
             $i = 0;
             $sql = preg_replace_callback('/\?/', 
-                function($m) use (&$params, &$i) {
+                function() use (&$params, &$i) {
                     $params['?'.$i] = $params[$i];
                     unset($params[$i]);
                     return ':?'. $i++;
@@ -567,8 +534,8 @@ class db_connection
                 $sql
             );
 
-            //去掉$params里面为数字的key
-            foreach ($params as $key => $value) 
+            // 去掉$params里面为数字的key
+            foreach (array_keys($params) as $key) 
             {
                 if (is_numeric($key)) 
                 {
@@ -651,6 +618,7 @@ class db_connection
         //兼容字段中有复杂计算不替换#PB#的情况
         $this->_sql = $this->table_prefix($this->_sql);
         static::log_query($this->convert_back_sql($this->_sql));
+        static::log_query($this->get_prepare_sql($this->_sql), 'prepare_sql');
         return $this->_sql;
     }
 
@@ -703,7 +671,6 @@ class db_connection
         {
             // Start the Query Timer
             $time_start = microtime(true);
-
 
             if ( !empty(self::$config[$this->_db_name]['noprepare']) ) 
             {
@@ -831,7 +798,7 @@ class db_connection
                     usleep($this->_atts['delay']);
                 }
 
-                log::warning($err_msg, 'Deadlock Retry');
+                log::warning($errmsg, 'Deadlock Retry');
                 return $this->execute($is_master, $params, $sql);
             }
 
@@ -1893,7 +1860,7 @@ class db_connection
      */
     protected function _compile_join(array $joins)
     {
-        foreach ($joins as $key=>$join) 
+        foreach (array_keys($joins) as $key)
         {
             $conditions = array();
 
@@ -1913,7 +1880,7 @@ class db_connection
 
                 // Quote each of the identifiers used for the condition
                 $c1 = $this->quote_identifier($c1);
-                if ( is_array($c2) && $old_op != '=' ) 
+                if ( is_array($c2) && $op != '=' ) 
                 {
                     $c2 = $this->quote($c2);
                 }
@@ -1977,25 +1944,17 @@ class db_connection
      */
     protected function convert_back_sql(string $sql)
     {
-        return preg_replace_callback($this->_get_chr_pattern(), function($matches) use (&$params) {
+        return preg_replace_callback($this->_get_chr_pattern(), function($matches) {
             return $matches[1];
         }, $sql);
     }
 
-    /**
-     * 返回 prepare stmt
-     * @param  object $db_conn
-     * @param  string $sql    
-     * @return string 
-     */
-    protected function convert_prepare_sql($db_conn, $sql) 
+    protected function get_prepare_sql(
+        $sql, 
+        array &$params = [], 
+        string &$types = ''
+    )
     {
-        $params = [];
-        $types  = '';
-        // 使用 preg_replace_callback 函数将值替换为 ? 占位符，并将值存储在数组中
-        // bind_param的时候不能根据参数自动判断类型，因为数据库类型是varchar/char的时候这个时候给一个int,模版是i
-        // 会导致索引失效，甚至导致返回错误数据，比如搜索123的时候，会把123xxxx查询处理，因为给他i,他会把数据库中的字段转成int
-        // 索引模版直接全部给s,就不会出现因为类型错误，导致索引失效/数据错误的bug
         $prepared_sql = preg_replace_callback(
             $this->_get_chr_pattern(true), 
             function($matches) use (&$params, &$types) {
@@ -2006,6 +1965,25 @@ class db_connection
             }, 
             $sql
         );
+
+        return $prepared_sql;
+    }
+
+    /**
+     * 返回 prepare stmt
+     * @param  object $db_conn
+     * @param  string $sql    
+     * @return mysqli_stmt 
+     */
+    protected function convert_prepare_sql($db_conn, $sql) 
+    {
+        $params = [];
+        $types  = '';
+        // 使用 preg_replace_callback 函数将值替换为 ? 占位符，并将值存储在数组中
+        // bind_param的时候不能根据参数自动判断类型，因为数据库类型是varchar/char的时候这个时候给一个int,模版是i
+        // 会导致索引失效，甚至导致返回错误数据，比如搜索123的时候，会把123xxxx查询处理，因为给他i,他会把数据库中的字段转成int
+        // 索引模版直接全部给s,就不会出现因为类型错误，导致索引失效/数据错误的bug
+        $prepared_sql = $this->get_prepare_sql($sql, $params, $types);
 
         // 使用 mysqli_prepare 函数创建 prepared statement
         $stmt = mysqli_prepare($db_conn->_handler(), $prepared_sql);
@@ -2173,10 +2151,7 @@ class db_connection
      */
     protected function _compile_set(array $values)
     {
-        //print_r($values);
-        $quote = array($this, 'quote_value');
-
-        $set = array();
+        $set = [];
         foreach ($values as $group)
         {
             // Split the set
@@ -2188,7 +2163,7 @@ class db_connection
                 $value = $this->_parameters[$value];
             }
 
-            $value = $this->quote_value(array($value, $column));
+            $value = $this->quote_value([$value, $column]);
             $column = $this->quote_identifier($column);
 
             // Quote the column name
@@ -2646,7 +2621,7 @@ class db_connection
                 // Split the identifier into the individual parts
                 $parts = explode('.', $table);
 
-                if ($prefix = $this->table_prefix())
+                if ($this->table_prefix())
                 {
                     // Get the offset of the table name, 2nd-to-last part
                     // This works for databases that can have 3 identifiers (Postgre)
@@ -2986,7 +2961,7 @@ class db_connection
         {
             $parts = explode('.', $value);
 
-            if ($prefix = $this->table_prefix())
+            if ($this->table_prefix())
             {
                 // Get the offset of the table name, 2nd-to-last part
                 // This works for databases that can have 3 identifiers (Postgre)
@@ -3316,7 +3291,7 @@ class db_connection
             // 进行日志
             $gurl = htmlspecialchars( req::cururl() );
             $msg = "{$gurl}\n".htmlspecialchars( $sql )."\n";
-            log::warning($msg, 'filter_sql');
+            log::warning($msg, 'filter_sql: ' . $error);
         }
 
         return $sql;
@@ -3383,6 +3358,10 @@ class db_connection
             if ($type == 'sql') 
             {
                 db::$queries[] = $content;
+            }
+            elseif ($type == 'prepare_sql') 
+            {
+                db::$prepare_queries[] = $content;
             }
             else
             {

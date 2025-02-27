@@ -504,7 +504,7 @@ class cls_auth
      *
      * @return mix array|false
      */
-    public function get_user( string $account = null, string $ftype = 'uid', bool $use_cache = true )
+    public function get_user( ?string $account = null, string $ftype = 'uid', bool $use_cache = true )
     {
         if ( $account === null )
         {

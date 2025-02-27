@@ -14,12 +14,10 @@ namespace kaliphp\lib;
 
 use kaliphp\log;
 use kaliphp\req;
-use kaliphp\kali;
 use kaliphp\config;
 use kaliphp\lib\cls_security;
 
 /**
- * @author han 
  * 系统spam相关操作，目的是为了能在后台可视化管理spam数据，否则杂乱无章
  * 使用方法
  *  $key = 'login:username:fuck'; //模块:验证类别:类别值
@@ -55,9 +53,8 @@ class cls_spam
         //     'login' => [
         //         'label' => '登陆',
         //         'keys'  => [
-        //             'email'  => ['label' => '乐马号/邮箱', 'limit' => 3, 'interval' => 1], //默认每天
-        //             'phone'  => ['label' => '电话', 'limit' => 3, 'interval' => 1], //默认每天
-        //             'potato' => ['label' => 'Potato', 'limit' => 3, 'interval' => 1], //默认每天
+        //             'email'  => ['label' => '邮箱', 'limit' => 3, 'interval' => 1], // 默认每天
+        //             'phone'  => ['label' => '电话', 'limit' => 3, 'interval' => 1], // 默认每天
         //             'ip'     => ['label' => 'IP', 'limit' => 10], //默认每天
         //         ]
         //     ],

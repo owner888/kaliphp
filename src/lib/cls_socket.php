@@ -41,7 +41,7 @@ class cls_socket
      *
      * @return Socket
      */
-    public static function instance($name = 'socket', array $config = null)
+    public static function instance($name = 'socket', ?array $config = null)
     {
         if (!isset(self::$_instances[$name]))
         {

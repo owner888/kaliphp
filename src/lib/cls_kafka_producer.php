@@ -66,7 +66,7 @@ class cls_kafka_producer
      * @param string $name  kafka
      * @return self
      */
-    public static function instance(array $config = null ): self
+    public static function instance(?array $config = null ): self
     {
         if (!isset(self::$_instance))
         {
@@ -112,7 +112,7 @@ class cls_kafka_producer
      *
      * @return self
      */
-    public function add_brokers( string $brokers = null ): self
+    public function add_brokers( ?string $brokers = null ): self
     {
         $this->handler->addBrokers($brokers ? : self::$def_config['metadata.broker.list']);
 
@@ -203,7 +203,7 @@ class cls_kafka_producer
      * 
      * @return bool
      */
-    public function send(string $topic_name, string $payload, string $key = null, array $headers = null, $partition = RD_KAFKA_PARTITION_UA)
+    public function send(string $topic_name, string $payload, ?string $key = null, ?array $headers = null, $partition = RD_KAFKA_PARTITION_UA)
     {
         $this->set_topic($topic_name);
 

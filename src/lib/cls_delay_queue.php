@@ -89,7 +89,7 @@ class cls_delay_queue
      * @param array config
      * @return db
      */
-    public static function instance( $name = 'delay_queue', array $config = null )
+    public static function instance( $name = 'delay_queue', ?array $config = null )
     {
         if (!isset(self::$_instances[$name]))
         {

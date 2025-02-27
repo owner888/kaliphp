@@ -17,6 +17,7 @@ use kaliphp\cache;
 use kaliphp\event;
 use kaliphp\config;
 use kaliphp\session;
+use kaliphp\lib\cls_auth;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
 
@@ -43,22 +44,22 @@ ini_set('display_errors', 'On');
  */
 class kali
 {
-    public static $config = [];
-    public static $base_root;
-    public static $data_root;
-    public static $cache_root;
-    public static $log_root;
+    public static array $config = [];
+    public static string $base_root;
+    public static string $data_root;
+    public static string $cache_root;
+    public static string $log_root;
 
     /**
      * 权限类的实例
      *
-     * @var $auth cls_auth 用于IDE跳转代码
+     * @var cls_auth $auth  用于IDE跳转代码
      */
-    public static $auth = null;
+    public static cls_auth $auth;
 
     // 当前 Controller 和 Action
-    public static $ct = '';
-    public static $ac = '';
+    public static string $ct = '';
+    public static string $ac = '';
 
     /**
      * Initializes the framework.  This can only be called once.
@@ -89,10 +90,10 @@ class kali
             exit(self::fmt_code(1006, ['APPPATH']));
         }    
 
-        self::$base_root    = APPPATH;
-        self::$data_root    = self::$base_root.DS."data";
-        self::$log_root     = self::$base_root.DS."data".DS."log";
-        self::$cache_root   = self::$base_root.DS."data".DS."cache";
+        self::$base_root  = APPPATH;
+        self::$data_root  = self::$base_root.DS."data";
+        self::$log_root   = self::$base_root.DS."data".DS."log";
+        self::$cache_root = self::$base_root.DS."data".DS."cache";
 
         if ( !is_readable(self::$base_root) ) 
         {

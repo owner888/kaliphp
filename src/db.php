@@ -24,6 +24,7 @@ class db
 {
     public static $config = [];
     public static $queries = [];
+    public static $prepare_queries = [];
     public static $query_times = [];
     public static $query_db_names = [];
 

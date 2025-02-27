@@ -23,7 +23,8 @@ use kaliphp\lib\cls_benchmark;
  * 
  * @version 2.7.0
  */
-class cls_profiler {
+class cls_profiler 
+{
 
     public static $config = [];
 
@@ -41,6 +42,7 @@ class cls_profiler {
     protected $_compile_session_data;
     protected $_compile_memory_usage;
     protected $_compile_queries;
+    protected $_compile_prepare_queries;
 
     public $enable_profiler = false;
 
@@ -57,6 +59,7 @@ class cls_profiler {
         'uri_string',
         'controller_info',
         'queries',
+        'prepare_queries',
         'http_headers',
         'cookie_data',
         'session_data',
@@ -260,6 +263,83 @@ class cls_profiler {
     }
 
     // --------------------------------------------------------------------
+
+    protected function _compile_prepare_queries()
+    {
+        // $versin = db::select('SELECT VERSION()')->as_field()->execute();
+        // var_dump($versin);
+        $db_config = config::instance('database')->get();
+        // 如果没有启动数据库
+        if ( count(db::$prepare_queries) == 0 )
+        {
+            return "\n\n"
+                .'<div  id="kali_profiler_queries" style="border:1px solid #0000FF;padding:6px 10px 10px 10px;margin:20px 0 20px 0;background-color:#eee;">'
+                ."\n"
+                .'<legend style="color:#0000FF;">&nbsp;&nbsp;QUERIES&nbsp;&nbsp;</legend>'
+                ."\n\n\n<table style=\"border:none; width:100%;\">\n"
+                .'<tr><td style="width:100%;color:#0000FF;font-weight:normal;background-color:#eee;padding:5px;">'
+                .'Database driver is not currently loaded'
+                ."</td></tr>\n</table>\n</div>";
+        }
+
+        // Key words we want bolded
+        $highlight = array('SELECT', 'DISTINCT', 'FROM', 'WHERE', 'AND', 'LEFT&nbsp;JOIN', 'ORDER&nbsp;BY', 'GROUP&nbsp;BY', 'LIMIT', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'OR&nbsp;', 'HAVING', 'OFFSET', 'NOT&nbsp;IN', 'IN', 'LIKE', 'NOT&nbsp;LIKE', 'COUNT', 'MAX', 'MIN', 'ON', 'AS', 'AVG', 'SUM', 'AES_ENCRYPT', 'AES_DECRYPT', 'ASC', 'DESC', '(', ')');
+
+        $output  = "\n\n";
+
+        $hide_queries = (count(db::$prepare_queries) > $this->_query_toggle_count) ? ' display:none' : '';
+        $total_time = number_format(array_sum(db::$query_times), 4).' seconds';
+
+        $show_hide_js = '(<span style="cursor: pointer;" class="kali_profiler_toggle">Hide</span>)';
+
+        if ($hide_queries !== '')
+        {
+            $show_hide_js = '(<span style="cursor: pointer;" class="kali_profiler_toggle">Show</span>)';
+        }
+
+        $output .= '<div  style="border:1px solid #0000FF;padding:6px 10px 10px 10px;margin:20px 0 20px 0;background-color:#eee;">'
+            ."\n"
+            .'<legend style="color:#0000FF;">&nbsp;&nbsp;'
+            .'DATABASE:&nbsp; '.$db_config['name'].'&nbsp;&nbsp;&nbsp;'
+            .'PREPARE QUERIES: '.count(db::$prepare_queries).' ('.$total_time.')&nbsp;&nbsp;'.$show_hide_js."</legend>\n\n\n"
+            .'<table style="width:100%;'.$hide_queries.'" id="kali_profiler_queries_db_1'."\">\n";
+
+        if (count(db::$prepare_queries) === 0)
+        {
+            $output .= '<tr><td style="width:100%;color:#0000FF;font-weight:normal;background-color:#eee;padding:5px;">'
+                ."No queries were run</td></tr>\n";
+        }
+        else
+        {
+            foreach (db::$prepare_queries as $key => $val)
+            {
+                $db_name = db::$query_db_names[$key];
+                $time = number_format(db::$query_times[$key], 4);
+                $val_raw = htmlspecialchars($val);
+                $val = util::highlight_code($val);
+                // 解决小屏幕无法自动换行bug
+                $val = str_replace(
+                    array('<code>', '</code>'),
+                    array('<div>', '</div>'),
+                    $val
+                );
+
+                foreach ($highlight as $bold)
+                {
+                    $val = str_replace($bold, '<strong>'.$bold.'</strong>', $val);
+                }
+
+                $output .= '<tr><td style="padding:5px;vertical-align:top;width:1%;color:#900;font-weight:normal;background-color:#ddd;">'
+                    . $db_name . ' (' . $time . ')' .'&nbsp;&nbsp;</td><td style="display: flex;align-items: top;padding:5px;color:#000;font-weight:normal;background-color:#ddd;" class="item-profiler">'
+                    .$val."<div class='opt-in'><span class='btn-copy btn btn-primary btn-xs' data-text='$val_raw'>Copy</span></div></td></tr>\n";
+            }
+        }
+
+        $output .= "</table>\n</div>";
+
+        return $output;
+    }
+
 
     /**
      * Compile $_GET Data

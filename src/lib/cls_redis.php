@@ -39,7 +39,7 @@ class cls_redis
      * @param string $name
      * @return self
      */
-    public static function instance( $name = 'redis', array $config = null )
+    public static function instance( $name = 'redis', ?array $config = null )
     {
         $_name = static::get_muti_name($name);
         if (!isset(self::$_instances[$_name]))
@@ -62,7 +62,7 @@ class cls_redis
      *
      * @param $config   链接配置
      */
-    public function __construct(string $name, array $config = null )
+    public function __construct(string $name, ?array $config = null )
     {
         $this->connect = $config;
         $this->_name   = $name;

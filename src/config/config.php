@@ -92,6 +92,7 @@ return [
         'session_data'       => true,
         'memory_usage'       => true,
         'queries'            => true,
+        'prepare_queries'    => true,
         'query_toggle_count' => 25,
     ],
 

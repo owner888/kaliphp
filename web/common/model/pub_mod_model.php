@@ -2870,7 +2870,7 @@ class pub_mod_model
     final public static function get_exception_status(\Exception $e)
     {
         $err_code = $e->getCode();
-        $status   = $err_code > 0 ? static::$unknow_err_status : $err_code;
+        $status   = $err_code >= 0 ? static::$unknow_err_status : $err_code;
         self::$msg_maps[$status] = self::get_exception_msg($e, $status);
         return $status;
     }

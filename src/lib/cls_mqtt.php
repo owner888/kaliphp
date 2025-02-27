@@ -89,7 +89,7 @@ class cls_mqtt
      * @param string $name
      * @return self
      */
-    public static function instance( $name = 'kaliphp', array $config = null )
+    public static function instance( $name = 'kaliphp', ?array $config = null )
     {
         $name = static::get_muti_name($name);
         log::debug($name);
@@ -110,7 +110,7 @@ class cls_mqtt
      *
      * @param $config   链接配置
      */
-    public function __construct( string $name, array $config = null )
+    public function __construct( string $name, ?array $config = null )
     {
         $this->name    = $name;
         $this->connect = $config;

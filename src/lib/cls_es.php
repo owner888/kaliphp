@@ -256,7 +256,7 @@ class cls_es
      * @param array config
      * @return db
      */
-    public static function instance( $name = 'search', array $config = null )
+    public static function instance( $name = 'search', ?array $config = null )
     {
         if (!isset(self::$_instances[$name]))
         {
@@ -476,7 +476,7 @@ class cls_es
      * @param  mix $columns  插入的字读啊安，一般不需要
      * @return $this
      */
-    public function insert($table = null, array $columns = null)
+    public function insert($table = null, ?array $columns = null)
     {
         $this->_type = __function__;
         if ( $table ) 

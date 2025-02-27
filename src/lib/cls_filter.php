@@ -13,7 +13,6 @@
 namespace kaliphp\lib;
 
 use kaliphp\util;
-use kaliphp\req;
 use Exception;
 
 /**

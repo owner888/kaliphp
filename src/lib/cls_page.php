@@ -26,7 +26,7 @@ class cls_page
         $prefix = req::$gets;
 
         // 每页显示条数
-        //$page_size = isset($page_size) ? $page_size : req::item('page_size', 20);
+        // $page_size = isset($page_size) ? $page_size : req::item('page_size', 20);
         // 默认调用初始化的页数，当用户选择了页数，就以用户选择为主
         // 检查cookie是否有 table_page_size ,读取所为默认page_size
         $page_size = isset($prefix['page_size']) ? req::item('page_size', 20) : $page_size;

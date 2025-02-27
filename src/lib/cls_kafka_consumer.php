@@ -80,7 +80,7 @@ class cls_kafka_consumer
      * @param string $name  kafka
      * @return self
      */
-    public static function instance( array $config = null ): self
+    public static function instance( ?array $config = null ): self
     {
         if (!isset(self::$_instance))
         {
@@ -131,7 +131,7 @@ class cls_kafka_consumer
      *
      * @return self
      */
-    public function add_brokers( string $brokers = null ): self
+    public function add_brokers( ?string $brokers = null ): self
     {
         $this->handler->addBrokers($brokers ? : self::$def_config['metadata.broker.list']);
 
