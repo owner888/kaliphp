@@ -143,7 +143,7 @@ use kaliphp\lib\cls_bbcode;
  *   ]);
  * 最后生成sql：SELECT `game_id` FROM `dx_stat_test` WHERE (`game_id` > '3' OR `game_id` != '4' OR ((`game_id` > '5' AND ((`game_id` > '6' OR `game_id` < '7')) AND ((`hour` = '1' AND ((`hour` = '1' OR `hour` > '10'))))))) AND `game_id` > '1' AND `game_id` >= '2'
  *
- * 如果遇到一些超级无敌变态的查询，也可以使用expr包装一下，比如 ['a' => self::expr('fuck fuck...')]
+ * 如果遇到一些超级无敌变态的查询，也可以使用expr包装一下，比如 ['a' => db::expr('fuck fuck...')]
  * 
  * 13.如果要取不同表的字段，可以在fields中指定
  * $data = self::lists([
@@ -189,7 +189,7 @@ use kaliphp\lib\cls_bbcode;
  *       'as_sql' => 'sub',
  *   ]);
  *   $tmp = self::find([
- *       'table' => self::expr($sub_sql),
+ *       'table' => db::expr($sub_sql),
  *       'where' => array_intersect($D, [
  *           'gameId'     => null,
  *           'serverType' => null,
@@ -214,7 +214,7 @@ use kaliphp\lib\cls_bbcode;
  *  ])
  *  * $sql = mod_test::lists([
  *     'table'  => 'dx_stat_test',
- *     'where' => ['field' => self::expr($sql)],
+ *     'where' => ['field' => db::expr($sql)],
  * ]);
  *
  * 18.database_方法也可以指定数据库
@@ -560,13 +560,13 @@ class pub_mod_model
         $_table = $table . (!empty($conds['alias']) ? " {$conds['alias']}" : '');
         if ( is_object($table) ) 
         {
-            $_table = self::expr($_table);
+            $_table = db::expr($_table);
         }
 
         //table为子语句不进行解析
         if ( is_string($_table) && preg_match('#\(.*\)#', $_table)) 
         {
-            $_table = self::expr($_table);
+            $_table = db::expr($_table);
         }
         else if( static::$pk && is_string(static::$pk) && !empty($conds[static::$pk]) )
         {
@@ -1330,7 +1330,7 @@ class pub_mod_model
             {
                 if ( preg_match('#\(.*\)#', $f) ) 
                 {
-                    $f = self::expr($f);
+                    $f = db::expr($f);
                 }
 
                 if ( is_object($f) )
@@ -1739,7 +1739,7 @@ class pub_mod_model
                     $last  = end($value);
                     $first = is_object($first) ? $first : "'{$first}'";
                     $last  = is_object($last) ? $last : "'{$last}'";
-                    return $func ? $query->$func(self::expr(sprintf(
+                    return $func ? $query->$func(db::expr(sprintf(
                         "%s BETWEEN %s AND %s", 
                         $field, 
                         $first, 
@@ -1747,7 +1747,7 @@ class pub_mod_model
                     ))) : [
                         'field' => $field,
                         'op'    => 'BETWEEN',
-                        'value' => self::expr(sprintf(" %s AND %s ", $first, $last))
+                        'value' => db::expr(sprintf(" %s AND %s ", $first, $last))
                     ];
                     break;
                 case '><': // > xx < xx
@@ -1760,9 +1760,9 @@ class pub_mod_model
                     else
                     {
                         return [
-                            'field' => self::expr(sprintf(" %s > '%s' ", $field, reset($value))),
+                            'field' => db::expr(sprintf(" %s > '%s' ", $field, reset($value))),
                             'op'    => 'AND',
-                            'value' => self::expr(sprintf(" %s < '%s' ", $field, end($value)))
+                            'value' => db::expr(sprintf(" %s < '%s' ", $field, end($value)))
                         ];
                     }
      
@@ -1774,9 +1774,9 @@ class pub_mod_model
                         if ( !$func ) 
                         {
                             return [
-                                'field' => self::expr(sprintf(" %s %s '%s' ", $field, $sub_mat['op1'], reset($value))),
+                                'field' => db::expr(sprintf(" %s %s '%s' ", $field, $sub_mat['op1'], reset($value))),
                                 'op'    => 'AND',
-                                'value' => self::expr(sprintf(" %s %s '%s' ", $field, $sub_mat['op2'], end($value)))
+                                'value' => db::expr(sprintf(" %s %s '%s' ", $field, $sub_mat['op2'], end($value)))
                             ];
                         }
 
@@ -1806,7 +1806,7 @@ class pub_mod_model
             return [
                 'field' => $field,
                 'op'    => $op,
-                'value' => $no_func_opeater ? self::expr(sprintf("'%s'", $value)) : $value,
+                'value' => $no_func_opeater ? db::expr(sprintf("'%s'", $value)) : $value,
             ];
         }
     }
@@ -1958,7 +1958,7 @@ class pub_mod_model
                             $exists_sql = sprintf('(%s)', $exists_sql);
                         }
                         
-                        $query->$mod_func(self::expr(sprintf('%s %s', $exists_maps[$k], $exists_sql)));
+                        $query->$mod_func(db::expr(sprintf('%s %s', $exists_maps[$k], $exists_sql)));
                     }
                     unset($where[$k]);
                 }
@@ -2206,7 +2206,7 @@ class pub_mod_model
                 }
                 else if ( preg_match('#[^a-z]#i', $column) ) 
                 {
-                    $query->order_by(self::expr("{$column} {$direction}"));
+                    $query->order_by(db::expr("{$column} {$direction}"));
                 }
                 else
                 {
@@ -2216,7 +2216,7 @@ class pub_mod_model
         }
         else
         {
-            $query->order_by(self::expr($order_by));
+            $query->order_by(db::expr($order_by));
         }
 
         return $query;
@@ -2234,16 +2234,6 @@ class pub_mod_model
     {
         $func = !empty($encode) ? 'AES_ENCRYPT' : 'AES_DECRYPT';
         return  "{$func}({$field}, '{$GLOBALS['config']['db']['crypt_key']}')";
-    }
-
-    /**
-     * 比较复杂的语句可以使用这个函数包一下
-     * @param    string     $string
-     * @return   object         
-     */
-    final public static function expr(string $string)
-    {
-        return db::expr($string);
     }
 
     /**
@@ -2381,7 +2371,7 @@ class pub_mod_model
         if ( !static::_muti_start_trans($muti_id, __function__) ) 
         {
             static::_load_module_env();
-            //事务完成后统一发送统计数据
+            // 事务完成后统一发送统计数据
             if ( method_exists('common\extend\pub_func', 'dsrs') )
             {
                 util::shutdown_function(
@@ -2406,7 +2396,7 @@ class pub_mod_model
         if ( !static::_muti_start_trans($muti_id, __function__) ) 
         {
             static::_load_module_env();
-            //事务回滚，清空统计日志
+            // 事务回滚，清空统计日志
             if ( method_exists('common\extend\pub_func', 'dsrs') )
             {
                 pub_func::dsrs(null, null, 'clear');
@@ -2492,14 +2482,12 @@ class pub_mod_model
      *               [name] => 111
      *               [w_uid] => c27b6f5b05261298f51d13aa0460530b|CNY
      *           )
-     *
      *       [1] => Array
      *           (
      *               [wid] => 525
      *               [name] => 222
      *               [w_uid] => 50d8c583a2b94aa7b73b4fbf2f152b7a|CNY
      *           )
-     *
      *   )
      *
      *  $data = self::data_map([
@@ -2520,13 +2508,13 @@ class pub_mod_model
     {
         $maps  = config::instance('data_map')->get();
         if( !isset($data['data']) || empty($data['data']) ) return [];
-        foreach ($maps_attrs as $map => $config) //优先外部配置的属性
+        foreach ($maps_attrs as $map => $config) // 优先外部配置的属性
         {
             $maps[$map] = array_merge((isset($maps[$map]) ? $maps[$map] : []), (array) $config);
         }
 
         $fields = $maps_data = $group = [];
-        foreach($maps as $map => $row) //获取映射字段信息
+        foreach($maps as $map => $row) // 获取映射字段信息
         {
             if( isset($data[$map]) )
             {
@@ -2542,23 +2530,23 @@ class pub_mod_model
             $data['data'] = [$data['data']];
         }
         
-        foreach($data['data'] as $row) //获取映射字段中的值，用值去分表查询
+        foreach($data['data'] as $row) // 获取映射字段中的值，用值去分表查询
         {
             foreach($fields as $map => $_fields)
             {
                 foreach($_fields as $f)
                 {
-                    if( !isset($row[$f]) ) continue;//字段不存在，跳过
+                    if( !isset($row[$f]) ) continue; // 字段不存在，跳过
                     $maps_data[$map][$row[$f]] = $row[$f];
                 }
             }
         }
 
-        //按批去查
+        // 按批去查
         foreach( $maps_data as $map => $row )
         {
             $_fields = implode(',',  (array) $maps[$map]['fields']).','.$maps[$map]['index'];
-            //用户表有扩展表，所以需要单独处理
+            // 用户表有扩展表，所以需要单独处理
             if (!empty($maps[$map]['data_func']))
             {
                 $tmp = call_user_func_array($maps[$map]['data_func'], [
@@ -2616,7 +2604,7 @@ class pub_mod_model
 
         foreach($data['data'] as $key => $row)
         {
-            foreach($fields as $map => $_fields)//字段映射
+            foreach($fields as $map => $_fields) // 字段映射
             {
                 foreach($_fields as $f)
                 {
@@ -2665,7 +2653,6 @@ class pub_mod_model
                         $data['data'][$key][$mf] = $group[$map][$row[$f]];
                     }
 
-                    //运行callback
                     if( isset($maps[$map]['callback']) && is_callable($maps[$map]['callback']) )
                     {
                         $data['data'][$key][$mf] = call_user_func($maps[$map]['callback'], $data['data'][$key][$mf]);
@@ -2877,9 +2864,11 @@ class pub_mod_model
 
     /**
      * 记录错误日志
+     * 
      * @param    \Exception $e   
      * @param    string     $func 
      * @param    array|null $data
+     * 
      * @return   void        
      */
     final public static function log_exception(
@@ -2912,10 +2901,12 @@ class pub_mod_model
     }
 
     /**
-     * call_service别名函数
+     * call_service 别名函数
+     * 
      * @param  mixed $func
      * @param  array  $params
-     * @return mixed  大于0表示成功
+     * 
+     * @return mixed  大于 0 表示成功
      */
     final public static function transaction($func, $params = [])
     {
@@ -2924,19 +2915,21 @@ class pub_mod_model
 
     /**
      * 服务层调用模型层公共函数，如果服务层还涉及其他的逻辑，请自己实现
+     * 
      * @param  mixed $func
-     * @param  array  $params
-     * @return mixed  大于0表示成功
+     * @param  array $params
+     * 
+     * @return mixed  大于 0 表示成功
      */
     final public static function call_service($func, $params = [])
     {
         self::_load_module_env();
         try
         {
-            //提交事物前运行钩子
+            // 提交事物前运行钩子
             static::run_hook($func, $params, 'start');
             self::db_start();
-            //防止参数带有引用报错
+            // 防止参数带有引用报错
             foreach ($params as &$p) {}
             $status = call_user_func_array($func, $params);
         }
@@ -2949,21 +2942,21 @@ class pub_mod_model
 
         if( $status > 0 )
         {
-            //提交事务后运行钩子
+            // 提交事务后运行钩子
             static::run_hook($func, $params, 'commit');
             self::db_commit();
         }
         else
         {
-            //回滚事物
+            // 回滚事物
             static::run_hook($func, $params, 'rollback');
             self::db_rollback();
         }
 
         self::db_end();
-        //事务完成后运行钩子
+        // 事务完成后运行钩子
         static::run_hook($func, $params, 'end');
-        //测试环境打印数据库,需要调试的时候再开启
+        // 测试环境打印数据库,需要调试的时候再开启
         if( defined('SERVICE_LOG') && SERVICE_LOG )
         {
             log::write(
@@ -2994,12 +2987,12 @@ class pub_mod_model
     final public static function call_serv_static($class, $method, $args)
     {
         list($prefix, $_method) = @explode('_', $method, 2);
-        //开启事物
+        // 开启事物
         if ( strcasecmp($prefix, 'serv') === 0  && method_exists($class, $_method) )
         {
             return static::call_service([$class, $_method], $args);
         }
-        //指定数据库
+        // 指定数据库
         else if( $_method && method_exists(static::class, $_method) )
         {
             static::set_module_config($prefix);
@@ -3024,14 +3017,14 @@ class pub_mod_model
     {
         if ( !is_object($func) ) 
         {
-            //替换成hook的路径
+            // 替换成 hook 的路径
             $replace_arr = [
                 'model\\'   => 'hook\hook_',
                 'service\\' => 'hook\hook_',
             ];
             if ( null !== self::class && !is_array($func) )
             {
-                $func  = [static::$class, $func];
+                $func  = [self::class, $func];
             }
              
             if( is_array($func) )
@@ -3043,7 +3036,7 @@ class pub_mod_model
                 );
             }
 
-            //是否有后缀
+            // 是否有后缀
             if ( $suffix && is_array($func) ) 
             {
                 $func[1] .= '_' . $suffix;
@@ -3067,13 +3060,15 @@ class pub_mod_model
 
     /**
      * 获取系统配置信息
+     * 
      * @param  string      $module 模块
      * @param  string|null $key    key
+     * 
      * @return mixed
      */
     final public static function get_config(string $module, ?string $key = null)
     {
-        //非cli下取静态变量里的值
+        // 非cli下取静态变量里的值
         if ( PHP_SAPI != 'cli' )
         {
             static $configs = [];
@@ -3095,8 +3090,10 @@ class pub_mod_model
 
     /**
      * decode 数据库配置中的Json字段
+     * 
      * @param  array  $data
      * @param  string $table
+     * 
      * @return array
      */
     final public static function json_format(array $data, ?string $table = null)
@@ -3124,7 +3121,7 @@ class pub_mod_model
             }
         }
 
-        //格式化bbcode
+        // 格式化 bbcode
         $html_fields = self::get_config('database', 'html_fields');
         if ( $html_fields ) 
         {
@@ -3142,9 +3139,6 @@ class pub_mod_model
         return $data;
     }
 
-    /**
-     * @return   void
-     */
     private static function _load_module_env()
     {
         //因为基础类定义了__callStatic，所以这里无法使用is_callable判断
@@ -3160,9 +3154,9 @@ class pub_mod_model
      *     var_dump($a);
      * });
      *
-     * //可以通过set_mod_data绑定一个调试函数，比如
+     * 可以通过 set_mod_data 绑定一个调试函数，比如:
      * return self::try_catch_func(function() use($data) {
-     *    //绑定一个调试函数，会在try_catch_func结束后调用
+     *    // 绑定一个调试函数，会在 try_catch_func 结束后调用
      *    self::set_mod_data('debug_func', function($status) use($data) {
      *        var_dump($status);
      *        log::error($data);
@@ -3177,7 +3171,7 @@ class pub_mod_model
      */
     public static function try_catch_func($func, $log_error = true, array $exclude_status = [])
     {
-        //方法不可用直接抛异常
+        // 方法不可用直接抛异常
         if ( !is_callable($func) ) 
         {
             static::exception("方法{$func}不可用", static::$unknow_err_status);
@@ -3190,20 +3184,20 @@ class pub_mod_model
         catch (\Exception $e) 
         {
             $status = static::get_exception_status($e);
-            //是否记录日志
+            // 是否记录日志
             if ( 
                 $log_error && (!is_array($log_error) || in_array($status, $log_error)) &&
                 (!$exclude_status || !in_array($status, $exclude_status))
             ) 
             {
-                //只拿上一层的调用信息
+                // 只拿上一层的调用信息
                 $debug_info = debug_backtrace(0, 2)[1] ?? [];
-                //获取调用函数名，如果是数组，直接使用
+                // 获取调用函数名，如果是数组，直接使用
                 if ( is_array($func) ) 
                 {
                     $tmp = $func;
                 }
-                //字符串或者闭包方式
+                // 字符串或者闭包方式
                 else
                 {               
                     $tmp  = [
@@ -3219,7 +3213,7 @@ class pub_mod_model
             }
         }
         
-        //是否有绑定调试函数
+        // 是否有绑定调试函数
         if ( ($debug_func = static::get_mod_data('debug_func')) && is_callable($debug_func) ) 
         {
             static::set_mod_data('debug_func', null);
@@ -3466,44 +3460,14 @@ class pub_mod_model
     }
 
     /**
-     * 获取当前数据库配置信息
-     * @param    ?string     $key
-     * @return   mixed         
-     */
-    final public static function get_db_config(?string $key)
-    {
-        return db::get_config(static::get_db_name(), $key);
-    }
-
-    /**
-     * 根据语言，返回当前语言列表数据
-     * @param    array      $data        列表数据
-     * @param    string     $table       当前表
-     * @param    string     $lang        当前语言，一般使用默认
-     * @param    string     $pk          当前表主键，不填会自动获取，但是不保证100%对
-     * @return   array
-     */
-    final public static function lang_data(
-        array   $data, 
-        ?string $table = null, 
-        ?string $lang  = null, 
-        ?string $pk    = null
-    )
-    {
-        $table = $table ?? static::$table;
-        $pk    = $pk    ?? static::get_pk(['table' => $table]);
-        return pub_mod_muti_lang::detect_lang_data($table, $data, $lang, $pk);
-    }
-
-    /**
-     * 获取时间偏移db对象
+     * 获取时间偏移 db 对象
      * @param    int        $diff        
      * @param    string     $interval_str
      * @return   string
      */
     protected static function get_time_interval(int $diff, string $interval_str = 'MONTH')
     {
-        return self::expr(sprintf(
+        return db::expr(sprintf(
             ' NOW() - interval %d %s',
             $diff,
             $interval_str

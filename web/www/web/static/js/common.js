@@ -1279,6 +1279,7 @@ function openSearch() {
 
     layui.form.on('select(global-select-filter)', function(data){
         cachekeySearch = JSON.parse(data.value)
+        handleItemClick(cachekeySearch);
     });
 }
 
@@ -1287,20 +1288,20 @@ function closeSearch() {
 }
 
 function adjustTabsPosition(n) {
-    var prevAllWidth = calculateWidth($(n).prevAll());
-    var nextAllWidth = calculateWidth($(n).nextAll());
-    var contentTabsChildrenWidth = calculateWidth($(".content-tabs").children().not(".J_menuTabs"));
-    var totalWidth = $(".content-tabs").outerWidth(true) - contentTabsChildrenWidth;
+    var prevAllWidth = calculateWidth($(n).prevAll()); // 按钮宽度
+    var nextAllWidth = calculateWidth($(n).nextAll()); // 按钮宽度
+    var contentTabsChildrenWidth = calculateWidth($(".content-tabs").children().not(".J_menuTabs")); // 两个按钮+刷新+下拉功能
+    var totalWidth = $(".content-tabs").outerWidth(true) - contentTabsChildrenWidth;// 计算滚动区的真实宽度
     var marginLeftVal = 0;
 
-    if ($(".page-tabs-content").outerWidth() < totalWidth) {
+    if (calculateWidth($(".page-tabs-content").children()) <= totalWidth) {
         marginLeftVal = 0;
     } else {
         if (nextAllWidth <= (totalWidth - $(n).outerWidth(true) - $(n).next().outerWidth(true))) {
             if ((totalWidth - $(n).next().outerWidth(true)) > nextAllWidth) {
                 marginLeftVal = prevAllWidth;
                 var currentTab = n;
-                while ((marginLeftVal - $(currentTab).outerWidth()) > ($(".page-tabs-content").outerWidth() - totalWidth)) {
+                while ((marginLeftVal - $(currentTab).outerWidth()) > (calculateWidth($(".page-tabs-content").children()) - totalWidth)) {
                     marginLeftVal -= $(currentTab).prev().outerWidth();
                     currentTab = $(currentTab).prev();
                 }

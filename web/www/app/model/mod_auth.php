@@ -475,12 +475,12 @@ class mod_auth extends cls_auth
             $purviews = !empty($fields['purviews']) ? explode(",", $fields['purviews']) : array();
 
             // 组权限
-            $groupids = db::select('groups')
+            $groupids = (string) db::select('groups')
                 ->from(static::$table_config['user'])
                 ->where('uid', '=', $this->uid)
                 ->as_field()
                 ->execute();
-            $groupids = empty($groupids) ? null : explode(',', $groupids);
+            $groupids = explode(',', $groupids);
 
             $group_purviews = $this->get_group_purviews( $groupids );
             $purviews = array_merge($purviews, $group_purviews);
@@ -516,9 +516,9 @@ class mod_auth extends cls_auth
 
     public function get_group_purviews( ?array $groupids = null )
     {
-        if ( !$groupids ) 
+        if ( empty($groupids) ) 
         {
-            return array();
+            return [];
         }
 
         $groups = db::select('purviews')
