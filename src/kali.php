@@ -21,8 +21,6 @@ use kaliphp\lib\cls_auth;
 use kaliphp\lib\cls_benchmark;
 use kaliphp\lib\cls_security;
 
-defined('DS') or define('DS', DIRECTORY_SEPARATOR);
-
 // 严格开发模式
 error_reporting( E_ALL );
 ini_set('display_errors', 'On');
@@ -35,6 +33,13 @@ ini_set('display_errors', 'On');
 //{
     //ini_set('display_errors', 'Off');
 //}
+
+defined('DS') or define('DS', DIRECTORY_SEPARATOR);
+
+// Get the start time and memory for use later
+defined('FRAME_START_TIME') or define('FRAME_START_TIME', microtime(true));
+defined('FRAME_START_MEM')  or define('FRAME_START_MEM',  memory_get_usage());
+defined('FRAME_TIMESTAMP')  or define('FRAME_TIMESTAMP',  time());
 
 /**
  * The core of the framework.
@@ -53,7 +58,7 @@ class kali
     /**
      * 权限类的实例
      *
-     * @var cls_auth $auth  用于IDE跳转代码
+     * @var Object $auth  用于IDE跳转代码
      */
     public static cls_auth $auth;
 
@@ -152,27 +157,6 @@ class kali
         defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
         defined('ENV_PRE') or define('ENV_PRE', SYS_ENV === 'pre');
         defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
-
-        defined('DEBUG')   or define('DEBUG',   100);
-        defined('INFO')    or define('INFO',    200);
-        defined('NOTICE')  or define('NOTICE',  250);
-        defined('WARNING') or define('WARNING', 300);
-        defined('ERROR')   or define('ERROR',   400);
-
-        // Get the start time and memory for use later
-        defined('FRAME_START_TIME') or define('FRAME_START_TIME', microtime(true));
-        defined('FRAME_START_MEM')  or define('FRAME_START_MEM',  memory_get_usage());
-        defined('FRAME_TIMESTAMP')  or define('FRAME_TIMESTAMP',  time());
-
-        // Event default action
-        defined('beforeAction') or define('beforeAction', 1);
-        defined('afterAction')  or define('afterAction', 2);
-        defined('onException')  or define('onException', 3);
-        defined('onError')      or define('onError', 4);
-        defined('onRequest')    or define('onRequest', 5);
-        defined('onResponse')   or define('onResponse', 6);
-        defined('onFilter')     or define('onFilter', 7);
-        defined('onSql')        or define('onSql', 'onSql');
     }
 
     /**

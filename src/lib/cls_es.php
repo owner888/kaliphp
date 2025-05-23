@@ -12,10 +12,10 @@
 
 namespace kaliphp\lib;
 
-use kaliphp\config;
 use kaliphp\log;
 use kaliphp\util;
 use Elasticsearch\ClientBuilder;
+use Elasticsearch\Client;
 
 /**
  elasticsearch常见使用方法如下：
@@ -109,9 +109,9 @@ use Elasticsearch\ClientBuilder;
 class cls_es
 {
     /**
-     * @var null
+     * @var Client
      */
-    private $_handler;
+    private Client|null $_handler = null;
 
     /**
      * @var null
@@ -282,33 +282,33 @@ class cls_es
         if ( !is_object($this->_handler) ) 
         {
             $config = $config ? $config : $this->_config;
-            $this->_handler = ClientBuilder::create();
+            $client_builder = ClientBuilder::create();
 
-            //设置服务器连接信息
+            // 设置服务器连接信息
             if ( isset($config['host']) ) 
             {
-                $this->_handler->setHosts($config['host']);
+                $client_builder->setHosts($config['host']);
             }
 
-            //重连次数
+            // 重连次数
             if ( isset($config['retry_times']) ) 
             {
-                $this->_handler->setRetries($config['retry_times']);
+                $client_builder->setRetries($config['retry_times']);
             }
 
-            //设置连接池
+            // 设置连接池
             if ( isset($config['connection_pool'])) 
             {
-                $this->_handler->setConnectionPool($config['connection_pool']);
+                $client_builder->setConnectionPool($config['connection_pool']);
             }
 
-            //设置序列化器
+            // 设置序列化器
             if ( isset($config['serializer']) ) 
             {
-                $this->_handler->setConnectionPool($config['serializer']);
+                $client_builder->setConnectionPool($config['serializer']);
             }
 
-             $this->_handler = $this->_handler->build();
+            $this->_handler = $client_builder->build();
         }
 
         return $this->_handler;
@@ -774,7 +774,7 @@ class cls_es
      */
     public function reset()
     {
-        foreach(['where', 'columns', 'order', 'aggs', 'expr'] as $f)
+        foreach(['where', 'columns', 'order', 'aggs', 'expr', '_set'] as $f)
         {
             $this->$f = [];
         }
@@ -784,8 +784,8 @@ class cls_es
             $this->$f = '';
         }
 
-        $this->_as_row   = false;
-        $this->as_result = false;
+        $this->_as_row    = false;
+        $this->_as_result = false;
         return $this;
     }
 
@@ -1003,12 +1003,13 @@ class cls_es
                 'method' => $method,
                 'params' => $params,
             ]);
-
+            
             $handler = $handler ? $handler : $this->_handler();
             $result = call_user_func([$handler, $method], $params);
 
             if ( $this->_as_result) 
             {
+                $this->reset();
                 return $result;
             }
 
@@ -1368,7 +1369,7 @@ class cls_es
      *
      * @return array
      */
-    protected function _compilee_where_leaf(string $leaf, string $column, string $operator = null, $value): array
+    protected function _compilee_where_leaf(string $leaf, string $column, null|string $operator, $value): array
     {
         if ($leaf === 'range') 
         {

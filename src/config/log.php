@@ -1,5 +1,4 @@
 <?php
-
 defined('NONE')      or define('NONE',      0);     // 不记录日志
 defined('ALL')       or define('ALL',       99);    // 所有日志
 defined('DEBUG')     or define('DEBUG',     100);   // 详细的Debug信息
@@ -27,6 +26,10 @@ return [
     // the default output format is [%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
     'log_output'             => "%datetime% [%level_name%] --> %message%\n",
     'log_chrome'             => false,
+    'log_callback'           => [
+        // 'levels' => [ERROR, WARNING],
+        // 'func'   => ['common\extend\pub_log', 'send_to_tg'],
+    ],
     // 那些请求方法提交的数据会被记录
     'log_request_methods'    => [
         //'*',

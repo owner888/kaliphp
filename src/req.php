@@ -21,6 +21,7 @@ use kaliphp\lib\cls_crypt;
 use kaliphp\lib\cls_filter;
 use kaliphp\lib\cls_security;
 use kaliphp\lib\cls_ip2location;
+use kaliphp\lib\cls_ip138;
 
 /**
  * 处理外部请求变量的类
@@ -32,6 +33,9 @@ use kaliphp\lib\cls_ip2location;
  */
 class req
 {
+    const IP2LOCATION = 1;
+    const IP138 = 2;
+
     public static $config = [];
 
     // $_COOKIE 变量
@@ -444,15 +448,16 @@ class req
      */
     public static function country($ip = '')
     {
+        $bin_file = $_ENV['IP_COUNTRY_BIN_FILE'] ?? '/data/web/IPV6-COUNTRY.BIN';
         // 如果是通过IP来获取城市地址的
         if (!empty($ip)) 
         {
-            if (!file_exists(APPPATH.'/../../IP-COUNTRY-ISP.BIN')) 
+            if (!file_exists($bin_file)) 
             {
                 return "-";
             }
-            $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
-            $records = $db->lookup($ip, [cls_ip2location::COUNTRY_CODE]);
+            $db = new cls_ip2location($bin_file, cls_ip2location::FILE_IO);
+            $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
             return strtoupper($records['countryCode']);
         }
 
@@ -463,7 +468,7 @@ class req
             return $country;
         }
 
-        //域名上了接入层获取方法
+        // 域名上了接入层获取方法
         if( !empty(self::server('HTTP_X_REAL_COUNTRY_SHORT')) )
         {
             return self::server('HTTP_X_REAL_COUNTRY_SHORT');
@@ -477,14 +482,48 @@ class req
         else 
         {
             // /data/web 目录
-            if (!file_exists(APPPATH.'/../../IP-COUNTRY-ISP.BIN')) 
+            if (!file_exists($bin_file)) 
             {
                 return "-";
             }
             $ip = self::ip();
-            $db = new cls_ip2location(APPPATH.'/../../IP-COUNTRY-ISP.BIN', cls_ip2location::FILE_IO);
-            $records = $db->lookup($ip, [cls_ip2location::COUNTRY_CODE]);
+            $db = new cls_ip2location($bin_file, cls_ip2location::FILE_IO);
+            $records = $db->lookup($ip, array(cls_ip2location::COUNTRY_CODE));
             return strtoupper($records['countryCode']);
+        }
+    }
+
+    /**
+     * 获得国家、省、市
+     * 
+     * @param  string $ip
+     * @return array
+     */
+    public static function ip_to_address(string $ip = '', $type = self::IP2LOCATION): array
+    {
+        if ( empty($ip)) 
+        {
+            return [];
+        }
+
+        if ( $type == self::IP2LOCATION) 
+        {
+            // 服务器的 /data/web 目录
+            $filepath = APPPATH.'/../../../../IPV6-COUNTRY-REGION-CITY.BIN';
+
+            if ( !file_exists($filepath)) 
+            {
+                log::warn($filepath . ' not exist.');
+                return [];
+            }
+
+            $db = new cls_ip2location($filepath, cls_ip2location::FILE_IO);
+            $records = $db->lookup($ip, [cls_ip2location::COUNTRY_CODE, cls_ip2location::COUNTRY_NAME, cls_ip2location::REGION_NAME, cls_ip2location::CITY_NAME]);
+            return $records;
+        }
+        else 
+        {
+           return cls_ip138::instance()->ip_to_address($ip);
         }
     }
 

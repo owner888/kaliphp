@@ -30,12 +30,6 @@ class resp
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        // php7.1 json_encode float 精度会溢出
-        if (version_compare(phpversion(), '7.1', '>=')) 
-        {
-            ini_set('serialize_precision', -1);
-        }
-
         $data = [
             'code'      => $code,
             'msg'       => $msg,

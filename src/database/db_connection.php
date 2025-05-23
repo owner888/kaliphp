@@ -11,16 +11,18 @@
  */
 
 namespace kaliphp\database;
-use kaliphp\config;
+
 use kaliphp\req;
+use kaliphp\util;
 use kaliphp\log;
 use kaliphp\db;
 use kaliphp\event;
+use kaliphp\config;
 use Exception;
 
+defined('IS_CLI') || define('IS_CLI', PHP_SAPI === 'cli');
 /**
  * 数据库类
- *
  * @version 2.0
  */
 class db_connection
@@ -67,27 +69,22 @@ class db_connection
     /**
      * @var array $_columns insert columns
      */
-    protected $_columns = array();
+    protected $_columns = [];
 
     /**
      * @var array  $_values insert  values
      */
-    protected $_values = array();
+    protected $_values = [];
 
     /**
      * @var array  $_set  insert or update values
      */
-    protected $_set = array();
-
-    /**
-     * @var array  $_dups update values
-     */
-    protected $_dups = [];
+    protected $_set = [];
 
     /**
      * @var array  $_select  columns to select
      */
-    protected $_select = array();
+    protected $_select = [];
 
     /**
      * @var bool  $_distinct  whether to select distinct values
@@ -97,57 +94,76 @@ class db_connection
     /**
      * @var array  $_from  table name
      */
-    protected $_from = array();
+    protected $_from = [];
 
     /**
      * @var array  $_where  where statements
      */
-    protected $_where = array();
+    protected $_where = [];
 
     /**
      * @var array  $_having  having clauses
      */
-    protected $_having = array();
+    protected $_having = [];
 
     /**
      * @var  array  Quoted query parameters
      */
-    protected $_parameters = array();
+    protected $_parameters = [];
 
     /**
      * @var array  $_join  join objects
      */
-    protected $_join = array();
+    protected $_join = [];
 
     /**
      * @var array  $_on  ON clauses
      */
-    protected $_on = array();
+    protected $_on = [];
 
     /**
      * @var array  $_group_by  group by clauses
      */
-    protected $_group_by = array();
+    protected $_group_by = [];
 
     /**
      * @var array  $_order_by  order by clause
      */
-    protected $_order_by = array();
+    protected $_order_by = [];
 
     /**
-     * @var  integer  $_max_select_limit
+     * 遇到相同主键/unique key更新，否则插入
+     * @var array
+     * array
      */
-    protected $_max_select_limit = 300;
+    protected $_dups = [];
+
+    /**
+     * 加密字段
+     * @var array
+     */
+    protected $_crypt_fields = [];
 
     /**
      * @var  integer  $_limit
      */
     protected $_limit = null;
+
+    /**
+     * @var  integer  $_max_select_limit
+     */
+    protected $_max_select_limit = 0;
     
     /**
      * @var integer  $_offset  offset
      */
     protected $_offset = null;
+
+    /**
+     * clickhouse中类似窗口函数的支持
+     * @var null
+     */
+    protected $_limit_by = null;
 
     /**
      * @var  bool  其他属性
@@ -179,26 +195,31 @@ class db_connection
     private $_handler;
 
     /**
-     * @var  \mysqli_result  $_result raw result resource
+     * @var  resource  $_result raw result resource
      */
     private $_result;
 
     public static $config = [];
 
+    public static $global_configs = [];
+
     //当前实例名称，方便多库使用的时候自定义实例名称
     private static $_instance_name = [];
 
     //默认数据库名称
-    private static $_default_name = 'default';
+    private static $_default_name  = null;
 
-    public static $rps = array(
+    private static $_orgin_default = 'default';
+
+
+    public static $rps = [
         '/*', '--', 'union', 'sleep', 'benchmark', 'load_file', 'outfile',
         'extractvalue', 'updatexml', 'information_schema', 'performance_schema'
-    );
-    public static $rpt = array(
+    ];
+    public static $rpt = [
         '/×', '——', 'ｕｎｉｏｎ', 'ｓｌｅｅｐ', 'ｂｅｎｃｈｍａｒｋ', 'ｌｏａｄ_ｆｉｌｅ', 'ｏｕｔｆｉｌｅ',
         'ｅｘｔｒａｃｔｖａｌｕｅ', 'ｕｐｄａｔｅｘｍｌ', 'ｉｎｆｏｒｍａｔｉｏｎ＿ｓｃｈｅｍａ', 'ｐｅｒｆｏｒｍａｎｃｅ＿ｓｃｈｅｍａ'
-    );
+    ];
 
     private static $chr2 = null;
     private static $chr3 = null;
@@ -208,51 +229,87 @@ class db_connection
      */
     public static function _init()
     {
-        static::$chr2 = chr(2);
-        static::$chr3 = chr(3);
-
+        static::$chr2           = chr(2);
+        static::$chr3           = chr(3);
+        static::$_default_name  = self::$_orgin_default;
+        static::$global_configs = config::instance('database')->get('global_db_configs') ?: [];
         return static::init_db();
     }
 
     /**
      * 初始化数据库
      * @param string $name 实例名称
-     * @param string $config_file 数据库配置文件名
+     * @param string $name 数据库配置文件名
      * @param bool $default_instance 是否设为默认数据库
      */
-    public static function init_db($name = null, $config_file = null, $default_instance = false)
+    public static function init_db(
+        ?string $name             = null, 
+        ?string $config_file      = null, 
+        ?bool   $default_instance = false, 
+        ?array  $slave_index      = null
+    )
     {
-        $name  = self::get_muti_name($name);
-		// 引入其他模块的类配置文件(比如 clickhouse.php)
-        if ($config_file) 
+        list($orgin_name, ) = $name ? explode(':', $name) : null;
+        $name               = $name ?? self::$_orgin_default;
+        $muti_name          = self::get_muti_name($name);
+        $_config_key        = null;
+		// 引入其他模块的类配置文件(支持直接指定的database.php的某一个key)
+        if ( $config_file && strstr($config_file, ':') ) 
         {
-            @list($config_file, $config_key) = explode(':', $config_file);
+            list($_config_file, $_config_key) = explode(':', $config_file);
+        }
+		// 加载其他配置文件
+        else if( $config_file )
+        {
+            $_config_file = $config_file;
         }
 		// 默认配置文件
         else
         {
-            $config_key  = null;       // 如果使用默认配置，只要在默认配置加一个key,就可以实现加载其他数据库
-            $config_file = 'database'; // 加载的数据库配置文件名，可以配置成其他文件
+            $_config_file = 'database'; // 加载的数据库配置文件名，可以配置成其他文件
         }
 
-        self::$config[$name] = config::instance($config_file)->get($config_key);
+        // 兼容 name 当 key 到 database 中取的方式
+        if ( !$config_file && $orgin_name ) 
+        {
+            self::$config[$name] = config::instance($_config_file)->get($orgin_name);
+			// 取不当尝试取为 name 的配置
+            if ( !self::$config[$name] && $name != self::$_default_name ) 
+            {
+                try 
+                {
+                    $configs = config::instance($orgin_name)->get();
+                    self::$config[$name] = $configs;
+                } 
+                catch (Exception) 
+                {
+                }
+            }
+        }
 
+        if ( empty(self::$config[$name]) ) 
+        {
+            self::$config[$name] = config::instance($_config_file)->get($_config_key);
+        }
+        
         if ( self::$config[$name] ) 
         {
-            self::$config[$name]['config_file'] = $config_file;
+            self::$config[$name] = array_merge(self::$config[$name], [
+                'config_file' => $config_file
+            ]);
         }
 
-        if(!self::$config[$name])
+        if( !self::$config[$name] )
         {
-            throw new \Exception("Load {$config_file} fail", 3001);
+            throw new Exception("Load {$config_file} fail", 3001);
         }
         else if( isset(self::$config[$name]['host']['master']) )
         {
-            $instance_name = self::get_instance_name($name);
-            // 第一个为默认数据库
+            $instance_name = self::get_instance_name($muti_name);
+			// 第一个为默认数据库
             if( !self::$_instance_name && $default_instance )
             {
-                self::$_default_name = $name;
+                self::$_default_name  = $muti_name;
             }
 
 			// 如果没有初始化
@@ -261,38 +318,83 @@ class db_connection
                 // 链接主库
                 list($host, $port) = explode(":", self::$config[$name]['host']['master']);
                 $config = [
-                    'host'          => $host,
-                    'port'          => $port,
-                    'user'          => self::$config[$name]['user'],
-                    'pass'          => self::$config[$name]['pass'],
-                    'name'          => self::$config[$name]['name'],
-                    'read_timeout'  => self::$config[$name]['read_timeout'] ?? null,
-                    'timeout'       => self::$config[$name]['timeout'],
-                    'charset'       => self::$config[$name]['charset'],
-                    'gcm_len'       => self::$config[$name]['group_concat_max_len'] ?? null,
+                    'host'             => $host,
+                    'port'             => $port,
+                    'user'             => self::$config[$name]['user'] ?? null,
+                    'pass'             => self::$config[$name]['pass'] ?? null,
+                    'name'             => self::$config[$name]['name'],
+                    'timeout'          => self::$config[$name]['timeout'],
+                    'read_timeout'     => self::$config[$name]['read_timeout'] ?? null,
+                    'charset'          => self::$config[$name]['charset'],
+                    'gcm_len'          => self::$config[$name]['group_concat_max_len'] ?? null,
+                    'disabled_prepare' => self::$config[$name]['disabled_prepare'] ?? null,
                 ];
-
-                // static::$_instance
-                self::instance($instance_name['master'], $config);
-                static::$_instance[$instance_name['master']]->_db_name = $name;
+                
+                $config = self::_get_config($host, $port, $config);
+                self::instance($instance_name['master'], $name, $config);
 				// var_dump(self::instance());
 				// exit;
 
                 // 如果配置了从库 链接从库
                 if( !empty(self::$config[$name]['host']['slave']) )
                 {
-                    $slaves = self::$config[$name]['host']['slave'][mt_rand(0, count(self::$config[$name]['host']['slave']) - 1)];
-                    list($host, $port) = explode(":", $slaves);
-                    $config = array_merge($config, array('host' => $host, 'port' => $port));
-                    self::instance($instance_name['slave'], $config);
+                    $slaves   = self::$config[$name]['host']['slave'];
+                    $slave_fn = self::$config[$name]['host']['slave_fn'] ?? null;
+                    if ( $slave_fn && $slave_fn instanceof \Closure ) 
+                    {
+                        $slaves = $slave_fn($config, $slaves);
+                    }
+
+                    if ( $slave_index ) 
+                    {
+                        foreach(array_keys($slaves) as $k)
+                        {
+                            if ( !in_array($k, $slave_index) ) 
+                            {
+                                unset($slaves[$k]);
+                            }
+                        }
+
+                        $slaves = array_values($slaves);
+                    }
+
+                    if ( !$slaves ) 
+                    {
+                        goto MASTER_DB;
+                    }
+                    else
+                    {
+                        $slave = $slaves[mt_rand(0, count($slaves) - 1)];
+                    }
+
+                    // 从库和主库账号密码不一致的时候，置换账号密码
+                    if ( 
+                        !empty(self::$config[$name]['slave_users']) &&
+                        isset(self::$config[$name]['slave_users'][$slave])
+                    ) 
+                    {
+                        [$config['user'], $config['pass']] = self::$config[$name]['slave_users'][$slave];
+                    }
+
+                    list($r_host, $r_port) = explode(":", $slave);
+                    // 从库和主库一样，使用主库连接
+                    if ( $r_host == $host && $r_port == $port ) 
+                    {
+                        goto MASTER_DB;
+                    }
+                    else
+                    {
+                        $config = self::_get_config($r_host, $r_port, $config);
+                        $config = array_merge($config, array('host' => $r_host, 'port' => $r_port));           
+                        self::instance($instance_name['slave'], $name, $config);
+                    }
                 }
-				// 否则从库使用主库的链接
+                //否则从库使用主库的链接
                 else
                 {
-                    static::$_instance[$instance_name['slave']] = static::$_instance[$instance_name['master']];
+                    MASTER_DB:
+                    static::$_instance[$instance_name['slave']] = &static::$_instance[$instance_name['master']];
                 }
-
-                static::$_instance[$instance_name['slave']]->_db_name = $name;
             }
 
             return $name;
@@ -302,14 +404,77 @@ class db_connection
     }
 
     /**
+     * 合并公共配置
+     * @param string  $host
+     * @param integer $port
+     * @param array $config
+     * @return array
+     */
+    private static function _get_config(string $host, int $port, array $config):array
+    {
+        $new_config = static::$global_configs["{$host}:{$port}"] ?? null;
+        if ( $new_config && is_array($new_config) ) 
+        {
+            foreach($new_config as $k => $v)
+            {
+                $config[$k] = $v;
+            }
+        }
+
+        return $config;
+    }
+
+    /**
+     * 获取db的名称，兼容指定slave
+     * @param  string|null $name
+     * @param  array|null $slave_index
+     * @return string
+     */
+    public static function get_db_name(?string $name = null, ?array $slave_index = null)
+    {
+        return ($name ?? self::$_default_name) . ($slave_index ? ':' . implode('#', $slave_index) : '');
+    }
+
+    /**
+     * 实例话数据库，返回当前主库对象
+     * @param  string|null $name
+     * @param  string|null $config_file
+     * @param  boolean|null $default_instance
+     * @param  array|null $slave_index
+     * @return object
+     */
+    public static function new_db(
+        ?string $name             = null, 
+        ?string $config_file      = null, 
+        ?bool   $default_instance = false, 
+        ?array  $slave_index      = null
+    )
+    {
+        $name          = self::get_db_name($name, $slave_index);
+        $instance_name = static::get_instance_name($name, 'master');
+        if( 
+            isset(static::$_instance[$instance_name]) || 
+            static::init_db($name, $config_file, $default_instance, $slave_index) 
+        )
+        {
+            return static::$_instance[$instance_name];
+        }
+        else
+        {
+            throw new Exception(sprintf('%s[%s] error', __function__, $instance_name), 3001);
+        }
+    }
+
+    /**
      * 获取当前配置信息
-     * @param    string|null $name 实例名称
-     * @param    string|null $key  key
-     * @return   array            [description]
+     * @DateTime 2022-08-16
+     * @param    string|null $name
+     * @param    string|null $key 
+     * @return   mixed        
      */
     public static function get_config(?string $name = null, ?string $key = null)
     {
-        $name  = self::get_muti_name($name);
+        $name = $name ?? self::$_default_name;
         if ( !isset(self::$config[$name]) ) 
         {
             self::init_db($name);
@@ -330,7 +495,7 @@ class db_connection
      */
     private function _handler()
     {
-        if ( !$this->_handler || !is_object($this->_handler) )
+        if( !$this->_handler || !is_object($this->_handler) )
         {
             if (
                 !$this->_config || !isset($this->_config['host']) || !isset($this->_config['user']) || 
@@ -340,14 +505,13 @@ class db_connection
                 throw new Exception('配置有误', 3001);
             }
 
-            if ( isset($this->_config['keep-alive']) && $this->_config['keep-alive'] )
+            if (isset($this->_config['keep-alive']) && $this->_config['keep-alive'])
             {
                 $this->_config['host'] = 'p:'.$this->_config['host'];
             }
 
             // 让mysqli extension在用 try catch 可以抓到 query 的异常
             mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
             try
             {
                 $this->_handler = mysqli_init();
@@ -357,7 +521,7 @@ class db_connection
                 }
 
                 // 非cli下 命令执行超时秒数
-                if ( PHP_SAPI !== 'cli' && !empty($this->_config['read_timeout']) ) 
+                if ( !IS_CLI && !empty($this->_config['read_timeout']) ) 
                 {
                     if ( !defined('MYSQL_OPT_READ_TIMEOUT') ) 
                     {
@@ -367,7 +531,7 @@ class db_connection
                     // 最低是3s
                     mysqli_options($this->_handler, MYSQLI_OPT_READ_TIMEOUT, $this->_config['read_timeout']);
                 }
-
+                
                 //$this->_handler = mysqli_connect(
                 mysqli_real_connect($this->_handler, 
                     $this->_config['host'], 
@@ -381,10 +545,9 @@ class db_connection
                 //mysqli_query($this->_handler, "SET WAIT_TIMEOUT = 1");
 
                 // 让int、float 返回正确的类型，而不是返回string
+                defined('MYSQLI_OPT_INT_AND_FLOAT_NATIVE') &&
                 $this->_handler->options(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, 1);
-
                 mysqli_query($this->_handler, "SET NAMES ".$this->_config['charset']);
-
                 if ( !empty($this->_config['gcm_len']) ) 
                 {
                     mysqli_query(
@@ -392,6 +555,9 @@ class db_connection
                         'SET SESSION group_concat_max_len='.$this->_config['gcm_len']
                     );
                 }
+
+                //标记最近的一次sql所使用的实例名称
+                self::$config[$this->_db_name]['current_instance'] = $this->_name;
             }
             catch (Exception $e)
             {
@@ -405,8 +571,6 @@ class db_connection
             }
         }
 
-        //标记最近的一次sql所使用的实例名称
-        self::$config[$this->_db_name]['current_instance'] = $this->_name;
         return $this->_handler;
     }
 
@@ -423,7 +587,7 @@ class db_connection
             if( isset(self::$_instance[$v]) )
             {
                 self::$_instance_name[$k] = $v;
-                self::$_default_name = $name;
+                self::$_default_name      = $name;
                 $result = true;
             }
         }
@@ -435,55 +599,61 @@ class db_connection
      * 单例
      * @param string $name
      * @param bool $instance
-     * @return db
+     * @return object
      */
-    public static function instance($name = null, ?array $config = null)
+    public static function instance($name = null, $db_name = null, ?array $config = null, bool $force_init = false)
     {
         if ($name === null)
         {
             // Use the default instance name
             $name = !empty(self::$_instance_name['master']) ? 
-                self::$_instance_name['master'] : self::get_instance_name(self::$_default_name, 'master');
+                self::$_instance_name['master'] : 
+                self::get_instance_name(self::$_default_name, 'master');
         }
 
-        if ( ! isset(static::$_instance[$name]))
+        if ( $force_init || !isset(static::$_instance[$name]))
         {
-            static::$_instance[$name] = new static($name, $config);
+            $db_name = $db_name ?: self::$_default_name;
+            static::$_instance[$name] = new static($name, $db_name, $config);
+            // 非cli下，cgi结束后主动关闭链接
+            !IS_CLI && util::shutdown_function(function() use($name) {
+                static::$_instance[$name]->close($name);
+            });
         }
 
         return static::$_instance[$name];
     }
 
-    /**
-     * 主动关闭连接
-     * @param string $name
-     */
-    public function close($name = null)
+    public function close($instance = null)
     {
-        foreach(static::$_instance as $_name => $_instance)
+        foreach(static::$_instance as $name => $db_instance)
         {
-            if (!$name || $name == $_name) 
+            if ( (!$instance || $instance == $name) ) 
             {
-                is_object($_instance->_handler) && @mysqli_close($_instance->_handler);
-                static::$_instance[$_name]->_handler = null;
+                if ( is_object($db_instance->_handler) ) 
+                {
+                    @mysqli_close($db_instance->_handler);
+                }
+                
+                static::$_instance[$name]->_handler = null;
             }
         }
+       
+        return false; 
     }
 
-    /**
-     * 重新连接
-     */
-    public function reconnect()
+    public function reconnect(?string $name = null)
     {
-        self::close($this->_name);
-        self::instance($this->_name, $this->_config);
-        $this->_handler();
+        $name = $name ?? $this->_name;
+        self::close($name);
+        self::instance($name, $this->_db_name, $this->_config, true);
     }
 
-    public function __construct($name, $config)
+    public function __construct($name, $db_name, $config)
     {
         // 设置实例名
         $this->_name    = $name;
+        $this->_db_name = $db_name;
         $this->_config  = $config;
         $this->_handler = null;
 
@@ -514,43 +684,50 @@ class db_connection
         return $this;
     }
 
-    public function query($sql, array $params = [])
+    /**
+     * 执行sql
+     * @param mixed   $sql 如果为数组的时候，必须包含0和1，0表示sql模版，1为数组，表示模版里面的变量
+     * $this->query([
+     *   'select * from xxxx where xxx1 in {xxx1} and xxx2={xxx2}',
+     *    [
+     *        'xxx1' => 1,
+     *        'xxx2' => [2, 3, 'a'],
+     *    ]
+     *]);
+     * @param boolean $close_filter
+     * @return $this
+     */
+    public function query($sql, bool $close_filter = false)
     {
-        // Change #PB# to db_prefix
-        $sql = $this->table_prefix($sql);
-
-        if (!empty($params)) 
+        // 参数化
+        if ( is_array($sql) ) 
         {
-            // 因为compile里面是按k-v结构的数组来替换sql语句的，所以
-            // 先处理sql里面的？号然后组合好新的数组传给到parameters方法
-            // 如果没有？号直接将params传给parameters
-            $i = 0;
-            $sql = preg_replace_callback('/\?/', 
-                function() use (&$params, &$i) {
-                    $params['?'.$i] = $params[$i];
-                    unset($params[$i]);
-                    return ':?'. $i++;
+            $has_array = false;
+            $sql       = preg_replace_callback(
+                '#{\s*(\w+)\s*\}#isU', 
+                function($mat) use($sql, &$has_array) {
+                    $val = $sql[1][$mat[1]] ?? null;
+                    !$has_array && $has_array = is_array($val);
+                    return $this->quote($val);
                 }, 
-                $sql
+                $sql[0]
             );
 
-            // 去掉$params里面为数字的key
-            foreach (array_keys($params) as $key) 
+            // 替换重复的(())
+            if ( $has_array ) 
             {
-                if (is_numeric($key)) 
-                {
-                    unset($params[$key]);
-                }
+                $sql = preg_replace('#in\s+\(\s*(\(.*\))\s*\)#isU', 'IN \\1', $sql);
             }
-
-            $this->parameters($params);
         }
-        elseif (self::$config[$this->_db_name]['safe_test'])
+
+        // Change #PB# to db_prefix
+        $sql = $this->table_prefix($sql);
+        if ( !$close_filter && self::$config[$this->_db_name]['safe_test'] )
         {
             $sql = $this->filter_sql($sql);
         }
 
-        $this->_sql  = $sql;
+        $this->_sql = $sql;
         $this->_type = $this->get_type($this->_sql);
         // Save the query for debugging
 
@@ -615,10 +792,8 @@ class db_connection
             }
         }
 
-        //兼容字段中有复杂计算不替换#PB#的情况
+        // 兼容字段中有复杂计算不替换#PB#的情况
         $this->_sql = $this->table_prefix($this->_sql);
-        static::log_query($this->convert_back_sql($this->_sql));
-        static::log_query($this->get_prepare_sql($this->_sql), 'prepare_sql');
         return $this->_sql;
     }
 
@@ -638,10 +813,8 @@ class db_connection
         $real_sql   = $this->convert_back_sql($sql);
         $this->_sql = $real_sql;
 
-		// 获取当前实例组
-        $instance_name = isset($this->_atts['instance_name']) ? 
-            $this->_atts['instance_name'] : self::get_instance_name();
-  
+        // 获取当前实例组
+        $instance_group = $this->_atts['instance_name'] ?? $this->get_instance_group();
         // 用户手动指定使用主数据库 或 从数据库状态不可用
         if ( 
             $is_master === true || 
@@ -649,65 +822,87 @@ class db_connection
             !empty($this->_atts['lock'])
         )
         {
-            $_instance_name = $instance_name['master'];
+            $db_name = $instance_group['master'];
         }
         else
         {
             if ($this->_type === db::SELECT)
             {
-                $_instance_name = $instance_name['slave'];
+                $db_name = $instance_group['slave'];
             }
             else
             {
-                $_instance_name = $instance_name['master'];
+                $db_name = $instance_group['master'];
             }
         }
 
-		// echo "{$_instance_name}\n"; echo "{$sql}\n";
-		db::$query_db_names[] = $_instance_name;
-        $db_conn = self::$_instance[$_instance_name];
-
+        // echo $db_name;echo "{$sql}<br>";
+        $db_conn = self::$_instance[$db_name];
+        db::$query_db_names[] = $db_name;
         try
         {
             // Start the Query Timer
             $time_start = microtime(true);
-
-            if ( !empty(self::$config[$this->_db_name]['noprepare']) ) 
+            // 加 @ 去掉下面两个警告
+            // mysqli_query(): MySQL server has gone away
+            // mysqli_query(): Error reading result set's header
+            // $this->_result = @mysqli_query($db_conn->_handler(), $sql);
+            if ( !empty($db_conn->_config['disabled_prepare']) ) 
             {
-                // 加 @ 去掉下面两个警告
-                // mysqli_query(): MySQL server has gone away
-                // mysqli_query(): Error reading result set's header
-                $this->_result = @mysqli_query($db_conn->_handler(), $real_sql);
+                $this->_result = @mysqli_query($db_conn->_handler(), $this->convert_back_sql($sql));
             }
-            else
+            else 
             {
                 $stmt = $this->convert_prepare_sql($db_conn, $sql);
-                $this->_result = $stmt->get_result();
             }
 
             // Stop and aggregate the query time results
             $query_time = microtime(true) - $time_start;
-            static::log_query($query_time, 'query_time');
-
+            $this->log_query($query_time, 'query_time');
+            $this->log_query($real_sql, 'sql', $db_name . ':' . $db_conn->_config['host'] , round($query_time, 6));
             // 触发SQL事件
-            event::trigger(onSql, [$real_sql, $_instance_name, round($query_time, 6)]);
+            //event::trigger(onSql, [$real_sql, $db_name, round($query_time, 6)]);
 
             // 记录慢查询
-            if ( self::$config[$this->_db_name]['slow_query'] && ($query_time > self::$config[$this->_db_name]['slow_query']) )
+            if ( 
+                ( !defined('SYS_DEBUG') || SYS_DEBUG )  &&
+                self::$config[$this->_db_name]['slow_query'] && 
+                ($query_time > self::$config[$this->_db_name]['slow_query']) 
+            )
             {
-                log::warning(sprintf('Slow Query [%s]: %s (%ss)', $_instance_name, $real_sql, round($query_time, 6)));
+                event::trigger(onWarn, [$db_name, $real_sql, round($query_time, 6)]);
+                // log::warning(sprintf('Slow Query [%s]: %s (%ss)', $db_name, $real_sql, round($query_time, 6)));
             }
 
-            $result = [];
-            if ($this->_type === db::SELECT)
+            $result = null;
+            if ($this->_type === db::INSERT)
             {
+                // Return a list of insert id and rows created
+                $result = array(
+                    mysqli_insert_id($db_conn->_handler()),
+                    mysqli_affected_rows($db_conn->_handler()),
+                );
+
+                self::log_query($result[1], 'insert');
+            }
+            elseif ($this->_type === db::UPDATE or $this->_type === db::DELETE)
+            {
+                // log::write('test_sql', $db_conn);
+                // log::write('test_sql', self::$_instance);
+                // Return the number of rows affected
+                $result = mysqli_affected_rows($db_conn->_handler());
+                self::log_query($result, $this->_type === db::UPDATE ? 'update' : 'delete');
+            }
+            else
+            {
+                isset($stmt) && $this->_result = $stmt->get_result();
                 if ( $this->_as_result ) 
                 {
                     $result = $this->_result;
                 }
-                else 
+                else if( $this->_result )
                 {
-                    $rows = [];
+                    $rows = array();
                     while ($row = mysqli_fetch_array($this->_result, MYSQLI_ASSOC))
                     {
                         if ( !empty($this->_atts['row_fn']) )
@@ -724,64 +919,50 @@ class db_connection
                         }
                     }
 
-                    mysqli_free_result($this->_result);
-                    if ( empty($rows[0]) && empty($params['index']) ) 
+                    if ( $this->_as_field ) 
                     {
-                        $result = [];
-                    }
-                    elseif ( $this->_as_field ) 
-                    {
-                        $tmp    = reset($rows);
-                        $result = reset($tmp);
-                        unset($tmp);
+                        $result = reset($rows);
+                        $result && $result = reset($result);
                     }
                     elseif ( $this->_as_row ) 
                     {
-                        $result = $rows[0];
+                        $result = reset($rows);
                     }
                     else 
                     {
                         $result = $rows;
                     }
+
+                    mysqli_free_result($this->_result);
                 }
             }
-            elseif ($this->_type === db::INSERT)
-            {
-                // Return a list of insert id and rows created
-                $result = array(
-                    mysqli_insert_id($db_conn->_handler()),
-                    mysqli_affected_rows($db_conn->_handler()),
-                );
-
-                self::log_query($result[1], 'insert');
-            }
-            elseif ($this->_type === db::UPDATE or $this->_type === db::DELETE)
-            {
-                // Return the number of rows affected
-                $result = mysqli_affected_rows($db_conn->_handler());
-
-                self::log_query($result, $this->_type === db::UPDATE ? 'update' : 'delete');
-            }
-
         }
         catch (Exception $e)
         {
-            $errno  = $e->getCode();
-            $errmsg = $e->getMessage();
-            log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $real_sql.'('.$this->_db_name.')'), 'SQL Error');
+            $errno   = $e->getCode();
+            $err_msg = sprintf(
+                "%s:%s [%s (%s=>%s:%s:%s)]", 
+                $errno, 
+                $e->getMessage(), 
+                $real_sql, 
+                $db_conn->_name,
+                $db_conn->_config['name'] ?? null, 
+                $db_conn->_config['host'] ?? null,
+                $db_conn->_config['port'] ?? null
+            );
             
             $this->_atts['reconnect_times'] = isset($this->_atts['reconnect_times']) ? ++$this->_atts['reconnect_times'] : 1;
             // Mysql 等待超时,如果是开启了事务，不应该重试，因为重连可能导致事务id发生变化
             if ( 
-                empty($this->_atts['start']) && in_array($errno, [2013, 2006]) &&
+                empty($this->_atts['start']) && in_array($errno, [2013, 2006, 4031]) &&
                 //每个查询超出最大重连次数，不再重连，防止触发max_connect_errors，无法连接数据库
                 $this->_atts['reconnect_times'] <= $this->_max_reconnect
             ) 
             {
-                log::error(sprintf("%s:%s [%s]", $errno, $errmsg, $real_sql.'('.$this->_db_name.')'), 'SQL Reconnect');
-                // 重新链接，$this 默认是 default_w 的
-                // $this->reconnect();
-                $db_conn->reconnect();
+                log::info($err_msg, 'SQL Reconnect');
+                // 重新链接，$this 默认是default_w 的
+                //$this->reconnect();
+                $db_conn->reconnect($db_conn->_name);
                 // 再次执行当前方法
                 return $this->execute($is_master, $params, $sql);
             }
@@ -798,26 +979,38 @@ class db_connection
                     usleep($this->_atts['delay']);
                 }
 
-                log::warning($errmsg, 'Deadlock Retry');
+                log::info($err_msg, 'Deadlock Retry');
                 return $this->execute($is_master, $params, $sql);
             }
 
-            //如果发生错误，应该重置，否则会发生不可预见的问题
-            $this->reset();
-
+            log::error($errno . '=>' . $err_msg, 'SQL Error');
+            $ignore = $this->_atts['ignore'] ?? false;
             // 没有设置忽略错误
-            if ( empty($this->_atts['ignore']) ) 
+            if ( !$ignore ) 
             {
-                log::error(sprintf("%s [%s]", $errmsg, $real_sql), 'SQL Error');
-                $tracemsg = $this->get_exception_trace($e);
+                //$this->_sql = $sql;
+                $tracemsg   = $this->get_exception_trace($e, $real_sql);
                 throw new Exception($tracemsg);
             }
 
             return null;
         }
+        finally 
+        {
+            if ( isset($stmt) && $stmt ) 
+            {
+                $stmt->close();
+            }
 
-        $this->reset();
+            $this->reset();
+        }
+
         return $result;
+    }
+
+    public function link_id()
+    {
+        return mysqli_thread_id($this->_handler());
     }
 
     /**
@@ -862,6 +1055,12 @@ class db_connection
         if (is_string($tables))
         {
             $tables = explode(',', $tables);
+        }
+        // 子查询语句
+        else if( is_object($tables) )
+        {
+            $this->_from[0] = $tables;
+            return $this;
         }
 
         foreach ($tables as $val)
@@ -1081,9 +1280,25 @@ class db_connection
      *
      * @return  $this
      */
-    public function limit($number)
+    public function limit(int $number)
     {
-        $this->_limit = (int) $number;
+        if ($number != 0) 
+        {
+            $this->_limit = $number;
+        }
+        return $this;
+    }
+
+    /**
+     * Return up to "BY..." results
+     *
+     * @param   integer  $number  maximum results to return
+     *
+     * @return  $this
+     */
+    public function limit_by($field)
+    {
+        $this->_limit_by = $field;
         return $this;
     }
 
@@ -1097,10 +1312,9 @@ class db_connection
      */
     public function join($table, $type = NULL)
     {
-        if (!empty($type))
+        if ( $type )
         {
             $type = strtoupper(trim($type));
-
             if ( ! in_array($type, array('LEFT', 'RIGHT', 'OUTER', 'INNER', 'LEFT OUTER', 'RIGHT OUTER'), TRUE))
             {
                 $type = '';
@@ -1191,11 +1405,14 @@ class db_connection
         foreach($columns as $idx => $column)
         {
             // if an array of columns is passed, flatten it
-            if (is_array($column))
+            if ( is_array($column) )
             {
                 foreach($column as $c)
                 {
-                    $columns[] = $c;
+                    if ( $c ) 
+                    {
+                        $columns[] = $c;
+                    }
                 }
                 unset($columns[$idx]);
             }
@@ -1369,12 +1586,12 @@ class db_connection
         return $this->get_compiled_sql($real);
     }
 
-    public function get_compiled_sql($real = false)
+    public function get_compiled_sql()
     {
         // Compile the SQL query
         $sql = $this->compile();
         $this->reset();
-        return $real ?  $this->convert_back_sql($sql) : $sql;
+        return $sql;
     }
 
     public function get_compiled_select()
@@ -1423,7 +1640,7 @@ class db_connection
                 is_bool($this->_atts['is_union_table']) ? 't' . uniqid() : $this->_atts['is_union_table']
             );
         }
-        else if ( ! empty($this->_from))
+        else if ( !empty($this->_from) )
         {
             // Set tables to select from
             $sql .= ' FROM '.implode(', ', array_unique(array_map($quote_table, $this->_from)));
@@ -1435,19 +1652,19 @@ class db_connection
             $this->_atts['index_name'] = '';
         }
 
-        if ( ! empty($this->_join))
+        if ( !empty($this->_join) )
         {
             // Add tables to join[$table]
             $sql .= ' '.$this->_compile_join($this->_join);
         }
 
-        if ( ! empty($this->_where))
+        if ( !empty($this->_where) )
         {
             // Add selection conditions
             $sql .= ' WHERE '.$this->_compile_conditions($this->_where);
         }
 
-        if ( ! empty($this->_group_by))
+        if ( !empty($this->_group_by) )
         {
             // Add sorting
             $sql .= ' GROUP BY '.implode(', ', array_map($quote_ident, $this->_group_by));
@@ -1467,7 +1684,7 @@ class db_connection
             }
         }
 
-        if ( ! empty($this->_order_by))
+        if ( !empty($this->_order_by) )
         {
             // Add sorting
             $sql .= ' '.$this->_compile_order_by($this->_order_by);
@@ -1479,24 +1696,30 @@ class db_connection
         }
 
         // select 查询 limit 需要做下限制
-        if (PHP_SAPI !== 'cli') 
+        if ( PHP_SAPI !== 'cli' && $this->_max_select_limit ) 
         {
             $this->_limit = empty($this->_limit) ? $this->_max_select_limit : min($this->_limit, $this->_max_select_limit);
         }
 
-        if ( ! empty($this->_limit))
+        if ( $this->_limit !== NULL )
         {
             // Add limiting
             $sql .= ' LIMIT '.$this->_limit;
         }
 
-        if ($this->_offset !== NULL)
+        if ( $this->_limit_by !== NULL )
+        {
+            // Add limiting
+            $sql .= ' BY '.$this->_limit_by;
+        }
+
+        if ( $this->_offset !== NULL )
         {
             // Add offsets
             $sql .= ' OFFSET '.$this->_offset;
         }
 
-        if(  !empty($this->_atts['lock']) && empty($this->_as_row) ) 
+        if( !empty($this->_atts['lock']) && empty($this->_as_row) ) 
         {
             $this->_atts['lock'] = false;//用过一次后释放
             $sql .= ' FOR UPDATE';
@@ -1524,16 +1747,20 @@ class db_connection
         return $delay . $ignore;
     }
 
+    public function get_current_db_name()
+    {
+        return $this->_atts['instance_name']['db_name'] ?? $this->_db_name;
+    }
+
     public function get_compiled_insert()
     {
-        $table = $this->table_prefix($this->_table);
+        $table  = $this->table_prefix($this->_table);
         // Start an insertion query
-        $sql   = 'INSERT ' . $this->_get_compiled_atts() .' INTO '.$table;
-
+        $sql    = 'INSERT ' . $this->_get_compiled_atts() .' INTO '.$table;
         //因为json字段初始化不能为空，否则后面是没发更新的，必须给他一个默认值{}
-        if ( !empty(self::$config[$this->_db_name]['json_fields'][$table]) ) 
+        if ( !empty(self::$config[$this->get_current_db_name()]['json_fields'][$table]) ) 
         {
-            foreach (self::$config[$this->_db_name]['json_fields'][$table] as $field) 
+            foreach (self::$config[$this->get_current_db_name()]['json_fields'][$table] as $field) 
             {
                 if ( !in_array($field, $this->_columns) ) 
                 {
@@ -1548,14 +1775,13 @@ class db_connection
 
         // Add the column names
         $sql .= ' ('.implode(', ', array_map(array($this, 'quote_identifier'), $this->_columns)).') ';
-
         if (is_array($this->_values))
         {
             // Callback for quoting values
             //$quote = array($this, 'quote');
             $quote  = array($this, 'quote_value');
-
             $groups = array();
+            // 批量插入的时候字段必须一致，所以以第一个数组的field为准
             $fields = array_keys(reset($this->_values));
             foreach ($this->_values as $group_item)
             {
@@ -1587,9 +1813,9 @@ class db_connection
                 //$val = str_replace("'AES_ENCRYPT", "AES_ENCRYPT", $val);
                 //$val = str_replace("')'", "')", $val);
                 //$groups[] = $val;
-                $groups[] = '('.implode(', ', array_map($quote, $group)).')';
+                $groups[] = '(' . implode(', ', array_map($quote, $group)) . ')';
             }
-   
+
             // Add the values
             $sql .= 'VALUES '.implode(', ', $groups);
         }
@@ -1601,7 +1827,7 @@ class db_connection
 
         if ( !empty($this->_dups) )
         {
-            $sql .= ' ON DUPLICATE KEY  UPDATE '.$this->_compile_dups($this->_dups);
+            $sql .= ' ON DUPLICATE KEY  UPDATE ' . $this->_compile_dups($this->_dups);
             $this->_dups = [];
         }
 
@@ -1610,6 +1836,7 @@ class db_connection
 
     /**
      * 设置批量更新字段
+     * @DateTime 2022-05-31
      * @param    string     $field 
      */
     public function set_update_cmp_field(string $field)
@@ -1621,90 +1848,88 @@ class db_connection
     public function get_compiled_update()
     {
         // Start an update query
-        $sql = 'UPDATE '. $this->_get_compiled_atts() .
+        $sql = 'UPDATE ' . $this->_get_compiled_atts() .
             $this->table_prefix($this->_table);
         if ( ! empty($this->_join))
         {
             // Add tables to join
-            $sql .= ' '.$this->_compile_join($this->_join);
+            $sql .= ' ' . $this->_compile_join($this->_join);
         }
 
         //批量更新
         if ( isset($this->_atts['update_cmp_field']) ) 
         {
-            $sql .= ' SET '.$this->_compile_batch_update_set($this->_set);
+            $sql .= ' SET ' . $this->_compile_batch_update_set($this->_set);
         }
         else
         {
             // Add the columns to update
-            $sql .= ' SET '.$this->_compile_set($this->_set);
+            $sql .= ' SET ' . $this->_compile_set($this->_set);
         }
 
         if ( ! empty($this->_where))
         {
             // Add selection conditions
-            $sql .= ' WHERE '.$this->_compile_conditions($this->_where);
+            $sql .= ' WHERE ' . $this->_compile_conditions($this->_where);
         }
 
         if ( ! empty($this->_order_by))
         {
             // Add sorting
-            $sql .= ' '.$this->_compile_order_by($this->_order_by);
+            $sql .= ' ' . $this->_compile_order_by($this->_order_by);
         }
 
-        if ( ! empty($this->_limit))
+        if ($this->_limit !== null)
         {
             // Add limiting
-            $sql .= ' LIMIT '.$this->_limit;
+            $sql .= ' LIMIT ' . $this->_limit;
         }
-
+        
         return $sql;
     }
 
     public function get_compiled_delete()
     {
         // Start a deletion query
-        $sql = 'DELETE ' .$this->_get_compiled_atts(). ' FROM ' .$this->table_prefix($this->_table);
-
+        $sql = 'DELETE ' . $this->_get_compiled_atts(). ' FROM ' . $this->table_prefix($this->_table);
         if ( ! empty($this->_where))
         {
             // Add deletion conditions
-            $sql .= ' WHERE '.$this->_compile_conditions($this->_where);
+            $sql .= ' WHERE ' . $this->_compile_conditions($this->_where);
         }
 
         if ( ! empty($this->_order_by))
         {
             // Add sorting
-            $sql .= ' '.$this->_compile_order_by($this->_order_by);
+            $sql .= ' ' . $this->_compile_order_by($this->_order_by);
         }
 
-        if ( ! empty($this->_limit))
+        if ($this->_limit !== null)
         {
             // Add limiting
-            $sql .= ' LIMIT '.$this->_limit;
+            $sql .= ' LIMIT ' . $this->_limit;
         }
 
         return $sql;
     }
 
     // 暂时没用
-    public function get_fields($table)
-    {
-        // $sql = "SHOW COLUMNS FROM $table"; //和下面的语句效果一样
-        $rows   = $this->query("Desc `{$table}`")->execute();
-        $fields = array();
-        foreach ($rows as $v)
-        {
-            // 过滤自增主键
-            // if ($v['Key'] != 'PRI')
-            if ($v['Extra'] != 'auto_increment')
-            {
-                $fields[] = $v['Field'];
-            }
-        }
-
-        return $fields;
-    }
+    // public function get_fields($table)
+    // {
+    //     // $sql = "SHOW COLUMNS FROM $table"; //和下面的语句效果一样
+    //     $rows = db::get_all("Desc `{$table}`");
+    //     $fields = array();
+    //     foreach ($rows as $v)
+    //     {
+    //         // 过滤自增主键
+    //         // if ($v['Key'] != 'PRI')
+    //         if ($v['Extra'] != 'auto_increment')
+    //         {
+    //             $fields[] = $v['Field'];
+    //         }
+    //     }
+    //     return $fields;
+    // }
 
     //-------------------------------------------------------------
     // INSERT
@@ -1822,7 +2047,7 @@ class db_connection
     /**
      * Set the value of a single column.
      *
-     * @param   mixed  $column  field name or [$table, $alias] or object
+     * @param   mixed  $column  table name or [$table, $alias] or object
      * @param   mixed  $value   column value
      *
      * @return  $this
@@ -1860,22 +2085,21 @@ class db_connection
      */
     protected function _compile_join(array $joins)
     {
-        foreach (array_keys($joins) as $key)
+        foreach (array_keys($joins) as $key) 
         {
-            $conditions = array();
-
+            $conditions = [];
             foreach ($this->_on[$key] as $condition)
             {
                 // Split the condition
                 list($c1, $op, $c2, $chaining) = $condition;
 
                 // Add chain type
-                $conditions[] = ' '.$chaining.' ';
+                $conditions[] = ' ' . $chaining . ' ';
 
                 if ($op)
                 {
                     // Make the operator uppercase and spaced
-                    $op = ' '.strtoupper($op);
+                    $op = ' ' . strtoupper($op);
                 }
 
                 // Quote each of the identifiers used for the condition
@@ -1888,15 +2112,15 @@ class db_connection
                 {
                     $c2 = $this->quote_identifier($c2);
                 }
-
-                $conditions[] = $c1.$op.' '.(is_null($c2) ? 'NULL' : $c2);
+                
+                $conditions[] = $c1 . $op . ' ' . (is_null($c2) ? 'NULL' : $c2);
             }
 
             // remove the first chain type
             array_shift($conditions);
 
             // if there are conditions, concat the conditions "... AND ..." and glue them on...
-            empty($conditions) or $joins[$key] .= ' ON ('.implode('', $conditions).')';
+            empty($conditions) or $joins[$key] .= ' ON (' . implode('', $conditions) . ')';
 
         }
 
@@ -1909,7 +2133,7 @@ class db_connection
      * @param  mixed $value 
      * @return string      
      */
-    protected function _get_chr_value($value)
+    protected function get_chr_value($value)
     {
         // 全部转成string
         return sprintf(
@@ -1925,7 +2149,7 @@ class db_connection
      * @param    boolean    $filter_quote
      * @return   string        
      */
-    protected function _get_chr_pattern($width_quote = false)
+    protected function get_chr_pattern($width_quote = false)
     {
         $quote = $width_quote ? '\'' : '';
         return sprintf(
@@ -1942,38 +2166,18 @@ class db_connection
      * @param   string $sql
      * @return  string
      */
-    protected function convert_back_sql(string $sql)
+    public function convert_back_sql(string $sql)
     {
-        return preg_replace_callback($this->_get_chr_pattern(), function($matches) {
+        return preg_replace_callback($this->get_chr_pattern(), function($matches) {
             return $matches[1];
         }, $sql);
-    }
-
-    protected function get_prepare_sql(
-        $sql, 
-        array &$params = [], 
-        string &$types = ''
-    )
-    {
-        $prepared_sql = preg_replace_callback(
-            $this->_get_chr_pattern(true), 
-            function($matches) use (&$params, &$types) {
-                $val = $matches['where_val'];
-                $params[] = $val;
-                $types   .= 's';
-                return '?';
-            }, 
-            $sql
-        );
-
-        return $prepared_sql;
     }
 
     /**
      * 返回 prepare stmt
      * @param  object $db_conn
      * @param  string $sql    
-     * @return mysqli_stmt 
+     * @return object 
      */
     protected function convert_prepare_sql($db_conn, $sql) 
     {
@@ -1983,7 +2187,16 @@ class db_connection
         // bind_param的时候不能根据参数自动判断类型，因为数据库类型是varchar/char的时候这个时候给一个int,模版是i
         // 会导致索引失效，甚至导致返回错误数据，比如搜索123的时候，会把123xxxx查询处理，因为给他i,他会把数据库中的字段转成int
         // 索引模版直接全部给s,就不会出现因为类型错误，导致索引失效/数据错误的bug
-        $prepared_sql = $this->get_prepare_sql($sql, $params, $types);
+        $prepared_sql = preg_replace_callback(
+            $this->get_chr_pattern(true), 
+            function($matches) use (&$params, &$types) {
+                $val = $matches['where_val'];
+                $params[] = $val;
+                $types   .= 's';
+                return '?';
+            }, 
+            $sql
+        );
 
         // 使用 mysqli_prepare 函数创建 prepared statement
         $stmt = mysqli_prepare($db_conn->_handler(), $prepared_sql);
@@ -1996,11 +2209,38 @@ class db_connection
         // 绑定参数
         if ( $params ) 
         {
+            // 不能使用这种方式，数据库是非int,给一个int,模版变成i,会引发数据库字段类型转换，导致索引失效/数据查询错误
+            // $types = ''; // 参数类型字符串
+            // // 根据参数类型设置参数类型字符串
+            // foreach ($params as $param) 
+            // {   
+            //     if ( is_numeric($param) ) 
+            //     {
+            //         if (strpos($param, '.') !== false) 
+            //         {
+            //             $types .= 'd'; // 双精度浮点型
+            //         } 
+            //         else 
+            //         {
+            //             $types .= 'i'; // 整型
+            //         }
+            //     } 
+            //     else if (is_string($param)) 
+            //     {
+            //         $types .= 's'; // 字符串类型
+            //     } 
+            //     else 
+            //     {
+            //         $types .= 's'; // 默认为字符串类型
+            //         $param  = strval($param); // 将不支持的参数类型转换为字符串
+            //     }
+            // }
             // 使用 call_user_func_array 函数将参数绑定到 prepared statement
             $stmt->bind_param($types, ...$params);
         }
 
         $stmt->execute();
+        static::log_query($prepared_sql, 'prepare_sql');
         // 返回 prepared statement
         return $stmt;
     }
@@ -2014,11 +2254,10 @@ class db_connection
      *
      * @return  string
      */
-    protected function _compile_conditions(array $conditions)
+    public function _compile_conditions(?array $conditions = null)
     {
         $last_condition = NULL;
         $conditions     = $conditions ?? $this->_where;
-
         $sql = '';
         foreach ($conditions as $group)
         {
@@ -2030,7 +2269,7 @@ class db_connection
                     if ( ! empty($sql) AND $last_condition !== '(')
                     {
                         // Include logic operator
-                        $sql .= ' '.$logic.' ';
+                        $sql .= ' ' . $logic . ' ';
                     }
 
                     $sql .= '(';
@@ -2044,7 +2283,7 @@ class db_connection
                     if ( ! empty($sql) AND $last_condition !== '(')
                     {
                         // Add the logic operator
-                        $sql .= ' '.$logic.' ';
+                        $sql .= ' ' . $logic . ' ';
                     }
 
                     // Split the condition
@@ -2076,7 +2315,6 @@ class db_connection
                         {
                             // BETWEEN always has exactly two arguments
                             list($min, $max) = $value;
-
                             if (is_string($min) AND array_key_exists($min, $this->_parameters))
                             {
                                 // Set the parameter as the minimum
@@ -2115,7 +2353,7 @@ class db_connection
                             list($column, $json_field) = explode('->', $column, 2);
 
                             $column = $this->quote_field($column, false);
-                            $sql .= $column.'->\'$.' . $json_field . '\' '.$op.' '.$value;
+                            $sql .= $column . '->\'$.' . $json_field . '\' ' . $op . ' ' . $value;
                         }
                         else
                         {
@@ -2123,11 +2361,11 @@ class db_connection
                             $column = $this->quote_field($column, false);
                             if ($op === 'FIND_IN_SET') 
                             {
-                                $sql .= $op."( '{$value}', {$column} )";
+                                $sql .= $op . "( '{$value}', {$column} )";
                             }
                             else 
                             {
-                                $sql .= $column.' '.$op.' '.$value;
+                                $sql .= $column . ' ' . $op . ' ' . $value;
                             }
                         }
                     }
@@ -2156,8 +2394,7 @@ class db_connection
         {
             // Split the set
             list($column, $value) = $group;
-
-            if (is_string($value) AND array_key_exists($value, $this->_parameters))
+            if ( is_string($value) AND array_key_exists($value, $this->_parameters) )
             {
                 // Use the parameter value
                 $value = $this->_parameters[$value];
@@ -2167,7 +2404,7 @@ class db_connection
             $column = $this->quote_identifier($column);
 
             // Quote the column name
-            $set[$column] = $column.' = '.$value;
+            $set[$column] = $column .' = ' . $value;
         }
 
         return implode(', ', $set);
@@ -2224,6 +2461,7 @@ class db_connection
         $this->and_where($pk, 'IN', $pk_vals);
         return implode(', ', $set);
     }
+
     /**
      * Compiles an array of set values into an SQL partial. Used for UPDATE.
      *
@@ -2235,7 +2473,8 @@ class db_connection
     protected function _compile_dups(array $values) 
     {
         $dups = array();
-        foreach ($values as $group) {
+        foreach ($values as $group) 
+        {
             // Split the dups
             list($column, $value) = $group;
             if (is_string($value) AND array_key_exists($value, $this->_parameters)) 
@@ -2259,21 +2498,21 @@ class db_connection
                         $ff    = is_array($ff) ? addslashes(json_encode((object)$ff, JSON_UNESCAPED_UNICODE)) : $ff;
                         //string的才加‘’,否则不加
                         // $ff    = is_string($ff) || !$ff ? "'{$ff}'" : $ff;
-                        $tmp[] = "'$.\"{$f}\"', " . $this->_get_chr_value($ff);
+                        $tmp[] = "'$.{$f}', " . $this->quote($ff);
                     }
 
                     $value = 'JSON_SET(' . implode(", ", $tmp) . ')';
                 }
             }
-            // 兼容 `xxx` 和 values(`xxx`)
-            else if(!preg_match('#values\s*\([^\)]+\)#i', $value ?? ''))
+            // 兼容`xxx`和values(`xxx`)
+            else if( !preg_match('#values\s*\([^\)]+\)#i', $value) )
             {
                 $value = $this->quote_value(array($value, $column));
             }
 
             // Quote the column name
             $column = $this->quote_identifier($column);
-            $dups[$column] = $column.' = '.$value;
+            $dups[$column] = $column . ' = ' . $value;
         }
 
         return implode(', ', $dups);
@@ -2281,15 +2520,14 @@ class db_connection
 
     /**
      * 检查某个字段是否在json中
-     * @Author han
      * @param  string $column 
      * @return bool   true/false
      */
     private function _check_json_field(string $column) : bool
     {
         if (      
-            !empty(self::$config[$this->_db_name]['json_fields'][$this->_table]) && 
-            in_array($column, self::$config[$this->_db_name]['json_fields'][$this->_table])
+            !empty(self::$config[$this->get_current_db_name()]['json_fields'][$this->_table]) && 
+            in_array($column, self::$config[$this->get_current_db_name()]['json_fields'][$this->_table])
         ) 
         {
             return true;
@@ -2319,7 +2557,7 @@ class db_connection
                 continue;
             }
 
-            if ( !empty($direction))
+            if ( $direction )
             {
                 $direction = strtoupper($direction);
                 $direction = ' '.($direction == 'ASC' ? 'ASC' : 'DESC');
@@ -2348,7 +2586,7 @@ class db_connection
 
             foreach ($array as $from => $to)
             {
-                substr($from, 0, 1) !== ':' and $from = ':'.$from;
+                substr($from, 0, 1) !== ':' and $from = ':' . $from;
                 $tr_arr[$from] = $to;
             }
             unset($array);
@@ -2393,7 +2631,31 @@ class db_connection
     // 忽略错误
     public function ignore($value = true) 
     {
-        $this->_atts['ignore'] =(bool) $value;
+        $this->_atts['ignore'] = (bool) $value;
+        return $this;
+    }
+
+    /**
+     * 禁止记录日志
+     * @param    boolean    $value
+     * @return   $this   
+     */
+    public function un_log($value = true)
+    {
+        $this->_atts['un_log'] = (bool) $value;
+        return $this;
+    }
+
+    /**
+     * 延时插入/更新/删除等操作,可以大大降低服务器压力，如果是强业务型的一般不能使用
+     * @param  integer $value 
+     * 1. LOW_PRIORITY会导致客户端程序一直等待，直到其他客户端程序完成任务，它才会尝试插入操作
+     * 2. DELAYED，当释放客户端程序来执行其他语句的时候，要被插入的数据行会在一个缓冲区中排队等候
+     * @return $this
+     */
+    public function delay($value = 1)
+    {
+        $this->_atts['delay'] = (int) $value;
         return $this;
     }
 
@@ -2435,16 +2697,26 @@ class db_connection
      * @param string $default_db 是否为默认库
      * @return  $this
      */
-    public function from_db($name = null, $config_file = null, $default_db = null)
+    public function from_db(
+        ?string $name        = null, 
+        ?string $config_file = null, 
+        ?bool   $default_db  = null, 
+        ?array  $slave_index = null
+    )
     {
-        self::init_db($name, $config_file, $default_db);
-        $_instance_name = self::get_instance_name($name);
-        if( !isset(self::$_instance[$_instance_name['master']]) )
-        {
-            throw new Exception("instance:{$name} is not exit", 3001);
-        }
+        // if( $name )
+        // {
+            $name = self::get_db_name($name, $slave_index);
+            self::init_db($name, $config_file, $default_db, $slave_index);
+            $instance_name = self::get_instance_name($name);
+            if( !isset(self::$_instance[$instance_name['master']]) )
+            {
+                throw new Exception("instance:{$name} is not exit", 3001);
+            }
 
-        $this->_atts['instance_name'] = $_instance_name;
+            $this->_atts['instance_name'] = $instance_name;
+            $this->_db_name = $name;
+        // }
 
         return $this;
     }
@@ -2495,8 +2767,16 @@ class db_connection
     {
         if ($table !== null)
         {
-            $table = str_replace('#PB#', self::$config[$this->_db_name]['prefix'] ?? '', trim($table));
-            $table = str_replace('#!PB#', '#PB#', $table);
+            if ( is_array($table) ) 
+            {
+                $table[0] = self::table_prefix($table[0]);
+            }
+            else if( is_string($table) )
+            {
+                $table = str_replace('#PB#', self::$config[$this->_db_name]['prefix'], trim($table));
+                $table = str_replace('#!PB#', '#PB#', $table);
+            }
+            
             return $table;
         }
 
@@ -2505,14 +2785,12 @@ class db_connection
 
     public function errno() 
     {
-        $_instance_name = self::$config[$this->_db_name]['current_instance'];
-        return mysqli_errno(self::$_instance[$_instance_name]->_handler());
+        return mysqli_errno($this->_handler());
     }
 
     public function error() 
     {
-        $_instance_name = self::$config[$this->_db_name]['current_instance'];
-        return mysqli_error(self::$_instance[$_instance_name]->_handler());
+        return mysqli_error($this->_handler());
     }
 
     public function real_escape_string(string $string)
@@ -2535,7 +2813,7 @@ class db_connection
      */
     public function quote($value)
     {
-        if ($value === null)
+        if ( !isset($value) )
         {
             return 'null';
         }
@@ -2553,7 +2831,7 @@ class db_connection
             //if ($value instanceof db_query)
             //{
                 //// Create a sub-query
-                //return '('.$value->compile($this).')';
+                //$value = '('.$value->compile($this).')';
             //}
             if ($value instanceof db_expression)
             {
@@ -2570,10 +2848,25 @@ class db_connection
         }
         elseif (is_array($value))
         {
-            return '('.implode(', ', array_map(array($this, __FUNCTION__), $value)).')';
+            return !$value ? "('')" : '(' . implode(', ', array_map(array($this, __function__), $value)) . ')';
         }
+        // elseif (is_int($value))
+        // {
+        //     // $value = "'{$value}'";
+        // }
+        // elseif (is_float($value))
+        // {
+        //     // Convert to non-locale aware float to prevent possible commas
+        //     //$value = sprintf('%F', $value);
+        //     // $value = $value;
+        // }
+        // else
+        // {
+        //     // prepare 预处理不需要自己转义，否则会出现双重转义
+        //     //$value = $this->escape($value);
+        // }
 
-        return $this->_get_chr_value($value);
+        return $this->get_chr_value($value);
     }
 
     /**
@@ -2590,8 +2883,12 @@ class db_connection
      */
     public function quote_table($value)
     {
+        if ( is_object($value) ) 
+        {
+            return (string) $value;
+        }
         // Assign the table by reference from the value
-        if (is_array($value))
+        else if (is_array($value))
         {
             $table =& $value[0];
 
@@ -2649,7 +2946,7 @@ class db_connection
             // Separate the column and alias
             list($value, $alias) = $value;
 
-            return $value.' AS '.$this->quote_identifier($alias);
+            return $value.' AS ' . $this->quote_identifier($alias);
         }
         else
         {
@@ -2698,9 +2995,9 @@ class db_connection
             // 匹配CONCAT()
             if ( preg_match("#^concat\((.*?)\)#i", $value, $matchs) )
             {
-                $match_value = $matchs[1];
+                $match_value     = $matchs[1];
                 $match_value_arr = explode(",", $match_value);
-                $tmp_value_arr = array();
+                $tmp_value_arr   = array();
                 foreach ($match_value_arr as $v) 
                 {
                     $v = trim(str_replace('`', '', $v));
@@ -2711,17 +3008,17 @@ class db_connection
 
                 $quote_value = implode(", ", $tmp_value_arr);
                 $quote_value = preg_replace('#as\s+`[^`]+`#i', '', $quote_value);
-                $value = str_ireplace("concat(".$match_value.")", "CONCAT(".$quote_value.")", $value);
+                $value = str_ireplace("concat(" . $match_value . ")", "CONCAT(" . $quote_value . ")", $value);
             }
             // 匹配空格、tab符号、`符号
-            elseif (
+            elseif ( 
                 !preg_match('#distinct\s+#i', $value) && 
                 preg_match("#\(([ \t\w\`]+)\)#i", $value, $matchs)
             )
             {
                 $match_value = $matchs[1];
                 $quote_value = $this->quote_field($match_value, $select, true);
-                $value = str_replace("(".$match_value.")", "(".$quote_value.")", $value);
+                $value = str_replace("(" . $match_value . ")", "(" . $quote_value . ")", $value);
             }
 
             return $value;
@@ -2729,7 +3026,6 @@ class db_connection
 
         //去掉左右空格,防止字段前有多余空格
         $value = trim($value);
-
         // 使用AS的匿名
         if ($offset = strripos($value, ' AS '))
         {
@@ -2773,7 +3069,7 @@ class db_connection
         ) 
         {
             // $value = "CONVERT(AES_DECRYPT({$value}, '".self::$config[$this->_db_name]['crypt_key']."') USING utf8)";
-            $value = "AES_DECRYPT({$value}, '".self::$config[$this->_db_name]['crypt_key']."')";
+            $value = "AES_DECRYPT({$value}, '" . self::$config[$this->_db_name]['crypt_key'] . "')";
             // 只处理SELECT子句中的字段
             if ($select && !$inside) 
             {
@@ -2800,11 +3096,8 @@ class db_connection
     public function quote_value($fields)
     {
         $table = $this->_table;
-
-        $value = $fields[0];
-        $field = $fields[1];
-
-        if (is_object($value))
+        list($value, $field) = $fields;
+        if ( is_object($value) )
         {
             // 暂未使用
             //if ($value instanceof db_query)
@@ -2826,16 +3119,16 @@ class db_connection
 
         // 当前字段属于加密字段
         if ( 
-            !empty(self::$config[$this->_db_name]['crypt_fields'][$table]) && 
-            in_array($field, self::$config[$this->_db_name]['crypt_fields'][$table])
+            !empty(self::$config[$this->get_current_db_name()]['crypt_fields'][$table]) && 
+            in_array($field, self::$config[$this->get_current_db_name()]['crypt_fields'][$table])
         ) 
         {
-            $value = "AES_ENCRYPT('{$value}', '".self::$config[$this->_db_name]['crypt_key']."')";
+            $value = "AES_ENCRYPT('{$value}', '" . self::$config[$this->get_current_db_name()]['crypt_key'] . "')";
         }
         //json字段
         else if( 
-            !empty(self::$config[$this->_db_name]['json_fields'][$table]) && 
-            in_array($field, self::$config[$this->_db_name]['json_fields'][$table])
+            !empty(self::$config[$this->get_current_db_name()]['json_fields'][$table]) && 
+            in_array($field, self::$config[$this->get_current_db_name()]['json_fields'][$table])
         )
         {
             //更新
@@ -2855,15 +3148,16 @@ class db_connection
                         $ff    = is_array($ff) ? addslashes(json_encode((object)$ff, JSON_UNESCAPED_UNICODE)) : $ff;
                         //string的才加‘’,否则不加
                         // $ff    = is_string($ff) || !$ff ? "'{$ff}'" : $ff;
-                        $tmp[] = "'$.\"{$f}\"', " . $this->_get_chr_value($ff);
+                        $tmp[] = "'$.{$f}', " . $this->quote($ff);
                     }
 
-                    $value = 'JSON_SET('.implode(", ", $tmp).')';
+                    $value = 'JSON_SET(' . implode(", ", $tmp) . ')';
                 }
             }
             //插入
             else
             {
+
                 $value = !is_array($value) ?  $value : 
                     ($value ? json_encode($value, JSON_UNESCAPED_UNICODE) : json_encode(new \stdClass));
                 $value = $this->quote($value);
@@ -2871,8 +3165,9 @@ class db_connection
         }
         else 
         {
-            $value =  is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
-            $value  = isset($value) ? $this->quote($value) : 'NULL';
+            // prepare 预处理不需要自己转义，否则会出现双重转义
+            // $value = isset($value) ? $this->quote($this->real_escape_string($value)) : 'NULL';
+            $value = isset($value) ? $this->quote($value) : 'NULL';
         }
 
         return $value;
@@ -2914,7 +3209,7 @@ class db_connection
             // Separate the column and alias
             list($value, $alias) = $value;
 
-            return $this->quote_identifier($value).' AS '.$this->quote_identifier($alias);
+            return $this->quote_identifier($value) . ' AS ' . $this->quote_identifier($alias);
         }
 
         // 如果传进来的SQL片段带有转义字符，直接返回，不进行下面的转义
@@ -2930,7 +3225,7 @@ class db_connection
             {
                 $match_value = $matchs[1];
                 $quote_value = $this->quote_identifier($match_value);
-                $value = str_replace("(".$match_value.")", "(".$quote_value.")", $value);
+                $value = str_replace("(" . $match_value . ")", "(" . $quote_value . ")", $value);
             }
             return $value;
         }
@@ -2972,7 +3267,7 @@ class db_connection
             }
 
             // Quote each of the parts
-            return implode('.', array_map(array($this, __FUNCTION__), $parts));
+            return implode('.', array_map([$this, __FUNCTION__], $parts));
         }
 
         return "`{$value}`";
@@ -2986,6 +3281,7 @@ class db_connection
      */
     public function escape($value)
     {
+        // $value = $this->real_escape_string($value);
         // SQL standard is to use single-quotes for all values
         return isset($value) ? "'$value'" : 'null';
     }
@@ -3104,23 +3400,24 @@ class db_connection
         $this->_sql        = null;
         $this->_type       = null;
         $this->_table      = null;
-        $this->_select     = array();
-        $this->_from       = array();
-        $this->_join       = array();
-        $this->_on         = array();
-        $this->_where      = array();
-        $this->_group_by   = array();
-        $this->_having     = array();
-        $this->_order_by   = array();
+        $this->_select     = [];
+        $this->_from       = [];
+        $this->_join       = [];
+        $this->_on         = [];
+        $this->_where      = [];
+        $this->_group_by   = [];
+        $this->_having     = [];
+        $this->_order_by   = [];
         $this->_distinct   = false;
         $this->_limit      = null;
+        $this->_limit_by   = null;
         $this->_offset     = null;
         // insert
-        $this->_columns    = array();
-        $this->_values     = array();
+        $this->_columns    = [];
+        $this->_values     = [];
         // update
-        $this->_set        = array();
-        $this->_atts       = array();
+        $this->_set        = [];
+        $this->_atts       = [];
 
         $this->_as_sql     = false;
         $this->_as_object  = false;
@@ -3128,10 +3425,8 @@ class db_connection
         $this->_as_field   = false;
         $this->_as_result  = false;
 
-        $this->_parameters = array();
-
-        $this->_max_select_limit = 300;
-
+        $this->_parameters = [];
+        $this->_max_select_limit = 0;
         return $this;
     }
 
@@ -3147,9 +3442,9 @@ class db_connection
                 $this->reconnect($name);
             }
 
-            static::log_query('autocommit ' . ($mode ? 'true' : 'false'), 'sql', $name);
+            $this->log_query('autocommit ' . ($mode ? 'true' : 'false'), 'sql', $name);
             return mysqli_autocommit(
-                static::$_instance[$name]->_handler(), 
+                $handle, 
                 $mode
             );
         } 
@@ -3159,7 +3454,7 @@ class db_connection
                 "%s:%s [%s]", 
                 $e->getCode(), 
                 $e->getMessage(), 
-                'autocommit'.'('.$name.')'), 
+                'autocommit' . '(' . $name . ')'), 
                 'SQL Reconnect Error'
             );
 
@@ -3174,35 +3469,32 @@ class db_connection
                 throw new Exception($e->getMessage());
             }
         }
-
     }
 
     public function start()
     {
-        static::log_query('autocommit false');
         $this->_atts['start'] = true; // 数据库重连可能会导致事务丢失，标记开启了事务不重连
         return $this->autocommit(false);
     }
 
     public function commit()
     {
-        static::log_query('commit');
-        return mysqli_commit(static::$_instance[self::get_instance_name($this->_db_name, 'master')]->_handler());
+        $this->log_query('commit', 'sql', static::$_instance[$this->get_instance_group('master')]);
+        return mysqli_commit(static::$_instance[$this->get_instance_group('master')]->_handler());
     }
 
     public function rollback()
     {
-        static::log_query('rollback');
-        return mysqli_rollback(static::$_instance[self::get_instance_name($this->_db_name, 'master')]->_handler());
+        $this->log_query('rollback', 'sql', $this->get_instance_group('master'));
+        return mysqli_rollback(static::$_instance[$this->get_instance_group('master')]->_handler());
     }
 
     public function end()
     {
-        static::log_query('autocommit true');
         return $this->autocommit(true);
     }
 
-    public function get_exception_trace($e) 
+    public function get_exception_trace($e, ?string $sql = null) 
     {
         $ret   = [];
         $ret[] = $e->getMessage();
@@ -3217,9 +3509,9 @@ class db_connection
     */
     public function filter_sql($sql)
     {
-        $clean   = $error = '';
+        $clean = $error = '';
         $old_pos = 0;
-        $pos     = -1;
+        $pos = -1;
         // 完整的SQL检查，当数据量超过 1万 条的时候会出现性能瓶颈，特别是 10万 条的时候特别慢，最好就处理 1万 条
         while (true)
         {
@@ -3228,6 +3520,7 @@ class db_connection
             {
                 break;
             }
+
             $clean .= substr($sql, $old_pos, $pos - $old_pos);
             while (true)
             {
@@ -3244,45 +3537,35 @@ class db_connection
                 }
                 $pos = $pos2 + 1;
             }
+
             $clean .= '$s$';
             $old_pos = $pos + 1;
         }
+
         $clean .= substr($sql, $old_pos);
         $clean = trim(strtolower(preg_replace(array('~\s+~s'), array(' '), $clean)));
-        $fail = false;
+        $fail  = false;
         // sql语句中出现注解
         if (strpos($clean, '/*') > 2 || strpos($clean, '--') !== false || strpos($clean, '#') !== false)
         {
             $fail = true;
             $error = 'commet detect';
         }
-        // 常用的程序里也不使用union，但是一些黑客使用它，所以检查它
-        else if (strpos($clean, 'union') !== false && preg_match('~(^|[^a-z])union($|[^[a-z])~s', $clean) != 0)
+        else
         {
-            $fail = true;
-            $error = 'union detect';
+            foreach (self::$rps as $pattern) 
+            {
+                if (
+                    strpos($clean, $pattern) !== false && 
+                    preg_match("~(^|[^a-z]){$pattern}($|[^[a-z])~s", $clean) != 0)
+                {
+                    $fail = true;
+                    $error = "{$pattern} detect";
+                    break;
+                }
+            }
         }
-        // 这些函数不会被使用，但是黑客会用它来操作文件，down掉数据库
-        elseif (strpos($clean, 'sleep') !== false && preg_match('~(^|[^a-z])sleep($|[^[a-z])~s', $clean) != 0)
-        {
-            $fail = true;
-            $error = 'slown down detect';
-        }
-        elseif (strpos($clean, 'benchmark') !== false && preg_match('~(^|[^a-z])benchmark($|[^[a-z])~s', $clean) != 0)
-        {
-            $fail = true;
-            $error = "slown down detect";
-        }
-        elseif (strpos($clean, 'load_file') !== false && preg_match('~(^|[^a-z])load_file($|[^[a-z])~s', $clean) != 0)
-        {
-            $fail = true;
-            $error = "file fun detect";
-        }
-        elseif (strpos($clean, 'into outfile') !== false && preg_match('~(^|[^a-z])into\s+outfile($|[^[a-z])~s', $clean) != 0)
-        {
-            $fail = true;
-            $error = "file fun detect";
-        }
+        
         // 检测到有错误后记录日志并对非法关键字进行替换
         if ($fail === true)
         {
@@ -3290,8 +3573,8 @@ class db_connection
 
             // 进行日志
             $gurl = htmlspecialchars( req::cururl() );
-            $msg = "{$gurl}\n".htmlspecialchars( $sql )."\n";
-            log::warning($msg, 'filter_sql: ' . $error);
+            $msg = "{$gurl}\n" . htmlspecialchars( $sql ) . "\n";
+            log::warning($msg . $error, 'filter_sql');
         }
 
         return $sql;
@@ -3299,18 +3582,30 @@ class db_connection
 
     /**
      * 获取实例名称数组
-     * @param string $name 实例名称
-     * @param string $type master or slave
+     * @param  string  $name 实例名称
+     * @param  ?string $type master/slave 
+     * @return mixed
      */
     public static function get_instance_name($name = null, $type = null)
     {
         $name = self::get_muti_name($name);
         $instance_name = [
-            'master' => $name .'_w',
-            'slave'  => $name .'_r'
+            'master'  => $name .'_w',
+            'slave'   => $name .'_r',
+            'db_name' => $name,
         ];
 
-        return !empty($type) ? ($instance_name[$type] ?? $instance_name['master']) : $instance_name;
+        return !empty($type) ? $instance_name[$type] : $instance_name;
+    }
+
+    /**
+     * 获取当前实例组
+     * @param string|null $type  master/slave 
+     * @return mixed
+     */
+    public function get_instance_group(?string $type = null)
+    {
+        return static::get_instance_name($this->_db_name, $type);
     }
 
     /**
@@ -3331,7 +3626,6 @@ class db_connection
                 //兼容子进程下再开子进程
                 if ( !isset(self::$config[$muti_name]) && isset(self::$config[$name]) ) 
                 {
-
                     self::init_db($muti_name, self::$config[$name]['config_file']);
                 }
             }
@@ -3343,30 +3637,45 @@ class db_connection
     /**
      * 记录query的执行结果
      * @param  string       记录内容
-     * @param  string       记录类型 sql、query_time
      * @return bool         返回bool
      */
-    public static function log_query($content, $type = 'sql')
+    public function log_query($sql, $type = 'sql', ?string $curr_conn = null, $used_time = 0)
     {
-        // 非cli、调试模式、本机记录 SQL 和 时间，方便调试
-        if ( 
-            PHP_SAPI != 'cli' || 
-            (defined('SYS_DEBUG') && SYS_DEBUG === true) || 
-            (defined('IP') && IP === '127.0.0.1') 
-        )
+        // cli下最大记录条数
+        $max_len = 1000;
+        // 偏移多少后开始截取
+        $offset  = 100;
+        if ( in_array($type, ['sql', 'prepare_sql', 'query_time']) ) 
         {
-            if ($type == 'sql') 
+            if ( $type == 'sql' ) 
             {
-                db::$queries[] = $content;
+                db::$queries[] = ($curr_conn ? "[{$curr_conn}]: " : '') . $sql;
+                $tmp_var       = 'queries';
+                // var_dump($sql);
+                if ( empty($this->_atts['un_log']) ) 
+                {
+                    event::trigger(onSql, [$sql, $curr_conn, $used_time]);
+                }
             }
             elseif ($type == 'prepare_sql') 
             {
-                db::$prepare_queries[] = $content;
+                db::$prepare_queries[] = $sql;
+                $tmp_var = 'prepare_queries';
             }
             else
             {
-                db::$query_times[] = $content;
+                db::$query_times[] = $sql;
+                $tmp_var           = 'query_times';
             }
+
+            if ( IS_CLI && count(db::${$tmp_var}) > $max_len + $offset) 
+            {
+                db::${$tmp_var} = array_slice(db::${$tmp_var}, -$max_len);
+            }
+        }
+        else if( isset(db::$affected_rows[$type]) )
+        {
+            db::$affected_rows[$type] += (int) $sql;
         }
 
         return true;

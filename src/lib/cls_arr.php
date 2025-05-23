@@ -1506,4 +1506,115 @@ class cls_arr
         return $res;
     }
 
+    /**
+     * 判断是否为多维数组
+     * @param    mixed      $arr 
+     * @param    int        1包含计算算属性中的是否有数组 2.只计算数据
+     * @return   boolean       
+     */
+    public static function is_multiple_arr($arr, int $mode = 1): bool
+    {
+        if ( !is_array($arr) || count($arr) <= 0 ) 
+        {
+            return false;
+        }
+
+        if ( 1 == $mode ) 
+        {
+            $is_multi = count($arr) == count($arr, COUNT_RECURSIVE); 
+        }
+        else
+        {
+            $is_multi = true;
+            foreach($arr as $v)
+            {
+                if ( !is_array($v) ) 
+                {
+                    $is_multi = false;
+                    break;
+                }
+            }
+        }
+
+        return $is_multi;
+    }
+
+    /**
+     * 根据group_fields合并2个数组，有则相加，没有补全
+     * @param    array      $arr_a       
+     * @param    array      $arr_b       
+     * @param    array      $group_fields  合并字段
+     * @param    array|null $fields        为null,会自动获取$arr_a $arr_b 所有key
+     * @return   array        
+     */
+    public static function sum_group_by_fields(array $arr_a, array $arr_b, array $group_fields, ?array $fields = null)
+    {
+        if ( !$fields ) 
+        {
+            foreach(['arr_a', 'arr_b'] as $g)
+            {
+                 foreach(${$g} as $k => $v)
+                 {
+                    $fields = array_merge($fields ?? [], array_keys($v));
+                 }
+            }
+        }
+        else
+        {
+            $fields = array_merge($fields, $group_fields);
+        }
+
+        if ( !$fields ) 
+        {
+            return [];
+            // throw new \Exception('Ivalidate Fields parameters.');
+        }
+
+        $fields   = array_unique($fields);
+        $new_data = [];
+        foreach(['arr_a', 'arr_b'] as $g)
+        {
+            foreach(${$g} as $k => $v)
+            {
+                $_index = [];
+                foreach($group_fields as $f)
+                {
+                    $_index[] = $v[$f] ?? '';
+                }
+
+                $new_v = [];
+                foreach($fields as $f)
+                {
+                    $new_v[$f] = $v[$f] ?? (in_array($f, $group_fields) ? '' : 0);
+                }
+
+                $index = implode(':', $_index);
+                if ( !isset($new_data[$index]) ) 
+                {
+                    $new_data[$index] = $new_v;
+                }
+                else
+                {
+                    foreach($fields as $f)
+                    {
+                        if ( in_array($f, $group_fields) )
+                        {
+                            $new_data[$index][$f] = $new_v[$f];
+                        }
+                        else if ( is_numeric($new_v[$f]) && is_numeric($new_data[$index][$f]) ) 
+                        {
+                            $new_data[$index][$f] += $new_v[$f];
+                        }
+                        else
+                        {
+                            $new_data[$index][$f] = $new_data[$index][$f] ?: $new_v[$f];
+                        }
+                    }
+                }
+            }
+        }
+
+        return array_values($new_data);
+    }
+
 }

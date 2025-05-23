@@ -33,10 +33,16 @@ class cls_ip138
     {
         if (self::$db === null) 
         {
-            self::$db = fopen(($file = __DIR__ . '/../share/ip138.dat'), 'rb');
+            $filepath = APPPATH . '/../../../../ip138.dat';
+            if ( !file_exists($filepath)) 
+            {
+                exit($filepath . ' not exist.!');
+                throw new \Exception($filepath . ' not exist.!');
+            }
+            self::$db = fopen(($filepath), 'rb');
             if (self::$db === false) 
             {
-                throw new \Exception('Invalid ' . $file . ' file!');
+                throw new \Exception('Invalid ' . $filepath . ' file!');
             }
         }
     }
@@ -149,9 +155,9 @@ class cls_ip138
          $full_info = self::query($ip);
          $arr_info  = explode(chr(9), $full_info);
          return [
-            "country"  => $arr_info[0] ?? '',
-            "province" => $arr_info[1] ?? '',
-            "city"     => $arr_info[2] ?? ''
+            "countryName" => $arr_info[0] ?? '',
+            "regionName"  => $arr_info[1] ?? '',
+            "cityName"    => $arr_info[2] ?? ''
         ];
     }
     

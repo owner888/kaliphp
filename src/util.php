@@ -1678,6 +1678,59 @@ class util
         return $str;
     }
 
+    /**
+     * 2数相除
+     * @param    int|float     $a   
+     * @param    int|float     $b   
+     * @param    integer       $mode
+     * @return   int|float       
+     */
+    public static function division($a, $b, int $mode = 1)
+    {
+        if ( !$a || !$b ) 
+        {
+            return 0;
+        }
+
+        return !$mode ? floor($a/$b) : round($a/$b, $mode);
+    }
+
+    /**
+     * 获取百分百值
+     * @param    int|float     $a   
+     * @param    int|float     $b   
+     * @param    integer       $mode
+     * @param    bool          $width_percent 是否带上%
+     * @return   string      
+     */
+    public static function division_percent($a, $b, ?int $mode = null, bool $width_percent = false)
+    {
+        $mode = $mode ?? 1;
+        return self::division($a, $b, 2+$mode) * 100 . ($width_percent ? '%' : '');
+    }
+
+    /**
+     * 比较运算
+     * @param    mixed      $var1
+     * @param    string     $op  
+     * @param    mixed      $var2
+     * @return   bool      
+     */
+    public static function operation($var1, $op, $var2) 
+    {
+        switch ($op) 
+        {
+            case "=":  return $var1 == $var2;
+            case "!=": return $var1 != $var2;
+            case ">=": return $var1 >= $var2;
+            case "<=": return $var1 <= $var2;
+            case ">":  return $var1 >  $var2;
+            case "<":  return $var1 <  $var2;
+            case 'in': return in_array($var1, $var2);
+            default: return false;
+        }
+    }
+
 }
 
 /* vim: set expandtab: */

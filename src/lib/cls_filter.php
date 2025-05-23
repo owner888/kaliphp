@@ -517,18 +517,35 @@ class cls_filter
 
                 //当前字段不需要指定，如果要使用当前做参数的时候指定一个不存在的field,一般用row
                 $callback_field = $config['callback_field'] ?? $field;
-                $callback_param = $ret[$callback_field] ?? $ret;
+                $callback_param = $ret[$callback_field] ?? ($config['default'] ?? null);
                 foreach($funcs as $func)
                 {
                     if ( is_callable($func) )
                     {
                         if (is_array($ret[$field]))
                         {
-                            $ret[$field] = array_map($func, $callback_param);
+                            $ret[$field] = array_map(function($v) use($func, $data) {
+                                if($func instanceof \Closure) 
+                                {
+                                    return call_user_func_array($func, [$v, $data]);
+                                }
+                                else 
+                                {
+                                    return call_user_func_array($func, [$v]);
+                                }
+                                
+                            }, $callback_param);
                         }
                         else
                         {
-                            $ret[$field] = call_user_func($func, $callback_param);
+                            if($func instanceof \Closure) 
+                            {
+                                $ret[$field] = call_user_func_array($func, [$callback_param, $data]);
+                            }
+                            else 
+                            {
+                                $ret[$field] = call_user_func_array($func, [$callback_param]);
+                            }
                         }
                     }
                 }

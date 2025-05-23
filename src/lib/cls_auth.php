@@ -17,7 +17,6 @@ use kaliphp\db;
 use kaliphp\req;
 use kaliphp\util;
 use kaliphp\config;
-use kaliphp\session;
 use kaliphp\lib\cls_filter;
 
 use Exception;
@@ -239,7 +238,7 @@ class cls_auth
                     'logintime' => null,
                 ]);
 
-                list($id, $status) = db::insert(static::$table_config['user_session'])
+                [, $status] = db::insert(static::$table_config['user_session'])
                     ->set($data_filter)
                     ->dup($dups)
                     ->ignore(true)
@@ -412,7 +411,7 @@ class cls_auth
         if ( !empty(self::$config['app_name']) && !empty(static::$table_config['user_session']) ) 
         {
             // 插入用户登陆session
-            static::$utma && $status = static::save_user_session([
+            static::$utma && static::save_user_session([
                 'uid'         => $user['uid'],
                 'utma'        => static::$utma,
                 'token'       => session_id(),
@@ -736,6 +735,11 @@ class cls_auth
         cache::set(static::$_cache_prefix.'-'.$uid, $user);
     }
 
+    public function save_user_app_log($uid = null)
+    {
+
+    }
+    
     /**
      * 删除用户缓存
      *
@@ -808,6 +812,7 @@ class cls_auth
         {
             db::update(static::$table_config['user'])
                 ->set([
+                    'session_id' => $session_id, // 保存 session_id 到数据库，用于后台随时踢出
                     'logintime'  => $ltime,
                     'loginip'    => $loginip,
                 ])

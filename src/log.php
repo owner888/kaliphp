@@ -11,12 +11,24 @@
  */
 
 namespace kaliphp;
+
 use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
 use kaliphp\lib\cls_cli;
 use kaliphp\lib\cls_benchmark;
 
 defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
+
+defined('NONE')      or define('NONE',      0);     // 不记录日志
+defined('ALL')       or define('ALL',       99);    // 所有日志
+defined('DEBUG')     or define('DEBUG',     100);   // 详细的Debug信息
+defined('INFO')      or define('INFO',      200);   // 关键的事件或信息，如用户登录信息，SQL日志信息
+defined('NOTICE')    or define('NOTICE',    250);   // 普通但重要的事件信息
+defined('WARNING')   or define('WARNING',   300);   // 出现非错误的异常，示例：使用不推荐使用的API，使用不当的API
+defined('ERROR')     or define('ERROR',     400);   // 运行时错误，不需要立即执行，但通常应记录和监视
+defined('CRITICAL')  or define('CRITICAL',  500);   // 严重错误，示例：应用程序组件不可用，意外异常
+defined('ALERT')     or define('ALERT',     550);   // 必须立即采取行动，示例：整个网站关闭，数据库不可用等，这应该触发SMS警报并唤醒您
+defined('EMERGENCY') or define('EMERGENCY', 600);   // 紧急情况：系统不可用
 
 /**
  * 默认日志类
@@ -372,12 +384,27 @@ class log
 
         $msg = empty($context) ? $msg : $context.' - '.$msg;
 
+        // 是否对指定level的日志执行callback
+        $log_callback = config::instance('log')->get('log_callback');
+        if ( !empty($log_callback) && in_array($level, $log_callback['levels']))
+        {
+            try 
+            {
+                call_user_func_array($log_callback['func'], [self::$levels[$level], $msg, $context]);
+            } 
+            catch (\Throwable $e) 
+            {
+                self::$logs[ERROR][] = 'log_callback调用报错 - '. (string) $e;
+            }
+        }
+
         self::$logs[ $level ][] = $msg;
         if( PHP_SAPI == 'cli' || count(self::$logs[ $level ]) >= self::$max_log ) 
         {
             self::save();
             self::$logs[ $level ] = array();
         }
+
         return true;
     }
 

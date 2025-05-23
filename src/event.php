@@ -15,7 +15,7 @@ use kaliphp\kali;
 use kaliphp\lib\cls_chrome;
 use kaliphp\lib\cls_security;
 
-//event 默认事件
+// 默认事件动作
 defined('beforeAction') or define('beforeAction', 1);
 defined('afterAction') or define('afterAction', 2);
 defined('onException') or define('onException', 3);
@@ -24,6 +24,7 @@ defined('onRequest') or define('onRequest', 5);
 defined('onResponse') or define('onResponse', 6);
 defined('onFilter') or define('onFilter', 7);
 defined('onSql') or define('onSql', 'onSql');
+defined('onWarn') or define('onWarn', 'onWarn');
 
 /**
  * 事件类 
@@ -193,6 +194,12 @@ class event
         event::on(onRequest, ['kaliphp\event', 'on_request']);
         event::on(onResponse, ['kaliphp\event', 'on_response']);
         event::on(onSql, ['kaliphp\event', 'on_sql']);
+        event::on(onWarn, function($db_name, $sql, $query_time) {
+            log::warning(sprintf(
+                'Slow Query [%s]: %s (%ss)', 
+                $db_name, $sql, $query_time
+            ));
+        });
     }
 
     /**
@@ -254,11 +261,14 @@ class event
         }
 
         $forms = [
-            'ct' => 'index',
-            'ac' => 'index',
+            'ct'           => 'index',
+            'ac'           => 'index',
+            'ip'           => IP,
+            'country_code' => req::country(),
+            'country_cn'   => req::country_cn()
         ];
         $forms = array_merge($forms, req::$forms);
-        log::info('request: '.json_encode($forms), req::method());
+        log::info('request: '.json_encode($forms, JSON_UNESCAPED_UNICODE), req::method());
         //log::info('request: '.$request->getHostInfo().$request->getUrl());
     }
 
@@ -292,8 +302,7 @@ class event
 
     public static function on_sql($event, ?string $sql = null, ?string $db_name = null, $query_time = 0)
     {
-        // log::info(sprintf('SQL Query [%s]: %s (%ss)', $db_name, $sql, $query_time));
-
+        'dev' === SYS_ENV && log::info(sprintf('SQL Query [%s]: %s (%ss)', $db_name, $sql, $query_time));
         if ( SYS_CONSOLE )
         {
             cls_chrome::info('%c SQL语法 %c '.$sql.' ','color: white; background: #34495e; padding:5px 0;', 'background: #95a5a6; padding:5px 0;');

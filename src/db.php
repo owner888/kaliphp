@@ -22,11 +22,12 @@ use kaliphp\database\db_expression;
  */
 class db
 {
-    public static $config = [];
-    public static $queries = [];
+    public static $config          = [];
+    public static $queries         = [];
     public static $prepare_queries = [];
-    public static $query_times = [];
-    public static $query_db_names = [];
+    public static $query_times     = [];
+    public static $query_db_names  = [];
+    public static $affected_rows   = [];
 
     // Query types
     const SELECT =  1;
@@ -45,7 +46,7 @@ class db
      * 单例
      * @param string $name
      * @param bool $instance
-     * @return db
+     * @return db_connection
      */
     public static function instance($name = 'default_w', $config = [])
     {
@@ -127,14 +128,29 @@ class db
      * @param mixed $db  select默认会读取从库，提供db类方便读取主库
      * @return db_connection
      */
-    public static function select_count($table, $where = []): int
+    public static function select_count(string|db_connection $table, array $where = [], array $parameters = []): int
     {
-        return (int) db_connection::instance()
-            ->select('COUNT(*) AS `count`')
-            ->from($table)
-            ->where($where)
-            ->as_field()
-            ->execute();
+        $count = 0;
+        if ( $table instanceof db_connection )
+        {
+            $count = (int) $table->where($where)
+                ->parameters($parameters)
+                ->limit(1)
+                ->as_field()
+                ->execute();
+        }
+        else
+        {
+            $count = (int) db_connection::instance()
+                ->select('COUNT(*) AS `count`')
+                ->from($table)
+                ->where($where)
+                ->parameters($parameters)
+                ->as_field()
+                ->execute();
+        }
+
+        return $count;
     }
 
     /**
@@ -337,6 +353,16 @@ class db
     public static function raw($string)
     {
         return self::expr($string);
+    }
+
+    /**
+     * 获取当前配置信息
+     * @param    mixed     $name
+     * @return   mixed          
+     */
+    public static function get_config(?string $name = null, ?string $key = null)
+    {
+        return db_connection::get_config($name, $key);
     }
 
 }
