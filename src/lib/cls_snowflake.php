@@ -120,7 +120,7 @@ class cls_snowflake
         }
 
         //如果是同一时间生成的，则进行毫秒内序列 
-        if(self::$last_timestamp == $timestamp) 
+        if (self::$last_timestamp == $timestamp) 
         {
             self::$sequence = (self::$sequence + 1) & self::sequence_mask;
             //毫秒内序列溢出

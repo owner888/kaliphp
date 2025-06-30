@@ -172,8 +172,8 @@ class log
      */
     public static function exec_log($start = 'total_execution_start', $end = 'total_execution_end', $type = 0)
     {
-        if( !config::instance('log')->get('exec_log', false) ) : return false; endif;
-        if( req::method() == 'CLI' ) : return false; endif;
+        if ( !config::instance('log')->get('exec_log', false) ) : return false; endif;
+        if ( req::method() == 'CLI' ) : return false; endif;
 
         $exe_log['ip']          = req::ip();
         $exe_log['exe_url']     = req::url();
@@ -399,7 +399,7 @@ class log
         }
 
         self::$logs[ $level ][] = $msg;
-        if( PHP_SAPI == 'cli' || count(self::$logs[ $level ]) >= self::$max_log ) 
+        if ( PHP_SAPI == 'cli' || count(self::$logs[ $level ]) >= self::$max_log ) 
         {
             self::save();
             self::$logs[ $level ] = array();
@@ -416,7 +416,7 @@ class log
     public static function save()
     {
         // 保存到日志文件
-        foreach( self::$logs as $level => $msgs )
+        foreach ( self::$logs as $level => $msgs )
         {
             if ( isset(self::$levels[$level]) ) 
             {
@@ -432,7 +432,7 @@ class log
             // 是否输出到浏览器
             if ( SYS_CONSOLE && $is_sys_log ) 
             {
-                foreach( $msgs as $msg ) 
+                foreach ( $msgs as $msg ) 
                 {
                     cls_chrome::$level($msg);
                 }
@@ -440,7 +440,7 @@ class log
 
             if ( self::is_terminal() && $is_sys_log ) 
             {
-                foreach( $msgs as $msg ) 
+                foreach ( $msgs as $msg ) 
                 {
                     cls_cli::$level($msg);
                 }
@@ -448,7 +448,7 @@ class log
 
             if ( config::instance('log')->get('log_type') == 'monolog' && $is_sys_log ) 
             {
-                foreach($msgs as $msg) 
+                foreach ($msgs as $msg) 
                 {
                     static::instance()->log($level, $msg);
                 }
@@ -457,7 +457,7 @@ class log
             {
                 $log_file = APPPATH.DS.'data'.DS.'log'.DS.$level.'.log';
                 $log_msgs = '';
-                foreach($msgs as $msg) 
+                foreach ($msgs as $msg) 
                 {
                     $msg  = self::_format_line($level, $msg);
                     $log_msgs .= $msg;

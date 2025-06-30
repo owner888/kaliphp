@@ -109,7 +109,7 @@ class errorhandler
         // 所以session如果采用cache方式，这里不要释放，在 sesson::write() 里面释放
         // 没有启动session 或者 session类型不是cache的情况下
         // 反正是长链，缓存不要关了，否则session_regenerate_id会出问题
-        // if( !session_id() || $sess_config['type'] != 'cache' ) 
+        // if ( !session_id() || $sess_config['type'] != 'cache' ) 
         // {
         //     cache::free();
         // }
@@ -129,7 +129,7 @@ class errorhandler
     {
         $err = self::format_errstr($errno, $errstr, $errfile, $errline, $errcontext);
         // 存在错误信息
-        if( $err != '@' )
+        if ( $err != '@' )
         {
             log::debug("\nError Trace:\n".self::strip_tags($err));
             // CLI下面没必要保存日志到最后，直接debug里面输出即可
@@ -158,7 +158,7 @@ class errorhandler
      */
     public static function xhprof_handler()
     {
-        if( PHP_SAPI !== 'cli' && function_exists('xhprof_enable') && SYS_DEBUG )
+        if ( PHP_SAPI !== 'cli' && function_exists('xhprof_enable') && SYS_DEBUG )
         {
             defined('PATH_LIBRARY') or define('PATH_LIBRARY',   './lib');
             $xhprof_data = \xhprof_disable();
@@ -177,9 +177,9 @@ class errorhandler
      */
     public static function show_error()
     {
-        if( self::$_debug_error_msg != '' || self::$_debug_mt_info !='' )
+        if ( self::$_debug_error_msg != '' || self::$_debug_mt_info !='' )
         {
-            if( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
+            if ( ( SYS_DEBUG === true || self::$_debug_safe_ip === true ) && !self::$_debug_hidden )
             {
                 // API接口不需要返回那么详细的html内容
                 if ( req::is_json() ) 
@@ -219,9 +219,9 @@ class errorhandler
         // 处理从 catch 过来的错误
         if ( in_array($errno, $user_errors) )
         {
-            foreach( $errcontext as $e )
+            foreach ( $errcontext as $e )
             {
-                if( is_object($e) && method_exists($e, 'getMessage') ) 
+                if ( is_object($e) && method_exists($e, 'getMessage') ) 
                 {
                     $errno      = $e->getCode();
                     $errstr     = $errstr.' '.$e->getMessage();
@@ -234,13 +234,13 @@ class errorhandler
 
         // 生产环境不理会普通的警告错误
         // $not_save_error = [ E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_NOTICE, E_USER_WARNING, E_WARNING ];
-        // if( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
+        // if ( SYS_DEBUG !== true && !in_array($errno, $not_save_error) )
         // {
         //    return '@';
         // }
 
         // 错误文件不存在
-        if( !is_file($errfile) )
+        if ( !is_file($errfile) )
         {
             return '@';
         }
@@ -253,7 +253,7 @@ class errorhandler
         {
             $line = fgets($fp, 1024);
             $n++;
-            if( $n == $errline ) 
+            if ( $n == $errline ) 
             {
                 $errline_str = trim($line);
                 break;
@@ -262,7 +262,7 @@ class errorhandler
         fclose($fp);
 
         // 如果错误行用 @ 进行屏蔽，不显示错误
-        if( $errline_str[0] == '@' || preg_match("/[\(\t ]@/", $errline_str) ) 
+        if ( $errline_str[0] == '@' || preg_match("/[\(\t ]@/", $errline_str) ) 
         {
             return '@';
         }
@@ -274,7 +274,7 @@ class errorhandler
         }
 
         // 错误类型不存在
-        if( !isset(self::$_debug_errortype[$errno]) )
+        if ( !isset(self::$_debug_errortype[$errno]) )
         {
             self::$_debug_errortype[$errno] = "<font color='#466820'>手动抛出</font>";
         }
@@ -294,11 +294,11 @@ class errorhandler
         {
             foreach ( $narr as $k )
             {
-                if( !isset($trace[$k]) ) $trace[$k] = '';
+                if ( !isset($trace[$k]) ) $trace[$k] = '';
             }
             $err .= "<font color='#747267'>[$i] in function {$trace['class']}{$trace['type']}{$trace['function']} ";
-            if($trace['file']) $err .= " in {$trace['file']} ";
-            if($trace['line']) $err .= " on line {$trace['line']} ";
+            if ($trace['file']) $err .= " in {$trace['file']} ";
+            if ($trace['line']) $err .= " on line {$trace['line']} ";
             $err .= "</font><br />\n";
         }
 
@@ -361,9 +361,9 @@ class errorhandler
      */
     public static function test_debug_mt($optmsg)
     {
-        if( SYS_DEBUG === true || self::$_debug_safe_ip )
+        if ( SYS_DEBUG === true || self::$_debug_safe_ip )
         {
-            if( empty(self::$_debug_mt_time) )
+            if ( empty(self::$_debug_mt_time) )
             {
                 self::$_debug_mt_time = microtime(true);
                 $m = sprintf('%0.2f', memory_get_usage()/1024/1024);

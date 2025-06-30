@@ -21,7 +21,7 @@ use kaliphp\lib\cls_security;
  * 系统spam相关操作，目的是为了能在后台可视化管理spam数据，否则杂乱无章
  * 使用方法
  *  $key = 'login:username:fuck'; //模块:验证类别:类别值
- *  if( false == cls_spam::check($key, $spam_username) ) 
+ *  if ( false == cls_spam::check($key, $spam_username) ) 
  *  {
  *      //已经超出阀值
  *  }
@@ -83,10 +83,10 @@ class cls_spam
     public static function get($key)
     {
         $_key  = self::get_key($key);
-        if( !isset(self::$spam_data[$_key]) )
+        if ( !isset(self::$spam_data[$_key]) )
         {
             self::$spam_data[$_key] = cls_security::spam(['key' => $_key]);
-            if( !empty(self::$spam_data[$_key]) )
+            if ( !empty(self::$spam_data[$_key]) )
             {
                 self::$spam_data[$_key]['limit']    = self::get_system_limit($key);
                 self::$spam_data[$_key]['interval'] = self::get_system_limit($key, 'interval');
@@ -119,7 +119,7 @@ class cls_spam
             self::$spam_data[$_key]['interval'] : 0;
 
         //检查是否触发频率阀值
-        if( 
+        if ( 
             !empty($interval) &&
             !empty(self::$spam_data[$_key]['timestamp']) &&
             (time() - self::$spam_data[$_key]['timestamp'] <= $interval) )
@@ -132,9 +132,9 @@ class cls_spam
             $ret = self::$spam_data[$_key]['total'] < $limit || $limit === 0;
 
             //如果limit未ip,则会自动检查ip的限制
-            if( !empty($ret) && !empty($auto_ip_spam) )
+            if ( !empty($ret) && !empty($auto_ip_spam) )
             {
-                if( false != ($ip_key = self::get_ip_key($key)) )
+                if ( false != ($ip_key = self::get_ip_key($key)) )
                 {  
                     $ret = self::check($ip_key, $ip_spam, 0, false);
                     $ret = $ret == false ? 0 : $ret;
@@ -175,7 +175,7 @@ class cls_spam
         //按模块方法统计触发次数和剩余次数
         $ma = self::get_module_action($key);
         list($m, $a, ) = array_values($ma);
-        if( isset(self::$spam_keys[$m]['keys'][$a]['limit']) )
+        if ( isset(self::$spam_keys[$m]['keys'][$a]['limit']) )
         {
             self::$spam_data[$m][$a] = [
                 'limit'   => self::$spam_keys[$m]['keys'][$a]['limit'],
@@ -185,7 +185,7 @@ class cls_spam
         }
 
         //是否存在自动执行的spam
-        if( !empty($ret) && !empty(self::$auto_spam) )
+        if ( !empty($ret) && !empty(self::$auto_spam) )
         {
             $tmp = explode(':', $key);
             //大于3说明"$val"包含了":"
@@ -195,7 +195,7 @@ class cls_spam
             }
             
             list($module, $action, $val) = $tmp;
-            foreach(self::$auto_spam as $ip_key => $spam)
+            foreach (self::$auto_spam as $ip_key => $spam)
             {
                 self::$auto_spam[$ip_key]['data'] = isset(self::$auto_spam[$ip_key]['data']) ? 
                     (array) self::$auto_spam[$ip_key]['data'] : [];
@@ -252,7 +252,7 @@ class cls_spam
 
         $ret = cls_security::spam(['key' => $_key, 'action' => 'clear']);
         //如果limit未ip,则会自动检查ip的限制
-        if( 
+        if ( 
             !empty($ret) && !empty($auto_clear) && 
             false != ($ip_key = self::get_ip_key($key))
         )
@@ -277,10 +277,10 @@ class cls_spam
     {
         $limit = 0; //非系统配置的默认为0，需要程序自己写限制数量
         $tmp = self::get_module_action($key);
-        if( !empty($tmp) )
+        if ( !empty($tmp) )
         {
             list($m, $k, $v) = array_values($tmp);
-            if( isset(self::$spam_keys[$m]['keys'][$k][$type]) )
+            if ( isset(self::$spam_keys[$m]['keys'][$k][$type]) )
             {
                 $limit = self::$spam_keys[$m]['keys'][$k][$type];
             }
@@ -299,11 +299,11 @@ class cls_spam
     public static function get_key($key)
     {
         static $keys;
-        if( !isset($keys[$key]) )
+        if ( !isset($keys[$key]) )
         {
             $tmp = self::get_module_action($key);
             //如果键不符合规格，则后台不能管理，需要自己管理
-            if( empty($tmp) )
+            if ( empty($tmp) )
             {
                 list($m, $k, $v) = $tmp;
                 $_key = $m .':' .$k.':'.$v;
@@ -331,7 +331,7 @@ class cls_spam
         $tmp = self::get_module_action($key);
         $ip_key = '';
 
-        if( !empty($tmp) )
+        if ( !empty($tmp) )
         {
             list($module, $action, $val) = array_values($tmp);
             $keys = isset(self::$spam_keys[$module]['keys']) ? 
@@ -339,7 +339,7 @@ class cls_spam
 
             //删除当前action
             unset($keys[$action]);
-            if( isset($keys['ip']) )
+            if ( isset($keys['ip']) )
             {
                 $ip_key = "{$module}:ip:".self::get_ip();
             }
@@ -351,7 +351,7 @@ class cls_spam
     public static function get_module_action($key) 
     {
         static $module_actions = [];
-        if( !isset($module_actions[$key]) )
+        if ( !isset($module_actions[$key]) )
         {
             $tmp = explode(':', $key);
             //大于3说明"$val"包含了":"
@@ -360,7 +360,7 @@ class cls_spam
                 $tmp = [$tmp[0], $tmp[1], implode(':', array_slice($tmp, 2))];
             }
 
-            if( count($tmp) == 3 )
+            if ( count($tmp) == 3 )
             {
                 list($module, $action, $val) = $tmp;
                 $module_actions[$key] = ['m' => $module, 'a' => $action, 'v' => $val];
@@ -385,16 +385,16 @@ class cls_spam
     public static function list_keys($module = '')
     {
         $ret = [];
-        if( empty($module) )
+        if ( empty($module) )
         {
-            foreach(self::$spam_keys as $key => $conf)
+            foreach (self::$spam_keys as $key => $conf)
             {
                 $ret[$key] = $conf['label'];
             }
         }
-        else if( isset(self::$spam_keys[$module]) )
+        else if ( isset(self::$spam_keys[$module]) )
         {
-            foreach(self::$spam_keys[$module]['keys'] as $key => $conf)
+            foreach (self::$spam_keys[$module]['keys'] as $key => $conf)
             {
                 $ret["{$module}:{$key}"] = $conf['label'];
             }

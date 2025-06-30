@@ -28,7 +28,7 @@ class cls_wkhtmltopdf
 
     public static function generate($html, $filename = 'download.pdf', $exec = false, $download = false)
     {
-        if($exec === true)
+        if ($exec === true)
         {
             exec('xvfb-run --server-args="-screen 0, 1024x680x24" wkhtmltopdf --use-xserver "'.$html.'" '.$filename);
             $pdf = file_get_contents($filename);
@@ -57,7 +57,7 @@ class cls_wkhtmltopdf
         header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
         header('Content-Length: '.strlen($pdf));
 
-        if($download === true)
+        if ($download === true)
         {
             header('Content-Description: File Transfer');
             header('Content-Type: application/force-download');

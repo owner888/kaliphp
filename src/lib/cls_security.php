@@ -398,10 +398,10 @@ class cls_security
         $data = array_merge(array('key' => '', 'action' => 'check'), $data);
 
         $key = $prefix.':spam|'. $data['key'];
-        if( !isset($spams[$key]) )
+        if ( !isset($spams[$key]) )
         {
             $spams[$key] = cache::get($key);
-            if(empty($spams[$key]))
+            if (empty($spams[$key]))
             {
                 $spams[$key] = array(
                     'total' => 0
@@ -409,18 +409,18 @@ class cls_security
             }
         }
 
-        if( $data['action'] == 'save' )
+        if ( $data['action'] == 'save' )
         {
             $spams[$key]['total']++;
             $spams[$key]['timestamp'] = FRAME_TIMESTAMP;
-            if(isset($data['data']))
+            if (isset($data['data']))
             {
                 $spams[$key]['data'] = $data['data'];
             }
 
             return cache::set($key, $spams[$key]);
         }
-        else if( $data['action'] == 'clear' )
+        else if ( $data['action'] == 'clear' )
         {
             unset($spams[$key]);
             return cache::del($key);

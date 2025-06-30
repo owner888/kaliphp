@@ -14,11 +14,11 @@ function smarty_function_lurd($params, &$smarty)
         $smarty->trigger_error("lurd: missing 'do' parameter");
         return;
     }
-    if($params['do'] == '')
+    if ($params['do'] == '')
     {
         return;
     }
-    if($params['do']=='format_date' || $params['do']=='format_float')
+    if ($params['do']=='format_date' || $params['do']=='format_float')
     {
         if ( empty($params['var']) )
         {
@@ -26,15 +26,15 @@ function smarty_function_lurd($params, &$smarty)
         }
     }
     //格式式日期时间
-    if($params['do']=='format_date') 
+    if ($params['do']=='format_date') 
     {    
-        if( empty($params['format']) )
+        if ( empty($params['format']) )
             {
                 $params['format'] = 'Y-m-d H:i:s';
             }
-            if( empty($params['type']) )
+            if ( empty($params['type']) )
             {
-                if( empty($params['var']) ) $params['var'] = time();
+                if ( empty($params['var']) ) $params['var'] = time();
                 return date( $params['format'], $params['var'] );
             }
             else
@@ -43,25 +43,25 @@ function smarty_function_lurd($params, &$smarty)
             }
     }
     //格式化浮点数
-    if($params['do']=='format_float') 
+    if ($params['do']=='format_float') 
     {    
-        if( empty($params['format']) )
+        if ( empty($params['format']) )
             {
                $params['format'] = '%0.4f';
             }
             return sprintf($params['format'], $params['var']);
     }
     //合并字段为md5数组
-    if($params['do']=='make_key') 
+    if ($params['do']=='make_key') 
     {
-        if( empty( $params['format'] ) || empty($params['var']) )
+        if ( empty( $params['format'] ) || empty($params['var']) )
         {
             $smarty->trigger_error("lurd: make_key missing 'format' Or 'var'  parameter");
             return;
         }
         $str = '';
           $keys = explode('', $params['format']);
-          foreach($keys as $k)
+          foreach ($keys as $k)
           {
              $str .= $params['var'][$k];
           }

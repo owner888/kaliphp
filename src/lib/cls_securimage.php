@@ -139,7 +139,7 @@ class cls_securimage
     
     function check($code)
     {
-        if( !isset($_SESSION[$this->session_name]) ) 
+        if ( !isset($_SESSION[$this->session_name]) ) 
         {
             return false;
         }

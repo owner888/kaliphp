@@ -56,11 +56,11 @@ class cls_muti_process
 
     public static function instance($name = null, $worker_process_num = null)
     {
-        if( !function_exists('pcntl_fork') )
+        if ( !function_exists('pcntl_fork') )
         {
             throw new \Exception("fork fail", -1001);
         }
-        else if( !isset(static::$_instances[$name]) )
+        else if ( !isset(static::$_instances[$name]) )
         {
             static::$_instances[$name] = new self($name, $worker_process_num);
         }
@@ -100,7 +100,7 @@ class cls_muti_process
      */
     public function insert($func, $params = [], $is_file = false)
     {
-        if(
+        if (
             (!$is_file && is_callable($func)) ||
             ($is_file && file_exists($func))
         )
@@ -122,7 +122,7 @@ class cls_muti_process
      */
     public function execute($params = [])
     {
-        if( !$this->_stack_jobs ) return false;
+        if ( !$this->_stack_jobs ) return false;
         // echo "execute():".$this->_name;
         // var_dump($this->_stack_jobs);exit;
         $length     = ceil(count($this->_stack_jobs) / $this->_max_workers);
@@ -130,16 +130,16 @@ class cls_muti_process
         $max_works  = count($stack_jobs);
         for ($work_id = 0; $work_id < $this->_max_workers; $work_id++)
         {
-            if( !isset($stack_jobs[$work_id]) ) break;
+            if ( !isset($stack_jobs[$work_id]) ) break;
             //创建子进程,返回子进程id
             $pid = pcntl_fork();
             //错误处理：创建子进程失败时返回-1.
-            if( $pid == -1 )
+            if ( $pid == -1 )
             {
                 die('Could not fork');
             }
             //父进程会得到子进程号，所以这里是父进程执行的逻辑
-            else if( $pid )
+            else if ( $pid )
             {
                 $this->sub_pids[$pid] = $pid;
             }
@@ -197,12 +197,12 @@ class cls_muti_process
      */
     private function _run($work_id, $jobs)
     {
-        foreach($jobs as $job)
+        foreach ($jobs as $job)
         {
             if ($job)
             {
                 //运行crond文件
-                if( $job['is_file'] && file_exists($job['func']) )
+                if ( $job['is_file'] && file_exists($job['func']) )
                 {
                     include $job['func'];
                 }

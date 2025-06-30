@@ -544,7 +544,7 @@ class cls_es
         switch ($this->_type) {
             case 'insert':
                 @list($data, $id, $key) = $args;
-                if(empty($data['id']))
+                if (empty($data['id']))
                 {
                     $data['id'] = $id ? $id : (isset($data[$key]) ? $data[$key] : uniqid());
                 } 
@@ -595,7 +595,7 @@ class cls_es
     {
         if ( is_array($column) ) 
         {
-            foreach($column as $field => $col)
+            foreach ($column as $field => $col)
             {
                 call_user_func([$this, 'where'], $field, $col, null, $leaf, $boolean, $filter);
             }
@@ -623,12 +623,12 @@ class cls_es
             $suffix = $prefix = '*';
             $leaf   = 'wildcard';
         }
-        else if( $operator == '*=' )
+        else if ( $operator == '*=' )
         {
             $suffix = '*';
             $leaf   = 'wildcard';
         }
-        else if( $operator == '=*' )
+        else if ( $operator == '=*' )
         {
             $suffix = '*';
             $leaf   = 'wildcard';
@@ -774,12 +774,12 @@ class cls_es
      */
     public function reset()
     {
-        foreach(['where', 'columns', 'order', 'aggs', 'expr', '_set'] as $f)
+        foreach (['where', 'columns', 'order', 'aggs', 'expr', '_set'] as $f)
         {
             $this->$f = [];
         }
 
-        foreach(['offset', 'limit', 'index', 'type', '_type', 'scroll'] as $f)
+        foreach (['offset', 'limit', 'index', 'type', '_type', 'scroll'] as $f)
         {
             $this->$f = '';
         }
@@ -1025,7 +1025,7 @@ class cls_es
 
                     if ( $return['total'] > 0 ) 
                     {
-                        foreach($result['hits']['hits'] as $row)
+                        foreach ($result['hits']['hits'] as $row)
                         {
                             $tmp[] = array_merge(['id' => $row['_id']], $row['_source']);
                         }
@@ -1048,11 +1048,11 @@ class cls_es
                                 $row = $row['index'];
                                 if (isset($row['result']))
                                 {
-                                    if('created' == $row['result'])
+                                    if ('created' == $row['result'])
                                     {
                                         $return['insert_ids'][] = $row['_id'];
                                     }
-                                    elseif('updated' == $row['result'])
+                                    elseif ('updated' == $row['result'])
                                     {
                                         $return['update_ids'][] = $row['_id'];
                                     }
@@ -1102,7 +1102,7 @@ class cls_es
     public function compile()
     {
         $body = [];
-        foreach($this->dsl_fileds as $field => $field_alias)
+        foreach ($this->dsl_fileds as $field => $field_alias)
         {
             if (!empty($this->$field_alias)) 
             {
@@ -1195,7 +1195,7 @@ class cls_es
         {
             $params = [];
             $method = 'bulk';
-            foreach($this->_set as $row)
+            foreach ($this->_set as $row)
             {
                 $params['body'][] = [
                     'index' => [
@@ -1258,7 +1258,7 @@ class cls_es
         {
             foreach ($aggs_item as $field => $type) 
             {
-                if(is_array($type))
+                if (is_array($type))
                 {
                     //数组的type,表示携带了复杂结构，直接按传入的来
                     $field_name = $field;
@@ -1320,7 +1320,7 @@ class cls_es
                     $this->_set['id'] = $where['value'];
                     return $bool;
                 }
-                else if( $where['type'] == 'filter' )
+                else if ( $where['type'] == 'filter' )
                 {
                     $filter[] = $this->_compilee_where_leaf(
                         $where['leaf'], $where['column'], 

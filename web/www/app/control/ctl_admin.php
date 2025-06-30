@@ -128,7 +128,7 @@ class ctl_admin
             $username = req::item('username');
             $password = req::item('password');
 
-            if( $username == '' || $password == '' )
+            if ( $username == '' || $password == '' )
             {
                 cls_msgbox::show('系统提示', '用户名密码不能为空！', '-1');
                 exit();
@@ -139,7 +139,7 @@ class ctl_admin
                 ->where('username', $username)
                 ->as_row()
                 ->execute();
-            if( $row['count'] )
+            if ( $row['count'] )
             {
                 cls_msgbox::show('系统提示', '用户名已经存在！', '-1');
                 exit();
@@ -191,7 +191,7 @@ class ctl_admin
                 'status'         => req::item('disable') ? 0 : 1,
             );
             $password = req::item('password');
-            if( $password != '' )
+            if ( $password != '' )
             {
                 $data['password'] = kali::$auth::password_hash($password);
             } 
@@ -299,7 +299,7 @@ class ctl_admin
         if (!empty(req::$posts)) 
         {
             $password = req::item('password', '');
-            if( $password == '' )
+            if ( $password == '' )
             {
                 cls_msgbox::show('系统提示', "修改失败，密码不能为空", -1);
             } 
@@ -356,7 +356,7 @@ class ctl_admin
         if (!empty(req::$posts)) 
         {
             $password = req::item('password', '');
-            if( $password == '' )
+            if ( $password == '' )
             {
                 cls_msgbox::show('系统提示', "修改失败，密码不能为空", -1);
             } 

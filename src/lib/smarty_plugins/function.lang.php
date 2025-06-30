@@ -10,7 +10,7 @@ use kaliphp\lang;
  */
 function smarty_function_lang($params, &$smarty)
 {
-    if( empty($params['key']) )
+    if ( empty($params['key']) )
     {
         return '';
     }

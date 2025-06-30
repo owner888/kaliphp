@@ -31,20 +31,20 @@ class cls_rewrite
     {
         self::$is_load = true;
         $rulefile = PATH_DATA.'/rewrite.ini';
-        if( file_exists($rulefile) )
+        if ( file_exists($rulefile) )
         {
             $ds = file($rulefile);
-            foreach($ds as $line)
+            foreach ($ds as $line)
             {
                 $line = trim($line);
-                if( $line=='' || $line[0]=='#')
+                if ( $line=='' || $line[0]=='#')
                 {
                     continue;
                 }
                 list($s, $t) = preg_split('/[ ]{4,}/', $line); //用至少四个空格分隔，这样即使s、t中有空格也能识别
                 $s = rtrim($s);
                 $t = ltrim($t);
-                if( $s != '' && $t !='' )
+                if ( $s != '' && $t !='' )
                 {
                     $_s = preg_replace("#(^[\^]|[\$]$)#", '', $s);
                     $sok = $s[0]=='^' ? '<rw>'.$_s : '<rw>(.*)'.$_s;
@@ -63,11 +63,11 @@ class cls_rewrite
     */
     public static function convert_html(&$html)
     {
-        if( !self::$is_load ) {
+        if ( !self::$is_load ) {
             self::load_rule();
         }
         //echo '<xmp>';
-        foreach(self::$rules as $s => $t) {
+        foreach (self::$rules as $s => $t) {
             //echo "$s -- $t \n";
             $html = preg_replace('~'.$s.'~iU', $t, $html);
         }
@@ -82,11 +82,11 @@ class cls_rewrite
     */
     public static function convert_url($url)
     {
-        if( !self::$is_load )
+        if ( !self::$is_load )
         {
             self::load_rule();
         }
-        foreach(self::$rules as $s=>$t)
+        foreach (self::$rules as $s=>$t)
         {
             $url = preg_replace('/'.$s.'/iU', $t, $url);
         }

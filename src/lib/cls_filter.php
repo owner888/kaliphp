@@ -55,7 +55,7 @@ class cls_filter
     public static function filter($val, string $type = '', bool $throw_error = false)
     {
         // 没指定过滤类型，不处理
-        if( $type == null )
+        if ( $type == null )
         {
             return $val;
         }
@@ -125,9 +125,9 @@ class cls_filter
                     $val = $val ? htmlspecialchars(trim($val), ENT_QUOTES) : $val;
                     break;
                 case 'email':
-                    if( !self::test_email($val) )
+                    if ( !self::test_email($val) )
                     {
-                        if( strlen($val) > 0 && $throw_error ) 
+                        if ( strlen($val) > 0 && $throw_error ) 
                         {
                             self::_throw_errmsg("Email不合法");
                         } 
@@ -138,9 +138,9 @@ class cls_filter
                     }
                     break;
                 case 'username':
-                    if( !self::_test_user_name($val) )
+                    if ( !self::_test_user_name($val) )
                     {
-                        if( $throw_error ) 
+                        if ( $throw_error ) 
                         {
                             self::_throw_errmsg("用户名不合法");
                         } 
@@ -152,9 +152,9 @@ class cls_filter
                     break;
                 case 'qq':
                     $val = preg_replace("/[^0-9]/", '', $val);
-                    if( strlen($val) < 5 )
+                    if ( strlen($val) < 5 )
                     {
-                        if( $val > 0 && $throw_error ) 
+                        if ( $val > 0 && $throw_error ) 
                         {
                             self::_throw_errmsg("QQ号码不合法");
                         } 
@@ -166,9 +166,9 @@ class cls_filter
                     break;
                 case 'mobile':
                     $val = preg_replace("/[^0-9]/", '', $val);
-                    if( !preg_match("/1[3-9]{10}/", $val) )
+                    if ( !preg_match("/1[3-9]{10}/", $val) )
                     {
-                        if( $throw_error ) 
+                        if ( $throw_error ) 
                         {
                             self::_throw_errmsg("手机号码不合法");
                         } 
@@ -179,9 +179,9 @@ class cls_filter
                     }
                     break;
                 case 'ip':
-                    if( !self::test_ip($val) ) 
+                    if ( !self::test_ip($val) ) 
                     {
-                        if( $throw_error ) 
+                        if ( $throw_error ) 
                         {
                             self::_throw_errmsg("IP地址不合法");
                         } 
@@ -192,9 +192,9 @@ class cls_filter
                     }
                     break;
                 case 'id_card':
-                    if( !self::test_is_idcard($val) ) 
+                    if ( !self::test_is_idcard($val) ) 
                     {
-                        if( $throw_error ) 
+                        if ( $throw_error ) 
                         {
                             self::_throw_errmsg("身份证不合法");
                         } 
@@ -283,7 +283,7 @@ class cls_filter
             if ( is_array($config) )
             {
                 // 来源映射
-                if( !empty($config['input_field']) )
+                if ( !empty($config['input_field']) )
                 {
                     $config['as_field'] = $field;
                     $field = $config['input_field'];
@@ -445,7 +445,7 @@ class cls_filter
                     break;
                 case 'array': //如果数组中的元素需要类型过来加一个sub_type，默认safe_str
                     $data[$field] = $data[$field] ?? (array) $default;
-                    if(isset($data[$field]) && !is_array($data[$field]))
+                    if (isset($data[$field]) && !is_array($data[$field]))
                     {
                         return $field;
                     }
@@ -518,14 +518,14 @@ class cls_filter
                 //当前字段不需要指定，如果要使用当前做参数的时候指定一个不存在的field,一般用row
                 $callback_field = $config['callback_field'] ?? $field;
                 $callback_param = $ret[$callback_field] ?? ($config['default'] ?? null);
-                foreach($funcs as $func)
+                foreach ($funcs as $func)
                 {
                     if ( is_callable($func) )
                     {
                         if (is_array($ret[$field]))
                         {
                             $ret[$field] = array_map(function($v) use($func, $data) {
-                                if($func instanceof \Closure) 
+                                if ($func instanceof \Closure) 
                                 {
                                     return call_user_func_array($func, [$v, $data]);
                                 }
@@ -538,7 +538,7 @@ class cls_filter
                         }
                         else
                         {
-                            if($func instanceof \Closure) 
+                            if ($func instanceof \Closure) 
                             {
                                 $ret[$field] = call_user_func_array($func, [$callback_param, $data]);
                             }
@@ -552,7 +552,7 @@ class cls_filter
             }
 
             // 添加映射字段
-            if( !empty($config['as_field']) )
+            if ( !empty($config['as_field']) )
             {
                 $ret[$config['as_field']] = $ret[$field];
                 unset($ret[$field]);
@@ -659,7 +659,7 @@ class cls_filter
                 $v_sum += (pow(2, $i) % 11) * (($vSubStr == 'a') ? 10 : intval($vSubStr , 11));
             }
 
-            if($v_sum % 11 != 1) return false;
+            if ($v_sum % 11 != 1) return false;
         }
 
         return true;

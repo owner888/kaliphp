@@ -47,10 +47,10 @@ class ctl_spam
         $keyword = req::item('keyword', '');
 
         $ret = [];
-        if( !empty($key) && !empty($keyword) )
+        if ( !empty($key) && !empty($keyword) )
         {
             $key = $key.':'.$keyword;
-            if( false != ($ret = cls_spam::get($key)) && !empty($ret['timestamp']) )
+            if ( false != ($ret = cls_spam::get($key)) && !empty($ret['timestamp']) )
             {
                 $ret['timestamp'] = is_numeric($ret['timestamp']) ? date('Y-m-d H:i:s', intval($ret['timestamp'])) : $ret['timestamp'];
             }
@@ -76,13 +76,13 @@ class ctl_spam
         $auto_clear = req::item('auto_clear', 0);
 
         $ret = ['code' => 0, 'msg' => '请输入spam内容'];
-        if( !empty($key) && !empty($keyword) )
+        if ( !empty($key) && !empty($keyword) )
         {
             $key = $key.':'.$keyword;
             cls_spam::clear($key, $auto_clear);
             $tmp = cls_spam::get($key);
 
-            if( empty($tmp['total']) )
+            if ( empty($tmp['total']) )
             {
                 $ret = ['code' => 1, 'msg' => '删除成功'];
             }

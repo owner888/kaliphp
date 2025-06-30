@@ -33,7 +33,7 @@ class cls_file_crypt
      */
     public static function encrypt( $oldpath = null, $newpath = null, $key = null )
     {
-        if( file_exists($oldpath) )
+        if ( file_exists($oldpath) )
         {
             $str = '';           // 处理后的字符串
             $len = strlen($key); // 密钥长度

@@ -53,7 +53,7 @@ class cache
     public static function _init()
     {
         self::$config = config::instance('cache')->get();
-        if( ! self::$config['enable'] ) 
+        if ( ! self::$config['enable'] ) 
         {
             return;
         }
@@ -65,15 +65,15 @@ class cache
         }
         self::$cache_time = self::$config['cache_time'];
         self::$cache_type = self::$config['cache_type'];
-        if( self::$cache_type == 'file' )
+        if ( self::$cache_type == 'file' )
         {
             self::$handle = cls_filecache::factory( kali::$cache_root.DS.self::$config['cache_name'] );
         }
-        else if( self::$cache_type == 'redis' )
+        else if ( self::$cache_type == 'redis' )
         {
             self::$handle = cls_redis::instance('cache');
         }
-        else if( self::$cache_type == 'memcached' )
+        else if ( self::$cache_type == 'memcached' )
         {
             self::$handle = new \Memcached();
             $servers = [];
@@ -91,7 +91,7 @@ class cache
             //self::$handle->setSaslAuthData($mc['user'], $mc['pass']);
             self::$handle->addServers( $servers );
         }
-        else if( self::$cache_type == 'memcache' )
+        else if ( self::$cache_type == 'memcache' )
         {
             self::$handle = new \Memcache();
             foreach ( self::$config['memcache']['servers'] as $mc )
@@ -126,20 +126,20 @@ class cache
             return false;
         }
 
-        if( $cachetime === null ) 
+        if ( $cachetime === null ) 
         {
             $cachetime = self::$cache_time;
         }
 
         $cachekey = self::_get_key($key);
         // CLI下会有内存溢出的情况
-        if( PHP_SAPI != 'cli' && self::$need_mem ) 
+        if ( PHP_SAPI != 'cli' && self::$need_mem ) 
         {
             self::$_caches[ $cachekey ] = $value;
         }
 
         // redis 扩展无法跟memcached、memcache一样直接传数组，所以需要先转json
-        if( in_array(self::$cache_type, ['redis', 'memcached']) ) 
+        if ( in_array(self::$cache_type, ['redis', 'memcached']) ) 
         {
             return self::$handle->set($cachekey, $value, $cachetime);
         }
@@ -161,7 +161,7 @@ class cache
     {
         $cachekey = self::_get_key($key);
 
-        if( isset(self::$_caches[ $cachekey ]) ) 
+        if ( isset(self::$_caches[ $cachekey ]) ) 
         {
             unset(self::$_caches[ $cachekey ]);
         }
@@ -179,13 +179,13 @@ class cache
     public static function get( $key )
     {
         //全局禁用cache(调试使用的情况)
-        if( ! self::$config['enable'] ) 
+        if ( ! self::$config['enable'] ) 
         {
             return false;
         }
 
         $cachekey = self::_get_key($key);
-        if( isset(self::$_caches[ $cachekey ]) ) 
+        if ( isset(self::$_caches[ $cachekey ]) ) 
         {
             return self::$_caches[ $cachekey ];
         }
@@ -203,14 +203,14 @@ class cache
     public static function ttl( $key ): int
     {
         //全局禁用cache(调试使用的情况)
-        if( ! self::$config['enable'] ) 
+        if ( ! self::$config['enable'] ) 
         {
             return -2;
         }
 
         $cachekey = self::_get_key($key);
 
-        if( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
+        if ( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
         {
             // memcache无法获取key的过期时间
             $value = self::$handle->get( $cachekey );
@@ -246,7 +246,7 @@ class cache
     public static function inc( $key, int $step = 1 )
     {
         $cachekey = self::_get_key($key);
-        if( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
+        if ( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
         {
             if ( !self::has($key) ) 
             {
@@ -254,7 +254,7 @@ class cache
             }
             return self::$handle->increment( $cachekey, $step );
         }
-        elseif( self::$cache_type == 'redis' ) 
+        elseif ( self::$cache_type == 'redis' ) 
         {
             return self::$handle->incrby( $cachekey, $step );
         }
@@ -277,7 +277,7 @@ class cache
     {
         $cachekey = self::_get_key($key);
 
-        if( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
+        if ( in_array(self::$cache_type, array('memcached', 'memcache')) ) 
         {
             if (!self::has($key)) 
             {
@@ -285,7 +285,7 @@ class cache
             }
             return self::$handle->decrement( $cachekey, $step );
         }
-        elseif( self::$cache_type == 'redis' ) 
+        elseif ( self::$cache_type == 'redis' ) 
         {
             return self::$handle->decrby( $cachekey, $step );
         }
@@ -303,7 +303,7 @@ class cache
      */               
     public static function free_mem( bool $flush_memc = false )
     {
-        if( isset(self::$_caches) ) 
+        if ( isset(self::$_caches) ) 
         {
             self::$_caches = array();
         }
@@ -324,11 +324,11 @@ class cache
     public static function free()
     {
         // 前面没有初始化成功，就不要在去初始化了，这里都要关闭连接了还去初始化
-        if( self::$handle == null ) 
+        if ( self::$handle == null ) 
         {
             return false;
         }
-        if( self::$cache_type == 'memcached' ) 
+        if ( self::$cache_type == 'memcached' ) 
         {
             self::$handle->quit();
         }

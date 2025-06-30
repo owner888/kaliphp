@@ -259,7 +259,7 @@ class db_connection
             list($_config_file, $_config_key) = explode(':', $config_file);
         }
 		// 加载其他配置文件
-        else if( $config_file )
+        else if ( $config_file )
         {
             $_config_file = $config_file;
         }
@@ -299,21 +299,21 @@ class db_connection
             ]);
         }
 
-        if( !self::$config[$name] )
+        if ( !self::$config[$name] )
         {
             throw new Exception("Load {$config_file} fail", 3001);
         }
-        else if( isset(self::$config[$name]['host']['master']) )
+        else if ( isset(self::$config[$name]['host']['master']) )
         {
             $instance_name = self::get_instance_name($muti_name);
 			// 第一个为默认数据库
-            if( !self::$_instance_name && $default_instance )
+            if ( !self::$_instance_name && $default_instance )
             {
                 self::$_default_name  = $muti_name;
             }
 
 			// 如果没有初始化
-            if( !isset(self::$_instance[$instance_name['master']]) )
+            if ( !isset(self::$_instance[$instance_name['master']]) )
             {
                 // 链接主库
                 list($host, $port) = explode(":", self::$config[$name]['host']['master']);
@@ -336,7 +336,7 @@ class db_connection
 				// exit;
 
                 // 如果配置了从库 链接从库
-                if( !empty(self::$config[$name]['host']['slave']) )
+                if ( !empty(self::$config[$name]['host']['slave']) )
                 {
                     $slaves   = self::$config[$name]['host']['slave'];
                     $slave_fn = self::$config[$name]['host']['slave_fn'] ?? null;
@@ -347,7 +347,7 @@ class db_connection
 
                     if ( $slave_index ) 
                     {
-                        foreach(array_keys($slaves) as $k)
+                        foreach (array_keys($slaves) as $k)
                         {
                             if ( !in_array($k, $slave_index) ) 
                             {
@@ -415,7 +415,7 @@ class db_connection
         $new_config = static::$global_configs["{$host}:{$port}"] ?? null;
         if ( $new_config && is_array($new_config) ) 
         {
-            foreach($new_config as $k => $v)
+            foreach ($new_config as $k => $v)
             {
                 $config[$k] = $v;
             }
@@ -452,7 +452,7 @@ class db_connection
     {
         $name          = self::get_db_name($name, $slave_index);
         $instance_name = static::get_instance_name($name, 'master');
-        if( 
+        if ( 
             isset(static::$_instance[$instance_name]) || 
             static::init_db($name, $config_file, $default_instance, $slave_index) 
         )
@@ -495,7 +495,7 @@ class db_connection
      */
     private function _handler()
     {
-        if( !$this->_handler || !is_object($this->_handler) )
+        if ( !$this->_handler || !is_object($this->_handler) )
         {
             if (
                 !$this->_config || !isset($this->_config['host']) || !isset($this->_config['user']) || 
@@ -582,9 +582,9 @@ class db_connection
     {
         $result = false;
         $instance_name = self::get_instance_name($name);
-        foreach($instance_name as $k => $v)
+        foreach ($instance_name as $k => $v)
         {
-            if( isset(self::$_instance[$v]) )
+            if ( isset(self::$_instance[$v]) )
             {
                 self::$_instance_name[$k] = $v;
                 self::$_default_name      = $name;
@@ -626,7 +626,7 @@ class db_connection
 
     public function close($instance = null)
     {
-        foreach(static::$_instance as $name => $db_instance)
+        foreach (static::$_instance as $name => $db_instance)
         {
             if ( (!$instance || $instance == $name) ) 
             {
@@ -780,12 +780,12 @@ class db_connection
                 $this->_sql = preg_replace("/[,;]$/i", '', trim($this->_sql)) . " LIMIT 1 ";
             }
 
-            if( !empty($this->_atts['lock']) )
+            if ( !empty($this->_atts['lock']) )
             {
                 $this->_atts['lock'] = false;//用过一次后释放
                 $this->_sql .= " FOR UPDATE";
             }
-            else if( !empty($this->_atts['share']) )
+            else if ( !empty($this->_atts['share']) )
             {
                 $this->_atts['share'] = false;//用过一次后释放
                 $this->_sql .= " LOCK IN SHARE MODE";
@@ -900,7 +900,7 @@ class db_connection
                 {
                     $result = $this->_result;
                 }
-                else if( $this->_result )
+                else if ( $this->_result )
                 {
                     $rows = array();
                     while ($row = mysqli_fetch_array($this->_result, MYSQLI_ASSOC))
@@ -909,7 +909,7 @@ class db_connection
                         {
                             call_user_func_array($this->_atts['row_fn'], [$row, &$rows]);
                         }
-                        else if( empty($params['index']) ) 
+                        else if ( empty($params['index']) ) 
                         {
                             $rows[] = $row;
                         }
@@ -967,7 +967,7 @@ class db_connection
                 return $this->execute($is_master, $params, $sql);
             }
             // 死锁重试
-            else if( 
+            else if ( 
                 in_array($errno, [1213, 1205]) && 
                 !empty($this->_atts['delay']) &&
                 //每个查询超出最大重连次数，不再重连，防止触发max_connect_errors，无法连接数据库         
@@ -1057,7 +1057,7 @@ class db_connection
             $tables = explode(',', $tables);
         }
         // 子查询语句
-        else if( is_object($tables) )
+        else if ( is_object($tables) )
         {
             $this->_from[0] = $tables;
             return $this;
@@ -1115,7 +1115,7 @@ class db_connection
         }
         else
         {
-            if(func_num_args() === 2)
+            if (func_num_args() === 2)
             {
                 $value = $op;
                 $op = '=';
@@ -1153,7 +1153,7 @@ class db_connection
         }
         else
         {
-            if(func_num_args() === 2)
+            if (func_num_args() === 2)
             {
                 $value = $op;
                 $op = '=';
@@ -1402,12 +1402,12 @@ class db_connection
     public function group_by($columns)
     {
         $columns = func_get_args();
-        foreach($columns as $idx => $column)
+        foreach ($columns as $idx => $column)
         {
             // if an array of columns is passed, flatten it
             if ( is_array($column) )
             {
-                foreach($column as $c)
+                foreach ($column as $c)
                 {
                     if ( $c ) 
                     {
@@ -1448,7 +1448,7 @@ class db_connection
      */
     public function and_having($column, $op = null, $value = null)
     {
-        if(func_num_args() === 2)
+        if (func_num_args() === 2)
         {
             $value = $op;
             $op = '=';
@@ -1470,7 +1470,7 @@ class db_connection
      */
     public function or_having($column, $op = null, $value = null)
     {
-        if(func_num_args() === 2)
+        if (func_num_args() === 2)
         {
             $value = $op;
             $op = '=';
@@ -1627,7 +1627,7 @@ class db_connection
         if ( !empty($this->_atts['union']) && !empty($this->_atts['is_union_table']) ) 
         {
             $union_sql = null;
-            foreach($this->_atts['union'] as $v)
+            foreach ($this->_atts['union'] as $v)
             {
                 $union_sql .= !$union_sql ? 
                 sprintf('(%s) ', $v['sql']) : 
@@ -1646,7 +1646,7 @@ class db_connection
             $sql .= ' FROM '.implode(', ', array_unique(array_map($quote_table, $this->_from)));
         }
 
-        if( !empty($this->_atts['index_name']) )
+        if ( !empty($this->_atts['index_name']) )
         {
             $sql .= ' FORCE INDEX('.$this->_atts['index_name'].')';
             $this->_atts['index_name'] = '';
@@ -1678,7 +1678,7 @@ class db_connection
 
         if ( !empty($this->_atts['union']) && empty($this->_atts['is_union_table']) ) 
         {
-            foreach($this->_atts['union'] as $v)
+            foreach ($this->_atts['union'] as $v)
             {
                 $sql .= sprintf(' UNION %s (%s)', ($v['type'] ? ' ALL ' : ''), $v['sql']);
             }
@@ -1719,12 +1719,12 @@ class db_connection
             $sql .= ' OFFSET '.$this->_offset;
         }
 
-        if( !empty($this->_atts['lock']) && empty($this->_as_row) ) 
+        if ( !empty($this->_atts['lock']) && empty($this->_as_row) ) 
         {
             $this->_atts['lock'] = false;//用过一次后释放
             $sql .= ' FOR UPDATE';
         }
-        else if(  !empty($this->_atts['share']) && empty($this->_as_row) ) 
+        else if (  !empty($this->_atts['share']) && empty($this->_as_row) ) 
         {
             $this->_atts['share'] = false;//用过一次后释放
             $sql .= ' LOCK IN SHARE MODE';
@@ -2484,7 +2484,7 @@ class db_connection
             }
 
             // json字段
-            if( is_array($value) && false != $this->_check_json_field($column) )
+            if ( is_array($value) && false != $this->_check_json_field($column) )
             {
                 if ( !$value ) 
                 {
@@ -2493,7 +2493,7 @@ class db_connection
                 else
                 {
                     $tmp = [$column];
-                    foreach($value as $f => $ff)
+                    foreach ($value as $f => $ff)
                     {
                         $ff    = is_array($ff) ? addslashes(json_encode((object)$ff, JSON_UNESCAPED_UNICODE)) : $ff;
                         //string的才加‘’,否则不加
@@ -2505,7 +2505,7 @@ class db_connection
                 }
             }
             // 兼容`xxx`和values(`xxx`)
-            else if( !preg_match('#values\s*\([^\)]+\)#i', $value) )
+            else if ( !preg_match('#values\s*\([^\)]+\)#i', $value) )
             {
                 $value = $this->quote_value(array($value, $column));
             }
@@ -2663,7 +2663,7 @@ class db_connection
     // 一些行级锁的操作，使用的是非主键的索引的必须带上，否则会死锁
     public function force_index($index_name)
     {
-        if( !empty($index_name) )
+        if ( !empty($index_name) )
         {
             $this->_atts['index_name'] = $index_name;
         }
@@ -2704,12 +2704,12 @@ class db_connection
         ?array  $slave_index = null
     )
     {
-        // if( $name )
+        // if ( $name )
         // {
             $name = self::get_db_name($name, $slave_index);
             self::init_db($name, $config_file, $default_db, $slave_index);
             $instance_name = self::get_instance_name($name);
-            if( !isset(self::$_instance[$instance_name['master']]) )
+            if ( !isset(self::$_instance[$instance_name['master']]) )
             {
                 throw new Exception("instance:{$name} is not exit", 3001);
             }
@@ -2741,9 +2741,9 @@ class db_connection
     // 主要用于更新或者删除是是否有条件
     public function has_where() 
     {
-        foreach(self::$_instance as $instance)
+        foreach (self::$_instance as $instance)
         {
-            if( $instance->_where )
+            if ( $instance->_where )
             {
                 return true;
             }
@@ -2771,7 +2771,7 @@ class db_connection
             {
                 $table[0] = self::table_prefix($table[0]);
             }
-            else if( is_string($table) )
+            else if ( is_string($table) )
             {
                 $table = str_replace('#PB#', self::$config[$this->_db_name]['prefix'], trim($table));
                 $table = str_replace('#!PB#', '#PB#', $table);
@@ -3126,7 +3126,7 @@ class db_connection
             $value = "AES_ENCRYPT('{$value}', '" . self::$config[$this->get_current_db_name()]['crypt_key'] . "')";
         }
         //json字段
-        else if( 
+        else if ( 
             !empty(self::$config[$this->get_current_db_name()]['json_fields'][$table]) && 
             in_array($field, self::$config[$this->get_current_db_name()]['json_fields'][$table])
         )
@@ -3142,7 +3142,7 @@ class db_connection
                 else
                 {
                     $tmp = [$field];
-                    foreach($value as $f => $ff)
+                    foreach ($value as $f => $ff)
                     {
                         //转成object是因为枚举数组没法更新
                         $ff    = is_array($ff) ? addslashes(json_encode((object)$ff, JSON_UNESCAPED_UNICODE)) : $ff;
@@ -3673,7 +3673,7 @@ class db_connection
                 db::${$tmp_var} = array_slice(db::${$tmp_var}, -$max_len);
             }
         }
-        else if( isset(db::$affected_rows[$type]) )
+        else if ( isset(db::$affected_rows[$type]) )
         {
             db::$affected_rows[$type] += (int) $sql;
         }

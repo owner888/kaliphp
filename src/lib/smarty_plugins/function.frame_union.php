@@ -7,24 +7,24 @@
  */
 function smarty_function_frame_union($params, &$smarty)
 {
-    if( empty($params['do']) || empty($params['var']) )
+    if ( empty($params['do']) || empty($params['var']) )
     {
         return;
     }
     //还原应用池名称
-    if($params['do']=='pools')
+    if ($params['do']=='pools')
     {
         $arr = cls_access::$cfg_groups['pools'];
         return isset($arr[$params['var']]['name']) ? $arr[$params['var']]['name'] : '';
     }
     //还原应用池名称
-    else if($params['do']=='groups')
+    else if ($params['do']=='groups')
     {
         $arr = cls_access::$cfg_groups['pools'];
         //list($p, $g) = explode('_', $params['var']);
         $strings = explode(',', $params['var']);
         $okstr = '';
-        foreach($strings as $str)
+        foreach ($strings as $str)
         {
             $str = trim($str);
             list($p, $g) = explode('_', $str);

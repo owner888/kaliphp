@@ -192,7 +192,7 @@ class cls_arr
         foreach ($values as $value) 
         {
             $keys = array_keys($array, $value);
-            if(!empty($keys))
+            if (!empty($keys))
             {
                 foreach ($keys as $key) 
                 {
@@ -637,7 +637,7 @@ class cls_arr
             if (array_key_exists($key, $array))
             {
                 $remove or $return[$key] = $array[$key];
-                if($remove)
+                if ($remove)
                 {
                     unset($array[$key]);
                 }
@@ -655,7 +655,7 @@ class cls_arr
     public static function filter_value(array $array, $value)
     {
         $value = (array) $value;
-        foreach($array as $k => $v)
+        foreach ($array as $k => $v)
         {
             if ( in_array($v, $value) ) 
             {
@@ -880,7 +880,7 @@ class cls_arr
         $temp = array();
         $keys = array_keys($conditions);
 
-        foreach($keys as $key)
+        foreach ($keys as $key)
         {
             $temp[$key] = static::pluck($array, $key, true);
             is_array($conditions[$key]) or $conditions[$key] = array($conditions[$key]);
@@ -890,7 +890,7 @@ class cls_arr
         foreach ($keys as $key)
         {
             $args[] = $ignore_case ? array_map('strtolower', $temp[$key]) : $temp[$key];
-            foreach($conditions[$key] as $flag)
+            foreach ($conditions[$key] as $flag)
             {
                 $args[] = $flag;
             }
@@ -953,7 +953,7 @@ class cls_arr
      */
     public static function replace_key($source, $replace, $new_key = null)
     {
-        if(is_string($replace))
+        if (is_string($replace))
         {
             $replace = array($replace => $new_key);
         }
@@ -1526,7 +1526,7 @@ class cls_arr
         else
         {
             $is_multi = true;
-            foreach($arr as $v)
+            foreach ($arr as $v)
             {
                 if ( !is_array($v) ) 
                 {
@@ -1551,9 +1551,9 @@ class cls_arr
     {
         if ( !$fields ) 
         {
-            foreach(['arr_a', 'arr_b'] as $g)
+            foreach (['arr_a', 'arr_b'] as $g)
             {
-                 foreach(${$g} as $k => $v)
+                 foreach (${$g} as $k => $v)
                  {
                     $fields = array_merge($fields ?? [], array_keys($v));
                  }
@@ -1572,18 +1572,18 @@ class cls_arr
 
         $fields   = array_unique($fields);
         $new_data = [];
-        foreach(['arr_a', 'arr_b'] as $g)
+        foreach (['arr_a', 'arr_b'] as $g)
         {
-            foreach(${$g} as $k => $v)
+            foreach (${$g} as $k => $v)
             {
                 $_index = [];
-                foreach($group_fields as $f)
+                foreach ($group_fields as $f)
                 {
                     $_index[] = $v[$f] ?? '';
                 }
 
                 $new_v = [];
-                foreach($fields as $f)
+                foreach ($fields as $f)
                 {
                     $new_v[$f] = $v[$f] ?? (in_array($f, $group_fields) ? '' : 0);
                 }
@@ -1595,7 +1595,7 @@ class cls_arr
                 }
                 else
                 {
-                    foreach($fields as $f)
+                    foreach ($fields as $f)
                     {
                         if ( in_array($f, $group_fields) )
                         {

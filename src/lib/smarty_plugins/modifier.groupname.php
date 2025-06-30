@@ -10,7 +10,7 @@ function smarty_modifier_groupname($string)
     $arr = cls_access::$cfg_groups['pools'];
     $strings = explode(',', $string);
     $okstr = '';
-    foreach($strings as $str)
+    foreach ($strings as $str)
     {
         $str = trim($str);
         list($p, $g) = explode('_', $str);

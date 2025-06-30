@@ -37,20 +37,20 @@ class cls_msgbox
     {
         $title = $title == '' ? '系统提示信息' : $title;
         $jumpmsg = $jstmp = '';
-        if( $gourl=='javascript:;' )
+        if ( $gourl=='javascript:;' )
         {
             $gourl == '';
         }
         //返回上一页
-        if( $gourl == -1 )
+        if ( $gourl == -1 )
         {
            $gourl = "javascript:history.go(-1);";
         }
-        if( $gourl == -2 )
+        if ( $gourl == -2 )
         {
             $jumpmsg = "<a href='?ac=logout'>重新登录</a>";
         }
-        elseif( $gourl != '' )
+        elseif ( $gourl != '' )
         {
             $browser_jump_hint = lang::get("common_browser_jump_hint", "如果你的浏览器没有自动跳转，请点击这里")."...";
             $jumpmsg = "<a href='{$gourl}'>{$browser_jump_hint}</a>";

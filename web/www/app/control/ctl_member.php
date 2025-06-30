@@ -78,7 +78,7 @@ class ctl_member
                 ->where('name', $name)
                 ->as_row()
                 ->execute();
-            if( $row['count'] )
+            if ( $row['count'] )
             {
                 cls_msgbox::show('系统提示', '标题已经存在！', '-1');
                 exit();
@@ -118,7 +118,7 @@ class ctl_member
                 ->where('id', '!=', $id)
                 ->as_row()
                 ->execute();
-            if( $row['count'] )
+            if ( $row['count'] )
             {
                 cls_msgbox::show('系统提示', '标题已经存在！', '-1');
                 exit();

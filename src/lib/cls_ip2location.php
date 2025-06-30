@@ -1016,8 +1016,8 @@ class cls_ip2location {
 		unpack('V', substr($data, 0, 4)),
 	);
 
-	foreach($parts as &$part)
-		if($part[1] < 0)
+	foreach ($parts as &$part)
+		if ($part[1] < 0)
 			$part[1] += 4294967296;
 
 	$result = bcadd(bcadd(bcmul($parts[0][1], bcpow(4294967296, 3)), bcmul($parts[1][1], bcpow(4294967296, 2))), bcadd(bcmul($parts[2][1], 4294967296), $parts[3][1]));

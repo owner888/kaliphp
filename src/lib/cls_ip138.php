@@ -167,7 +167,7 @@ class cls_ip138
     public static function get_ip_address(string $ip)
     {
         $arr_area = self::ip_to_address($ip);
-        if( !is_array($arr_area) )
+        if ( !is_array($arr_area) )
         {
             return $arr_area;
         }

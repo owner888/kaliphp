@@ -65,7 +65,7 @@ class ctl_admin_group
                 ->where('name', $name)
                 ->as_row()
                 ->execute();
-            if( $row['count'] )
+            if ( $row['count'] )
             {
                 cls_msgbox::show('系统提示', '用户组名已经存在！', '-1');
                 exit();
@@ -110,7 +110,7 @@ class ctl_admin_group
                 ->and_where('id', '!=', $id)
                 ->as_row()
                 ->execute();
-            if( $row['count'] )
+            if ( $row['count'] )
             {
                 cls_msgbox::show('系统提示', '用户组名已经存在！', '-1');
                 exit();

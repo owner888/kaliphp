@@ -107,7 +107,7 @@ class cls_menu
 
     public static function set_parentid($arr)
     {
-        foreach($arr as $k => $em) 
+        foreach ($arr as $k => $em) 
         {
             $display = !empty($em['display']) ? $em['display'] : '';
             if ( $display == 'none' ) 
@@ -132,9 +132,9 @@ class cls_menu
     {
         $arr['parentid'] = $parentid;
         $arr['topid']    = $topid;
-        if( $parentid==0 ) $topid = $arr['id'];
+        if ( $parentid==0 ) $topid = $arr['id'];
         // 如果不存在子节点，说明是末梢节点
-        if( !isset($arr['children']) ) 
+        if ( !isset($arr['children']) ) 
         {
             $ct      = !empty($arr['ct']) ? $arr['ct'] : '';
             $ac      = !empty($arr['ac']) ? $arr['ac'] : '';
@@ -161,7 +161,7 @@ class cls_menu
         }
 
         // 如果存在子节点，进入子节点递归处理
-        foreach($arr['children'] as $k => $son) 
+        foreach ($arr['children'] as $k => $son) 
         {
             $child = self::_set_parentid($son, $arr['id'], $topid);
             if (empty($child)) 
@@ -266,7 +266,7 @@ class cls_menu
     protected static function _has_purview($ct, $ac)
     {
         $rs = kali::$auth->check_purview($ct, $ac, 2);
-        if( $rs == 1 )
+        if ( $rs == 1 )
         {
             return true;
         } 

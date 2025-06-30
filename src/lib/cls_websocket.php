@@ -23,7 +23,7 @@ namespace kaliphp\lib;
 //));
 //$rs = $client->send_data($payload);
 
-//if( $rs !== true )
+//if ( $rs !== true )
 //{
     //echo "send data error...\n";
 //}
@@ -42,7 +42,7 @@ namespace kaliphp\lib;
     //));
     //$rs = $client->send_data($payload);
 
-    //if( $rs !== true )
+    //if ( $rs !== true )
     //{
         //echo "send data error...\n";
     //}
@@ -153,13 +153,13 @@ class cls_websocket
 
         $data = fread($this->_socket, $payloadLength);
 
-        if($payloadLength === 126)
+        if ($payloadLength === 126)
         {
             $mask = substr($data, 4, 4);
             $payloadOffset = 8;
             $dataLength = bindec(sprintf('%08b', ord($data[2])) . sprintf('%08b', ord($data[3]))) + $payloadOffset;
         }
-        elseif($payloadLength === 127)
+        elseif ($payloadLength === 127)
         {
             $mask = substr($data, 10, 4);
             $payloadOffset = 14;
@@ -178,12 +178,12 @@ class cls_websocket
             $dataLength = $payloadLength + $payloadOffset;
         }	
 
-        if($isMasked === true)
+        if ($isMasked === true)
         {
             for($i = $payloadOffset; $i < $dataLength; $i++)
             {
                 $j = $i - $payloadOffset;
-                if(isset($data[$i]))
+                if (isset($data[$i]))
                 {
                     $unmaskedPayload .= $data[$i] ^ $mask[$j % 4];
                 }
@@ -203,13 +203,13 @@ class cls_websocket
 
     public function send_data($data, $type = 'text', $masked = true)
     {
-        if($this->_connected === false)
+        if ($this->_connected === false)
         {
             trigger_error("Not connected", E_USER_WARNING);
             return false;
         }
 
-        if( !is_string($data)) 
+        if ( !is_string($data)) 
         {
             trigger_error("Not a string data was given.", E_USER_WARNING);
             return false;		
@@ -222,7 +222,7 @@ class cls_websocket
 
         $res = @fwrite($this->_socket, $this->_hybi10_encode($data, $type, $masked));
 
-        if($res === 0 || $res === false)
+        if ($res === 0 || $res === false)
         {
             return false;
         }		
@@ -261,7 +261,7 @@ class cls_websocket
         $header.= "Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n";
         $header.= "Sec-WebSocket-Key: " . $key . "\r\n";
 
-        if($origin !== false)
+        if ($origin !== false)
         {
             // golang的websocket会验证Origin，Sec-WebSocket-Origin这个不行，要用Origin
             // $header.= "Sec-WebSocket-Origin: " . $origin . "\r\n";
@@ -273,7 +273,7 @@ class cls_websocket
         socket_set_timeout($this->_socket, 2, 10000);
         //socket_write($this->_socket, $header);
         $res = @fwrite($this->_socket, $header);
-        if( $res === false ){
+        if ( $res === false ){
             echo "fwrite false \n";
         }
 
@@ -296,16 +296,16 @@ class cls_websocket
         $data = 'ping?';
         @fwrite($this->_socket, $this->_hybi10_encode($data, 'ping', true));
         $response = @fread($this->_socket, 300);
-        if(empty($response))
+        if (empty($response))
         {			
             return false;
         }
         $response = $this->_hybi10_decode($response);
-        if(!is_array($response))
+        if (!is_array($response))
         {			
             return false;
         }
-        if(!isset($response['type']) || $response['type'] !== 'pong')
+        if (!isset($response['type']) || $response['type'] !== 'pong')
         {			
             return false;
         }
@@ -338,11 +338,11 @@ class cls_websocket
             $useChars[] = $characters[mt_rand(0, strlen($characters)-1)];
         }
         // add spaces and numbers:
-        if($addSpaces === true)
+        if ($addSpaces === true)
         {
             array_push($useChars, ' ', ' ', ' ', ' ', ' ', ' ');
         }
-        if($addNumbers === true)
+        if ($addNumbers === true)
         {
             array_push($useChars, rand(0,9), rand(0,9), rand(0,9));
         }
@@ -382,7 +382,7 @@ class cls_websocket
         }
 
         // set mask and payload length (using 1, 3 or 9 bytes) 
-        if($payloadLength > 65535)
+        if ($payloadLength > 65535)
         {
             $payloadLengthBin = str_split(sprintf('%064b', $payloadLength), 8);
             $frameHead[1] = ($masked === true) ? 255 : 127;
@@ -391,13 +391,13 @@ class cls_websocket
                 $frameHead[$i+2] = bindec($payloadLengthBin[$i]);
             }
             // most significant bit MUST be 0 (close connection if frame too big)
-            if($frameHead[2] > 127)
+            if ($frameHead[2] > 127)
             {
                 $this->close(1004);
                 return false;
             }
         }
-        elseif($payloadLength > 125)
+        elseif ($payloadLength > 125)
         {
             $payloadLengthBin = str_split(sprintf('%016b', $payloadLength), 8);
             $frameHead[1] = ($masked === true) ? 254 : 126;
@@ -410,11 +410,11 @@ class cls_websocket
         }
 
         // convert frame-head to string:
-        foreach(array_keys($frameHead) as $i)
+        foreach (array_keys($frameHead) as $i)
         {
             $frameHead[$i] = chr($frameHead[$i]);
         }
-        if($masked === true)
+        if ($masked === true)
         {
             // generate a random mask:
             $mask = array();
@@ -482,13 +482,13 @@ class cls_websocket
             break;
         }
 
-        if($payloadLength === 126)
+        if ($payloadLength === 126)
         {
             $mask = substr($data, 4, 4);
             $payloadOffset = 8;
             $dataLength = bindec(sprintf('%08b', ord($data[2])) . sprintf('%08b', ord($data[3]))) + $payloadOffset;
         }
-        elseif($payloadLength === 127)
+        elseif ($payloadLength === 127)
         {
             $mask = substr($data, 10, 4);
             $payloadOffset = 14;
@@ -507,12 +507,12 @@ class cls_websocket
             $dataLength = $payloadLength + $payloadOffset;
         }	
 
-        if($isMasked === true)
+        if ($isMasked === true)
         {
             for($i = $payloadOffset; $i < $dataLength; $i++)
             {
                 $j = $i - $payloadOffset;
-                if(isset($data[$i]))
+                if (isset($data[$i]))
                 {
                     $unmaskedPayload .= $data[$i] ^ $mask[$j % 4];
                 }

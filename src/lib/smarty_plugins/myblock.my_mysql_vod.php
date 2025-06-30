@@ -55,7 +55,7 @@ function smarty_myblock_my_mysql_vod($_params, &$compiler)
 
 	$where[] = "`status`=1";	
 
-    if(!empty($ids))
+    if (!empty($ids))
     {
 		$ids_arr = explode(',',$ids);
         if (count($ids_arr) > 1) 
@@ -70,7 +70,7 @@ function smarty_myblock_my_mysql_vod($_params, &$compiler)
     }
     else 
     {
-        if(!empty($c_id))
+        if (!empty($c_id))
         {
             $c_id_arr = explode(',',$c_id);
             $c_ids = $c_id;
@@ -126,57 +126,57 @@ function smarty_myblock_my_mysql_vod($_params, &$compiler)
         $url['hits'] = $hits;
 	}
 
-    if(!empty($stars))
+    if (!empty($stars))
     {
         $where[] = "`stars` IN ({$stars})";
         $url['stars'] = $stars;
     }
-    if(!empty($letter))
+    if (!empty($letter))
     {
         $where[] = "`letter` IN ({$letter})";
         $url['letter'] = $letter;
     }
-    if(!empty($year))
+    if (!empty($year))
     {
         $where[] = "`year`={$year}";
         $url['year'] = $year;
     }
-    if(!empty($area))
+    if (!empty($area))
     {
         $where[] = "`area`='{$area}'";
         $url['area'] = $area;
     }
-    if(!empty($language))
+    if (!empty($language))
     {
         $where[] = "`language`='{$language}'";
         $url['language'] = $language;
     }
-    if(!empty($name))
+    if (!empty($name))
     {
         $where[] = "`name` LIKE '%{$name}%'";
         $url['name'] = $name;
     }
-    if(!empty($title))
+    if (!empty($title))
     {
         $where[] = "`title` LIKE '%{$title}%'";
         $url['title'] = $title;
     }
-    if(!empty($actor))
+    if (!empty($actor))
     {
         $where[] = "`actor` LIKE '%{$actor}%'";
         $url['actor'] = $actor;
     }
-    if(!empty($director))
+    if (!empty($director))
     {
         $where[] = "`director` LIKE '%{$director}%'";
         $url['director'] = $director;
     }
-    if(!empty($play))
+    if (!empty($play))
     {
         $where[] = "`play` LIKE '%{$play}%'";
         $url['play'] = $play;
     }
-    if(!empty($wd))
+    if (!empty($wd))
     {
         $where[] = "(`name` LIKE '%{$wd}%' OR `actor` LIKE '%{$wd}%' OR `director` LIKE '%{$wd}%')";
         $url['wd'] = $wd;

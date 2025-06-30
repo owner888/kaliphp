@@ -35,7 +35,7 @@ function smarty_function_page_data($params = [], $template)
     }
 
     //如果有key,则取指定的key的值
-    if( !empty($params['key']) )
+    if ( !empty($params['key']) )
     {
         $keys  = (array) $params['key'];
         foreach ($keys as $key) 

@@ -38,7 +38,7 @@ class cls_zip
 
         self::$files = array_unique(self::$files);
 
-        if( self::$archive == null )
+        if ( self::$archive == null )
         {
             self::$archive = new \ZipArchive();
             if ( !self::$archive->open($zip_name, ZipArchive::CREATE|ZipArchive::OVERWRITE) ) 
@@ -58,7 +58,7 @@ class cls_zip
 
     public static function add($path)
     {
-        if(is_dir($path))
+        if (is_dir($path))
         {
             $files = util::scandir($path);
             foreach ($files as $file) 

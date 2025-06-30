@@ -78,7 +78,7 @@ class ctl_config
         {
             $name = req::item('name');
             $row = db::select('count(*) AS `count`')->from('#PB#_config')->where('name', $name)->as_row()->execute();
-            if( $row['count'] )
+            if ( $row['count'] )
             {
                 cls_msgbox::show('系统提示', '变量名称已经存在！', '-1');
                 exit();

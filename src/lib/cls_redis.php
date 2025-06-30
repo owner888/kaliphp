@@ -85,7 +85,7 @@ class cls_redis
     private function connect($config = null)
     {
         $config = $this->connect;
-        if( class_exists('RedisCluster') && !empty($config['cluster']) )
+        if ( class_exists('RedisCluster') && !empty($config['cluster']) )
         {
             $pass = empty($config['cluster']["pass"]) ? null : $config['cluster']["pass"];
             $this->handler = new \RedisCluster(
@@ -96,12 +96,12 @@ class cls_redis
             
             $this->handler->setOption(\RedisCluster::OPT_SCAN, \RedisCluster::SCAN_RETRY);
             //因为集群可能多个项目使用，而集群不支持分库，所以设置一个前缀，所有操作都是隐式加上去的
-            if( $config['prefix'] )
+            if ( $config['prefix'] )
             {
                 $this->handler->setOption(\RedisCluster::OPT_PREFIX, $config['prefix'] . ':');
             }
 
-            if( defined('\RedisCluster::SERIALIZER_JSON') )
+            if ( defined('\RedisCluster::SERIALIZER_JSON') )
             {
                 $this->handler->setOption(\RedisCluster::OPT_SERIALIZER, \RedisCluster::SERIALIZER_JSON);
                 $this->connect['serializer'] = 'json';
@@ -121,22 +121,22 @@ class cls_redis
                 $this->handler->connect($config['host'], $config['port'], $config['timeout']);
             }
 
-            if( $config["pass"] )
+            if ( $config["pass"] )
             {
                 $this->handler->auth($config["pass"]);
             }
 
-            if( $config['dbindex'] )
+            if ( $config['dbindex'] )
             {
                 $this->handler->select($config['dbindex']);
             }
             
-            if( $config['prefix'] ) 
+            if ( $config['prefix'] ) 
             {
                 $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
             }
 
-            if( defined('\Redis::SERIALIZER_JSON') )
+            if ( defined('\Redis::SERIALIZER_JSON') )
             {
                 $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_JSON);
                 $this->connect['serializer'] = 'json';
@@ -280,7 +280,7 @@ class cls_redis
     {
         $this->_handle();
         $keys = [];
-        if( !empty($this->connect['is_cluster']) )
+        if ( !empty($this->connect['is_cluster']) )
         {
             $keyword = self::$config['prefix'].$keyword;
             foreach ($this->handler->_masters() as $master) 
@@ -307,12 +307,12 @@ class cls_redis
     public function infos()
     {
         $infos = [];
-        if( !empty($this->connect['is_cluster']) )
+        if ( !empty($this->connect['is_cluster']) )
         {
             foreach ($this->handler->_masters() as $master) 
             {
                 $info = (array) $this->handler->info($master);
-                foreach($info as $k => $v)
+                foreach ($info as $k => $v)
                 {
                     $k = $k . '('.implode(":", $master).')';
                     $infos[$k] = $v;
@@ -334,7 +334,7 @@ class cls_redis
 
     public function decode($value)
     {
-        if( empty($this->connect['serializer']) )
+        if ( empty($this->connect['serializer']) )
         {
             if ( is_array($value) ) 
             {

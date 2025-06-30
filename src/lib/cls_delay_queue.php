@@ -360,7 +360,7 @@ class cls_delay_queue
 
         if ( $data ) 
         {
-            foreach($data as $job)
+            foreach ($data as $job)
             {
                 $this->release($job);
                 $this->delete($job, $this->get_current_tube('tube_bury'));
@@ -436,7 +436,7 @@ class cls_delay_queue
             'payload'     => [],       //数据
         ];
 
-        foreach($default as $f => $ff)
+        foreach ($default as $f => $ff)
         {
             if ( isset($data[$f]) ) 
             {

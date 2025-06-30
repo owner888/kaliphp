@@ -143,7 +143,7 @@ class cls_mqtt
         // QoS 1 and 2 消息队列
         $this->handler->setMaxInFlightMessages(100);
 
-        if( !empty($config['user']) && !empty($config['pass']) )
+        if ( !empty($config['user']) && !empty($config['pass']) )
         {
             $this->handler->setCredentials($config['user'], $config['pass']);
         }

@@ -123,7 +123,7 @@ class cls_upload
         }
         else 
         {
-            if( req::$files[$formname]['error'] == UPLOAD_ERR_INI_SIZE || req::$files[$formname]['error'] == UPLOAD_ERR_FORM_SIZE )
+            if ( req::$files[$formname]['error'] == UPLOAD_ERR_INI_SIZE || req::$files[$formname]['error'] == UPLOAD_ERR_FORM_SIZE )
             {
                 throw new Exception(lang::get('upload_invalid_filesize'));
             }
@@ -474,7 +474,7 @@ class cls_upload
     {
         $dirs = [];
         array_map(function($a) use (&$dirs){
-            if( !empty($dir = preg_replace('#[\s\.]#', '', $a)) )
+            if ( !empty($dir = preg_replace('#[\s\.]#', '', $a)) )
             {
                 $dirs[] = $dir;
             }

@@ -70,14 +70,14 @@ foreach ($exe_job as $v)
     echo '  ', $commad_name,"\n";   
 
     $runtime_start = microtime(true);
-    if( function_exists('pcntl_fork') )//支持多进程优先使用，防止某个crond中断导致其他的无法执行
+    if ( function_exists('pcntl_fork') )//支持多进程优先使用，防止某个crond中断导致其他的无法执行
     {
         $pid = pcntl_fork();    //创建子进程
-        if( $pid == -1 ) //错误处理：创建子进程失败时返回-1.
+        if ( $pid == -1 ) //错误处理：创建子进程失败时返回-1.
         {
             die('Could not fork');
         } 
-        else if( $pid ) //父进程会得到子进程号，所以这里是父进程执行的逻辑
+        else if ( $pid ) //父进程会得到子进程号，所以这里是父进程执行的逻辑
         {
             //如果不需要阻塞进程，而又想得到子进程的退出状态，则可以注释掉pcntl_wait($status)语句，或写成：
             pcntl_wait($status, WNOHANG); //等待子进程中断，防止子进程成为僵尸进程。

@@ -311,7 +311,7 @@ class event
             $filter_arr = ['kaliphp\event::trigger','kali::run'];
             foreach ($backtrace as $val)
             {
-                if(!isset($val['class']) || !isset($val['line'])) continue;
+                if (!isset($val['class']) || !isset($val['line'])) continue;
                 if (strpos($val['file'],'kali.php') !== false) continue;
                 $full_method = $val['class'] . $val['type'] . $val['function'];
                 if (in_array($full_method,$filter_arr)) continue;

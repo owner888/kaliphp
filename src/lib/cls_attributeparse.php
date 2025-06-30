@@ -32,7 +32,7 @@ class cls_attributeparse
         $strLen = 0;
         $this->source_string = trim(preg_replace("/[ \r\n\t\f]{1,}/", " ", $str));
         $strLen = strlen($this->source_string);
-        if($strLen>0 && $strLen <= $this->source_max_size)
+        if ($strLen>0 && $strLen <= $this->source_max_size)
         {
             $this->parse_attribute();
         }
@@ -52,12 +52,12 @@ class cls_attributeparse
         // 获得Tag的名称，解析到 cAtt->get_att('tagname') 中
         for($i=0; $i<$strLen; $i++)
         {
-            if($this->source_string[$i]==' ')
+            if ($this->source_string[$i]==' ')
             {
                 $this->c_att->count++;
                 $tmpvalues = explode('.', $tmpvalue);
                 $this->c_att->items['tagname'] = ($this->char_tolower ? strtolower($tmpvalues[0]) : $tmpvalues[0]);
-                if( isset($tmpvalues[2]) )
+                if ( isset($tmpvalues[2]) )
                 {
                     $okname = $tmpvalues[1];
                     for($j=2;isset($tmpvalues[$j]);$j++)
@@ -66,7 +66,7 @@ class cls_attributeparse
                     }
                     $this->c_att->items['name'] = $okname;
                 }
-                else if(isset($tmpvalues[1]) && $tmpvalues[1]!='')
+                else if (isset($tmpvalues[1]) && $tmpvalues[1]!='')
                 {
                     $this->c_att->items['name'] = $tmpvalues[1];
                 }
@@ -81,12 +81,12 @@ class cls_attributeparse
         }
 
         //不存在属性列表的情况
-        if(!$hasattribute)
+        if (!$hasattribute)
         {
             $this->c_att->count++;
             $tmpvalues = explode('.', $tmpvalue);
             $this->c_att->items['tagname'] = ($this->char_tolower ? strtolower($tmpvalues[0]) : $tmpvalues[0]);
-            if( isset($tmpvalues[2]) )
+            if ( isset($tmpvalues[2]) )
             {
                 $okname = $tmpvalues[1];
                 for($i=2;isset($tmpvalues[$i]);$i++)
@@ -95,7 +95,7 @@ class cls_attributeparse
                  }
                 $this->c_att->items['name'] = $okname;
             }
-            else if(isset($tmpvalues[1]) && $tmpvalues[1]!='')
+            else if (isset($tmpvalues[1]) && $tmpvalues[1]!='')
             {
                 $this->c_att->items['name'] = $tmpvalues[1];
             }
@@ -108,15 +108,15 @@ class cls_attributeparse
         {
             $d = $this->source_string[$i];
             //查找属性名称
-            if($startdd==-1)
+            if ($startdd==-1)
             {
-                if($d != '=')
+                if ($d != '=')
                 {
                     $tmpatt .= $d;
                 }
                 else
                 {
-                    if($this->char_tolower)
+                    if ($this->char_tolower)
                     {
                         $tmpatt = strtolower(trim($tmpatt));
                     }
@@ -129,7 +129,7 @@ class cls_attributeparse
             }
 
             //查找属性的限定标志
-            else if($startdd==0)
+            else if ($startdd==0)
             {
                 switch($d)
                 {
@@ -150,9 +150,9 @@ class cls_attributeparse
                         break;
                 }
             }
-            else if($startdd==1)
+            else if ($startdd==1)
             {
-                if($d==$ddtag && ( isset($this->source_string[$i-1]) && $this->source_string[$i-1]!="\\") )
+                if ($d==$ddtag && ( isset($this->source_string[$i-1]) && $this->source_string[$i-1]!="\\") )
                 {
                     $this->c_att->count++;
                     $this->c_att->items[$tmpatt] = trim($tmpvalue);
@@ -168,7 +168,7 @@ class cls_attributeparse
         }//for
 
         //最后一个属性的给值
-        if($tmpatt != '')
+        if ($tmpatt != '')
         {
             $this->c_att->count++;
             $this->c_att->items[$tmpatt] = trim($tmpvalue);
@@ -190,11 +190,11 @@ class attribute
     //获得某个属性
     function get_att($str, $dfstr='')
     {
-        if($str == '')
+        if ($str == '')
         {
             return '';
         }
-        if(isset($this->items[$str]))
+        if (isset($this->items[$str]))
         {
             return $this->items[$str];
         }
@@ -207,7 +207,7 @@ class attribute
     //判断属性是否存在
     function is_att($str)
     {
-        if(isset($this->items[$str])) return true;
+        if (isset($this->items[$str])) return true;
         else return false;
     }
 

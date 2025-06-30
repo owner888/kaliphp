@@ -12,11 +12,11 @@
  */
 function smarty_myblock_lurd_list($_params, &$compiler)
 {
-    if( empty($compiler->_tpl_vars['lurd']) && empty($_params['datas']) )
+    if ( empty($compiler->_tpl_vars['lurd']) && empty($_params['datas']) )
     {
         return array();
     }
-    if( !empty($_params['datas']) )
+    if ( !empty($_params['datas']) )
     {
         return $_params['datas'];
     }

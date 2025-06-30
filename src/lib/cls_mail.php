@@ -198,7 +198,7 @@ class cls_mail {
      * @return boolean
      */
     public function addAttachment($file) {
-        if(!file_exists($file)) {
+        if (!file_exists($file)) {
             $this->_errorMessage = "file " . $file . " does not exist.";
             return false;
         }
@@ -231,7 +231,7 @@ class cls_mail {
 
         foreach ($command as $value) {
             $result = $this->_isSecurity ? $this->sendCommandSecurity($value[0], $value[1]) : $this->sendCommand($value[0], $value[1]);
-            if($result) {
+            if ($result) {
                 continue;
             }
             else{
@@ -249,7 +249,7 @@ class cls_mail {
      * @return string
      */
     public function error(){
-        if(!isset($this->_errorMessage)) {
+        if (!isset($this->_errorMessage)) {
             $this->_errorMessage = "";
         }
         return $this->_errorMessage;
@@ -266,7 +266,7 @@ class cls_mail {
         $command = array(
             array("HELO sendmail\r\n", 250)
         );
-        if(!empty($this->_userName)){
+        if (!empty($this->_userName)){
             $command[] = array("AUTH LOGIN\r\n", 334);
             $command[] = array($this->_userName . "\r\n", 334);
             $command[] = array($this->_password . "\r\n", 235);
@@ -279,19 +279,19 @@ class cls_mail {
         //$header = "From: 3kwan<".$this->_from.">\r\n";
 
         //设置收件人
-        if(!empty($this->_to)) {
+        if (!empty($this->_to)) {
             $count = count($this->_to);
-            if($count == 1){
+            if ($count == 1){
                 $command[] = array("RCPT TO: <" . $this->_to[0] . ">\r\n", 250);
                 $header .= "TO: <" . $this->_to[0] .">\r\n";
             }
             else{
                 for($i=0; $i<$count; $i++){
                     $command[] = array("RCPT TO: <" . $this->_to[$i] . ">\r\n", 250);
-                    if($i == 0){
+                    if ($i == 0){
                         $header .= "TO: <" . $this->_to[$i] .">";
                     }
-                    elseif($i + 1 == $count){
+                    elseif ($i + 1 == $count){
                         $header .= ",<" . $this->_to[$i] .">\r\n";
                     }
                     else{
@@ -302,19 +302,19 @@ class cls_mail {
         }
 
         //设置抄送
-        if(!empty($this->_cc)) {
+        if (!empty($this->_cc)) {
             $count = count($this->_cc);
-            if($count == 1){
+            if ($count == 1){
                 $command[] = array("RCPT TO: <" . $this->_cc[0] . ">\r\n", 250);
                 $header .= "CC: <" . $this->_cc[0] .">\r\n";
             }
             else{
                 for($i=0; $i<$count; $i++){
                     $command[] = array("RCPT TO: <" . $this->_cc[$i] . ">\r\n", 250);
-                    if($i == 0){
+                    if ($i == 0){
                         $header .= "CC: <" . $this->_cc[$i] .">";
                     }
-                    elseif($i + 1 == $count){
+                    elseif ($i + 1 == $count){
                         $header .= ",<" . $this->_cc[$i] .">\r\n";
                     }
                     else{
@@ -325,19 +325,19 @@ class cls_mail {
         }
 
         //设置秘密抄送
-        if(!empty($this->_bcc)) {
+        if (!empty($this->_bcc)) {
             $count = count($this->_bcc);
-            if($count == 1) {
+            if ($count == 1) {
                 $command[] = array("RCPT TO: <" . $this->_bcc[0] . ">\r\n", 250);
                 $header .= "BCC: <" . $this->_bcc[0] .">\r\n";
             }
             else{
                 for($i=0; $i<$count; $i++){
                     $command[] = array("RCPT TO: <" . $this->_bcc[$i] . ">\r\n", 250);
-                    if($i == 0){
+                    if ($i == 0){
                         $header .= "BCC: <" . $this->_bcc[$i] .">";
                     }
-                    elseif($i + 1 == $count){
+                    elseif ($i + 1 == $count){
                         $header .= ",<" . $this->_bcc[$i] .">\r\n";
                     }
                     else{
@@ -349,11 +349,11 @@ class cls_mail {
 
         //主题
         $header .= "Subject: =?UTF-8?B?" . $this->_subject ."?=\r\n";
-        if(isset($this->_attachment)) {
+        if (isset($this->_attachment)) {
             //含有附件的邮件头需要声明成这个
             $header .= "Content-Type: multipart/mixed;\r\n";
         }
-        elseif(false){
+        elseif (false){
             //邮件体含有图片资源的,且包含的图片在邮件内部时声明成这个，如果是引用的远程图片，就不需要了
             $header .= "Content-Type: multipart/related;\r\n";
         }
@@ -375,7 +375,7 @@ class cls_mail {
         $header .= "--" . $separator . "\r\n";
 
         //加入附件
-        if(!empty($this->_attachment)){
+        if (!empty($this->_attachment)){
             $count = count($this->_attachment);
             for($i=0; $i<$count; $i++){
                 $header .= "\r\n--" . $separator . "\r\n";
@@ -413,10 +413,10 @@ class cls_mail {
         }
         //发送命令给服务器
         try{
-            if(socket_write($this->_socket, $command, strlen($command))){
+            if (socket_write($this->_socket, $command, strlen($command))){
 
                 //当邮件内容分多次发送时，没有$code，服务器没有返回
-                if(empty($code))  {
+                if (empty($code))  {
                     return true;
                 }
 
@@ -427,9 +427,9 @@ class cls_mail {
                     echo 'response:' . $data . "\n\n";
                 }
 
-                if($data) {
+                if ($data) {
                     $pattern = "/^".$code."+?/";
-                    if(preg_match($pattern, $data)) {
+                    if (preg_match($pattern, $data)) {
                         return true;
                     }
                     else{
@@ -464,9 +464,9 @@ class cls_mail {
             echo 'Send command:' . $command . ',expected code:' . $code . "\n";
         }
         try {
-            if(fwrite($this->_socket, $command)){
+            if (fwrite($this->_socket, $command)){
                 //当邮件内容分多次发送时，没有$code，服务器没有返回
-                if(empty($code))  {
+                if (empty($code))  {
                     return true;
                 }
                 //读取服务器返回
@@ -476,9 +476,9 @@ class cls_mail {
                     echo 'response:' . $data . "\n\n";
                 }
 
-                if($data) {
+                if ($data) {
                     $pattern = "/^".$code."+?/";
-                    if(preg_match($pattern, $data)) {
+                    if (preg_match($pattern, $data)) {
                         return true;
                     }
                     else{
@@ -506,7 +506,7 @@ class cls_mail {
      * @return mixed
      */
     protected function readFile($file) {
-        if(file_exists($file)) {
+        if (file_exists($file)) {
             $file_obj = file_get_contents($file);
             return base64_encode($file_obj);
         }
@@ -523,9 +523,9 @@ class cls_mail {
      * @return mixed
      */
     protected function getMIMEType($file) {
-        if(file_exists($file)) {
+        if (file_exists($file)) {
             $mime = mime_content_type($file);
-            /*if(! preg_match("/gif|jpg|png|jpeg/", $mime)){
+            /*if (! preg_match("/gif|jpg|png|jpeg/", $mime)){
                 $mime = "application/octet-stream";
             }*/
             return $mime;
@@ -544,7 +544,7 @@ class cls_mail {
         //创建socket资源
         $this->_socket = socket_create(AF_INET, SOCK_STREAM, getprotobyname('tcp'));
 
-        if(!$this->_socket) {
+        if (!$this->_socket) {
             $this->_errorMessage = socket_strerror(socket_last_error());
             return false;
         }
@@ -552,12 +552,12 @@ class cls_mail {
         socket_set_block($this->_socket);//设置阻塞模式
 
         //连接服务器
-        if(!socket_connect($this->_socket, $this->_sendServer, $this->_port)) {
+        if (!socket_connect($this->_socket, $this->_sendServer, $this->_port)) {
             $this->_errorMessage = socket_strerror(socket_last_error());
             return false;
         }
         $str = socket_read($this->_socket, 1024);
-        if(!preg_match("/220+?/", $str)){
+        if (!preg_match("/220+?/", $str)){
             $this->_errorMessage = $str;
             return false;
         }
@@ -573,7 +573,7 @@ class cls_mail {
     protected function socketSecurity() {
         $remoteAddr = "tcp://" . $this->_sendServer . ":" . $this->_port;
         $this->_socket = stream_socket_client($remoteAddr, $errno, $errstr, 30);
-        if(!$this->_socket){
+        if (!$this->_socket){
             $this->_errorMessage = $errstr;
             return false;
         }
@@ -583,7 +583,7 @@ class cls_mail {
 
         stream_set_blocking($this->_socket, 1); //设置阻塞模式
         $str = fread($this->_socket, 1024);
-        if(!preg_match("/220+?/", $str)){
+        if (!preg_match("/220+?/", $str)){
             $this->_errorMessage = $str;
             return false;
         }
@@ -597,7 +597,7 @@ class cls_mail {
      * @return boolean
      */
     protected function close() {
-        if(isset($this->_socket) && is_object($this->_socket)) {
+        if (isset($this->_socket) && is_object($this->_socket)) {
             $this->_socket->close();
             return true;
         }
@@ -611,7 +611,7 @@ class cls_mail {
      * @return boolean
      */
     protected function closeSecutity() {
-        if(isset($this->_socket) && is_object($this->_socket)) {
+        if (isset($this->_socket) && is_object($this->_socket)) {
             stream_socket_shutdown($this->_socket, STREAM_SHUT_WR);
             return true;
         }

@@ -952,18 +952,18 @@ class cls_validate
         $id = strtoupper($id);
         $regx = "/(^\d{15}$)|(^\d{17}([0-9]|X)$)/";
         $arr_split = array();
-        if(!preg_match($regx,$id))
+        if (!preg_match($regx,$id))
         {
             return false;
         }
-        if(15==strlen($id)) //检查15位
+        if (15==strlen($id)) //检查15位
         {
             $regx = "/^(\d{6})+(\d{2})+(\d{2})+(\d{2})+(\d{3})$/";
 
             @preg_match($regx, $id, $arr_split);
             //检查生日日期是否正确
             $dtm_birth = "19".$arr_split[2] . '/' . $arr_split[3]. '/' .$arr_split[4];
-            if(!strtotime($dtm_birth))
+            if (!strtotime($dtm_birth))
             {
                 return false;
             }
@@ -977,7 +977,7 @@ class cls_validate
             $regx = "/^(\d{6})+(\d{4})+(\d{2})+(\d{2})+(\d{3})([0-9]|X)$/";
             @preg_match($regx, $id, $arr_split);
             $dtm_birth = $arr_split[2] . '/' . $arr_split[3]. '/' .$arr_split[4];
-            if(!strtotime($dtm_birth))  //检查生日日期是否正确
+            if (!strtotime($dtm_birth))  //检查生日日期是否正确
             {
                 return false;
             }

@@ -9,7 +9,7 @@ use kaliphp\req;
  */
 function smarty_function_request_em($params, &$smarty)
 {
-    if( !empty($params['array']) )
+    if ( !empty($params['array']) )
     {
         $arr = $params['array'];
         return isset($arr[$params['key']]) ? $arr[$params['key']] : '';

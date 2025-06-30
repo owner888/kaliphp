@@ -25,7 +25,7 @@ use kaliphp\lib\cls_security;
 error_reporting( E_ALL );
 ini_set('display_errors', 'On');
 
-//if( SYS_DEBUG === true || $_debug_safe_ip )
+//if ( SYS_DEBUG === true || $_debug_safe_ip )
 //{
     //ini_set('display_errors', 'On');
 //}
@@ -218,14 +218,14 @@ class kali
         event::trigger(onRequest);
 
         // 检查权限，Workerman环境先自己检查，后面再实现 
-        if( PHP_SAPI != 'cli' && isset(self::$config['check_purview_handle']) )
+        if ( PHP_SAPI != 'cli' && isset(self::$config['check_purview_handle']) )
         {
             kali::$auth = call_user_func_array(self::$config['check_purview_handle'], [$ct, $ac]);
         }
 
         $ctl  = 'ctl_'.$ct;
         //禁止 _ 开头的方法
-        if( $ac[0]=='_' )
+        if ( $ac[0]=='_' )
         {
             if ( PHP_SAPI != 'cli' ) 
             {
@@ -331,14 +331,14 @@ class kali
 
             $cache_time = 86400;
             $runtime_start = microtime(true);
-            if( function_exists('pcntl_fork') ) // 支持多进程优先使用，防止某个crond中断导致其他的无法执行
+            if ( function_exists('pcntl_fork') ) // 支持多进程优先使用，防止某个crond中断导致其他的无法执行
             {
                 $pid = pcntl_fork();  // 创建子进程
-                if( $pid == -1 )      // 错误处理：创建子进程失败时返回 -1
+                if ( $pid == -1 )      // 错误处理：创建子进程失败时返回 -1
                 {
                     die('Could not fork');
                 } 
-                else if( $pid ) // 父进程会得到子进程号，所以这里是父进程执行的逻辑
+                else if ( $pid ) // 父进程会得到子进程号，所以这里是父进程执行的逻辑
                 {
                     // 如果不需要阻塞进程，而又想得到子进程的退出状态，则可以注释掉pcntl_wait($status)语句，或写成：
                     pcntl_wait($status, WNOHANG); // 等待子进程中断，防止子进程成为僵尸进程。

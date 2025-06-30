@@ -70,7 +70,7 @@ class cls_swg_analyser extends TokenAnalyser
         $context = [];
         preg_match_all('#@\s*(?<keyword>(path|param|return|desc|tags|title)+)(?<args>((?!\*\s*@).)+)#ism', $template, $mat);
         // 先把关键字拿到
-        foreach($mat['keyword'] as $k => $v)
+        foreach ($mat['keyword'] as $k => $v)
         {
             $mat['args'][$k] = str_replace(['"', "'"], '', $mat['args'][$k]);
             if ( in_array($v, ['param', 'return']) ) 
@@ -157,7 +157,7 @@ EOT;
 
             $required = [];
             $pattern  = '#(?<type>[^\s]+)\s+\$?(?<name>[^\s]+)\s*(?<desc>[^@]*)#';
-            foreach($context['param'] as $item)
+            foreach ($context['param'] as $item)
             {
                 if ( preg_match($pattern, $item, $m) ) 
                 {
@@ -171,7 +171,7 @@ EOT;
                         preg_match_all($extr_pattern, $m['desc'], $od) 
                     ) 
                     {
-                        foreach($od['key'] as $key => $field)
+                        foreach ($od['key'] as $key => $field)
                         {
                             if ( 'Post' == $method && 'required' == $field ) 
                             {
@@ -229,7 +229,7 @@ EOT;
         if ( $context['return'] ) 
         {
             $pattern = '#(?<type>[^\s]+)\s+\$?(?<name>[^\s]+)\s+(?<desc>.*)#ism';
-            foreach($context['return'] as $item)
+            foreach ($context['return'] as $item)
             {
                 if ( preg_match($pattern, $item, $m) ) 
                 {

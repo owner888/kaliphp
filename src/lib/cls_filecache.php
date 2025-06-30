@@ -77,11 +77,11 @@ class cls_filecache
     {
         $this->_file_max = $this->_file_max * 1024 * 1024;
         $this->_cache_file = $cache_file.'.php';
-        if( !file_exists( $this->_cache_file ) )
+        if ( !file_exists( $this->_cache_file ) )
         {
             $this->_create();
         }
-        else if( filesize($this->_cache_file) > $this->_file_max )
+        else if ( filesize($this->_cache_file) > $this->_file_max )
         {
             $this->rebuild();
         }
@@ -90,7 +90,7 @@ class cls_filecache
     //析造
     public function __destruct()
     {
-        if( $this->_cache_fp )
+        if ( $this->_cache_fp )
         {
             @fclose( $this->_cache_fp );
             $this->_cache_fp = null;
@@ -118,14 +118,14 @@ class cls_filecache
     {
         //检查文件是否已经打开
         $this->open();
-        if( $key=='' ) {
+        if ( $key=='' ) {
             return false;
         }
         $index_signs = $this->_get_index_sign( $key );
         fseek($this->_cache_fp, $index_signs[0] * 4 + $this->_exit_code_length);
         $darr = unpack('l1h', fread($this->_cache_fp, 4));
         $head_pos = $darr['h'];
-        if( $head_pos==0 ) {
+        if ( $head_pos==0 ) {
             return false;
         }
         $n_pos = $head_pos;
@@ -139,7 +139,7 @@ class cls_filecache
             $cur_node  = unpack('S1key_len/l1data_len/l1pre/l1next/l1time/l1exptime', $info_dat);
             $cur_node['pos'] = $n_pos;
             $cur_node['key'] = fread($this->_cache_fp, $cur_node['key_len']);
-            if( $cur_node['data_len'] > 0 ) {
+            if ( $cur_node['data_len'] > 0 ) {
                 $cur_node['data'] = unserialize( fread($this->_cache_fp, $cur_node['data_len']) );
             } else {
                 $cur_node['data'] =  "**mark delete status**";
@@ -161,7 +161,7 @@ class cls_filecache
     public function rebuild( $isforce=false )
     {
         //强制在晚上2-6点这个时间才允许rebuild操作, 以避开访问高峰期
-        if( !$isforce && (date('G') < 2 || date('G') > 6)  ) {
+        if ( !$isforce && (date('G') < 2 || date('G') > 6)  ) {
             return false;
         }
         $this->open();
@@ -176,19 +176,19 @@ class cls_filecache
      */ 
     public function open()
     {
-        if( $this->_cache_fp ) 
+        if ( $this->_cache_fp ) 
         {
             return $this->_cache_fp;
         }
         
-        if( !file_exists($this->_cache_file) ) 
+        if ( !file_exists($this->_cache_file) ) 
         {
             return $this->_create();
         }
         
         $this->_cache_fp = @fopen($this->_cache_file, 'rb+');
         
-        if( !$this->_cache_fp ) 
+        if ( !$this->_cache_fp ) 
         {
             throw new \Exception ( "Cache file is not exists or no purview!" );
         }
@@ -247,7 +247,7 @@ class cls_filecache
      */ 
     private function _get_index_sign( $key )
     {
-        if( strlen($key) > 32 )  $key = md5( $key );
+        if ( strlen($key) > 32 )  $key = md5( $key );
         $keyindex = $this->_get_index( $key );
         return array($keyindex, $key);
     }
@@ -275,13 +275,13 @@ class cls_filecache
     {
         // 检查文件是否已经打开
         $this->open();
-        if( $key=='' ) 
+        if ( $key=='' ) 
         {
             return 0;
         }
         $cur_node = $this->get($key, true);
         // 把数据长度标识为0表示这数据已经删除，而不是实际性的删除
-        if( $cur_node['curkey'] != false && $cur_node['curkey'] )
+        if ( $cur_node['curkey'] != false && $cur_node['curkey'] )
         {
             fseek($this->_cache_fp, $cur_node['pos'] + 2);
             flock($this->_cache_fp, LOCK_EX);
@@ -319,7 +319,7 @@ class cls_filecache
     {
         //检查文件是否已经打开
         $this->open();
-        if( !$key ) 
+        if ( !$key ) 
         {
             return false;
         }
@@ -329,7 +329,7 @@ class cls_filecache
         fseek($this->_cache_fp, $key_index * 4 + $this->_exit_code_length);
         $darr = unpack('l1h', fread($this->_cache_fp, 4));
         $head_pos = $darr['h'];
-        if( $head_pos == 0 ) 
+        if ( $head_pos == 0 ) 
         {
             return false;
         }
@@ -340,19 +340,19 @@ class cls_filecache
             fseek($this->_cache_fp, $n_pos);
             $cur_node = array();
             $info_dat  = fread($this->_cache_fp, $this->_meta_length);
-            if( strlen($info_dat) != $this->_meta_length ) { return false; }
+            if ( strlen($info_dat) != $this->_meta_length ) { return false; }
             $cur_node  = unpack('S1key_len/l1data_len/l1pre/l1next/l1time/l1exptime', $info_dat);
             $cur_node['pos'] = $n_pos;
             $cur_node['curkey'] = false;
-            if($cur_node['key_len'] == 0) 
+            if ($cur_node['key_len'] == 0) 
             {
                 $n_pos = $cur_node['next'];
                 continue;
             }
             $_key = fread($this->_cache_fp, $cur_node['key_len']);
-            if( $_key==$key_sign )
+            if ( $_key==$key_sign )
             {
-                if( $cur_node['data_len'] > 0 ) 
+                if ( $cur_node['data_len'] > 0 ) 
                 {
                     $data = unserialize( fread($this->_cache_fp, $cur_node['data_len']) );
                 } 
@@ -382,7 +382,7 @@ class cls_filecache
     {
         //检查文件是否已经打开
         $this->open();
-        if( !$key ) 
+        if ( !$key ) 
         {
             return false;
         }
@@ -392,7 +392,7 @@ class cls_filecache
         fseek($this->_cache_fp, $key_index * 4 + $this->_exit_code_length);
         $darr = unpack('l1h', fread($this->_cache_fp, 4));
         $head_pos = $darr['h'];
-        if( $head_pos == 0 ) 
+        if ( $head_pos == 0 ) 
         {
             return false;
         }
@@ -403,18 +403,18 @@ class cls_filecache
             fseek($this->_cache_fp, $n_pos);
             $cur_node = array();
             $info_dat  = fread($this->_cache_fp, $this->_meta_length);
-            if( strlen($info_dat) != $this->_meta_length ) { return false; }
+            if ( strlen($info_dat) != $this->_meta_length ) { return false; }
             $cur_node  = unpack('S1key_len/l1data_len/l1pre/l1next/l1time/l1exptime', $info_dat);
             $cur_node['pos'] = $n_pos;
             $cur_node['curkey'] = false;
-            if($cur_node['key_len'] == 0) {
+            if ($cur_node['key_len'] == 0) {
                 $n_pos = $cur_node['next'];
                 continue;
             }
             $_key = fread($this->_cache_fp, $cur_node['key_len']);
-            if( $_key == $key_sign )
+            if ( $_key == $key_sign )
             {
-                if( $cur_node['data_len'] > 0 ) 
+                if ( $cur_node['data_len'] > 0 ) 
                 {
                     $data = unserialize( fread($this->_cache_fp, $cur_node['data_len']) );
                 } else 
@@ -441,7 +441,7 @@ class cls_filecache
     */ 
     private function _check_data( &$node, &$data )
     {
-        if( $node['data_len'] == 0 || ($node['exptime'] > 0 && $node['time'] + $node['exptime'] < time()) ) 
+        if ( $node['data_len'] == 0 || ($node['exptime'] > 0 && $node['time'] + $node['exptime'] < time()) ) 
         {
             return false;
         } 
@@ -468,7 +468,7 @@ class cls_filecache
      */
     public function set( $key, $value, $compress=0, $exptime=0, $block_size=1 )
     {
-        if( !$key ) 
+        if ( !$key ) 
         {
             return false;
         }
@@ -494,10 +494,10 @@ class cls_filecache
         $value = serialize( $value );
         
         //链表为空
-        if( $head_pos==0 )
+        if ( $head_pos==0 )
         {
             //锁定文件
-            if( !$this->is_single ) 
+            if ( !$this->is_single ) 
             {
                 flock($this->_cache_fp, LOCK_EX);
             }
@@ -515,12 +515,12 @@ class cls_filecache
         {
             $cur_node = $this->get($key, true);
             //锁定文件
-            if( !$this->is_single ) 
+            if ( !$this->is_single ) 
             {
                 flock($this->_cache_fp, LOCK_EX);
             }
             //不存在相同的key数据，直接在文件末尾写数据
-            if( !$cur_node['curkey'] )
+            if ( !$cur_node['curkey'] )
             {
                 $save_data = pack('Slllll', strlen($key_sign), strlen($value), $cur_node['pos'], 0, time(), $exptime).$key_sign.$value;
                 //保存数据到文件尾部
@@ -532,7 +532,7 @@ class cls_filecache
                 fwrite($this->_cache_fp, pack('l', $head_pos));
             }
             //如果新数据比旧数据小，直接在原来位置修改数据
-            else if( strlen($value) <= $cur_node['data_len'] )
+            else if ( strlen($value) <= $cur_node['data_len'] )
             {
                 $save_data = pack('Slllll', strlen($key_sign), strlen($value), $cur_node['pre'], $cur_node['next'], time(), $exptime).$key_sign.$value;
                 fseek($this->_cache_fp, $cur_node['pos']);
@@ -547,7 +547,7 @@ class cls_filecache
                 $head_pos = ftell( $this->_cache_fp );
                 fwrite($this->_cache_fp, $save_data);
                 //改变前一个节点link_next_pos的指向
-                if( $cur_node['pre'] > 0 )
+                if ( $cur_node['pre'] > 0 )
                 {
                     fseek($this->_cache_fp, $cur_node['pre'] + 10);
                     fwrite($this->_cache_fp, pack('l', $head_pos));
@@ -558,7 +558,7 @@ class cls_filecache
                     fwrite($this->_cache_fp, pack('l', $head_pos));
                 }
                 //改变后一个节点link_pre_pos的指向
-                if( $cur_node['next'] > 0)
+                if ( $cur_node['next'] > 0)
                 {
                     fseek($this->_cache_fp, $cur_node['next'] + 6);
                     fwrite($this->_cache_fp, pack('l', $head_pos));
@@ -566,7 +566,7 @@ class cls_filecache
             }
         }
         //解除文件写保护
-        if( !$this->is_single ) 
+        if ( !$this->is_single ) 
         {
             flock($this->_cache_fp, LOCK_UN);
         }
@@ -601,7 +601,7 @@ class cls_filecache
             $h &= 0x7fffffff;
         }
         $i = ($h % $this->_mask_value);
-        //if( $i < 6 ) $i = $i+5; //由于被php代码占用，不在前20字节存储数据
+        //if ( $i < 6 ) $i = $i+5; //由于被php代码占用，不在前20字节存储数据
         return $i;
     }
 }

@@ -17,7 +17,7 @@ function smarty_function_string_array($params, &$smarty)
         $smarty->assign($params['name'], array());
         return '';
     }
-    if( empty($params['spstring']) )
+    if ( empty($params['spstring']) )
     {
         $params['spstring'] = "\n";
     }

@@ -17,13 +17,13 @@ function smarty_block_news_list($params, $content, &$smarty, &$repeat)
 { 
     extract($params);
 
-    if(!isset($assign))
+    if (!isset($assign))
     {
         $assign = 'row';
     }
 
     // 注册一个block的索引，照顾smarty的版本
-    if(method_exists($smarty,'get_template_vars'))
+    if (method_exists($smarty,'get_template_vars'))
     {
         $_bindex = $smarty->get_template_vars('_bindex');
     }
@@ -32,14 +32,14 @@ function smarty_block_news_list($params, $content, &$smarty, &$repeat)
         $_bindex = $smarty->getVariable('_bindex')->value;
     }
 
-    if(!$_bindex)
+    if (!$_bindex)
     {
         $_bindex = array();
     }
 
-    if($name)
+    if ($name)
     {
-        if(!isset($_bindex[$name]))
+        if (!isset($_bindex[$name]))
         {
             $_bindex[$name] = 1;
         }
@@ -55,7 +55,7 @@ function smarty_block_news_list($params, $content, &$smarty, &$repeat)
     $dataindex = substr($dataindex,0,16);
     // 将使用tpl::$blocksdata[$dataindex]来存储
     // 填充数据
-    if(!isset(tpl::$blocksdata[$dataindex]))
+    if (!isset(tpl::$blocksdata[$dataindex]))
     {
         #************************************************************************
         #主要数据填充区
@@ -67,25 +67,25 @@ function smarty_block_news_list($params, $content, &$smarty, &$repeat)
     }
 
     // 如果没有数据，直接返回null,不必再执行了
-    if(!tpl::$blocksdata[$dataindex])
+    if (!tpl::$blocksdata[$dataindex])
     {
         $repeat = false;
         return '';
     }
 
     // 取一条数据出栈，并把它指派给$assign，重复执行开关置位1
-    if(list($key, $item) = each(tpl::$blocksdata[$dataindex]))
+    if (list($key, $item) = each(tpl::$blocksdata[$dataindex]))
     {
         $smarty->assign($assign, $item);
         $repeat = true;
     }
 
     // 如果已经到达最后，重置数组指针，重复执行开关置位0
-    if(!$item)
+    if (!$item)
     {
         reset(tpl::$blocksdata[$dataindex]);
         $repeat = false;
-        if($name)
+        if ($name)
         {
             unset($_bindex[$name]);
             $smarty->assign('_bindex', $_bindex);

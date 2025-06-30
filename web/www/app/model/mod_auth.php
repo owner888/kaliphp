@@ -89,7 +89,7 @@ class mod_auth extends cls_auth
         $safe_actions = ['logout', 'login', 'authentication'];
         if ( !in_array($ac, $safe_actions) ) 
         {
-            if(  //登陆IP不在白名单，禁止操作
+            if (  //登陆IP不在白名单，禁止操作
                 !empty($auth->user['safe_ips']) && 
                 !in_array(IP, explode(',', str_replace('，', ',', $auth->user['safe_ips']))) 
             ) 
@@ -156,18 +156,18 @@ class mod_auth extends cls_auth
      */
     public function check_user( string $account, string $loginpwd, int $remember = 0 )
     {
-        if( $account == '' || $loginpwd == '' )
+        if ( $account == '' || $loginpwd == '' )
         {
             throw new Exception('请输入会员名密码');
         }
 
         // 检测用户名合法性.
         $ftype = 'username';
-        if( cls_validate::instance()->email($account) )
+        if ( cls_validate::instance()->email($account) )
         {
             $ftype = 'email';
         }
-        else if( !cls_validate::instance()->username($account) )
+        else if ( !cls_validate::instance()->username($account) )
         {
             throw new Exception('会员名格式不合法！');
         }
@@ -176,7 +176,7 @@ class mod_auth extends cls_auth
         //1秒内同一个ip同一个账号只能一次
         $lock_name = md5($account.'-'.req::ip());
         $is_lock   = cls_redis_lock::lock("login_lock_{$lock_name}", 0, 1);
-        if(!$is_lock)
+        if (!$is_lock)
         {
             throw new \Exception("频率过快，请稍后重试！");
         }
@@ -184,14 +184,14 @@ class mod_auth extends cls_auth
         // 查mysql之前先判断spam
         // 对应 spam_config.check_user.keys.account 的配置
         $spam_key = "check_user:account:{$account}";
-        if( false == ($spam_status = cls_spam::check($spam_key, $spam_info, 0, true)) )
+        if ( false == ($spam_status = cls_spam::check($spam_key, $spam_info, 0, true)) )
         {
             throw new \Exception('请求频繁，请稍后重试！');
         }
 
         cls_spam::add($spam_key, ['username' => $account]);//请求了就记录
         // 同一IP使用某帐号连续错误次数检测
-        if( $this->get_login_error24( $account ) )
+        if ( $this->get_login_error24( $account ) )
         {
             throw new Exception('连续登录失败超过3次，暂时禁止登录！');
         }
@@ -200,7 +200,7 @@ class mod_auth extends cls_auth
         $user = $this->get_user( $account, $ftype, false );
 
         // 存在用户数据
-        if( is_array($user) )
+        if ( is_array($user) )
         {
             if ( !$user['status'] ) 
             {
@@ -214,7 +214,7 @@ class mod_auth extends cls_auth
 
             $loginsta = false;
             // 正常密码，正确生成会话信息
-            if( static::check_password($loginpwd, $user['password']) )
+            if ( static::check_password($loginpwd, $user['password']) )
             {
                 $loginsta = true;
             }
@@ -301,7 +301,7 @@ class mod_auth extends cls_auth
         }
 
         // 源数据
-        if( $user === false )
+        if ( $user === false )
         {
             // 读取用户数据
             $user = db::select(static::$table_fields)
@@ -363,13 +363,13 @@ class mod_auth extends cls_auth
         // 获取检测应用池开放权限的模块
         $public_mod = isset(static::$config['public'][$mod]) ? static::$config['public'][$mod] : array();
         // 检测开放的控制器和方法
-        if( !empty(static::$config['public']) && 
+        if ( !empty(static::$config['public']) && 
             ( static::$config['public']=='*' || in_array($action, $public_mod) || in_array('*', $public_mod) ) )
         {
             $rs = 1;
         }
         // 未登录用户
-        else if( empty($this->uid) )
+        else if ( empty($this->uid) )
         {
             $rs = 0;
         }
@@ -402,7 +402,7 @@ class mod_auth extends cls_auth
         }
 
         // 返回检查结果
-        if( $backtype == 2 )
+        if ( $backtype == 2 )
         {
             return $rs;
         }
@@ -410,12 +410,12 @@ class mod_auth extends cls_auth
         else
         {
             // 正常状态
-            if( $rs == 1 )
+            if ( $rs == 1 )
             {
                 return true;
             }
             // 用户权限不足(用户权限+用户组权限)
-            else if( $rs == -1 )
+            else if ( $rs == -1 )
             {
                 if ( req::is_ajax() ) 
                 {
@@ -430,7 +430,7 @@ class mod_auth extends cls_auth
                 }
             }
             // 未登录用户
-            else if( $rs == 0 )
+            else if ( $rs == 0 )
             {
                 if ( req::is_ajax() ) 
                 {
@@ -463,7 +463,7 @@ class mod_auth extends cls_auth
         // $purviews  = false;
 
         // 源数据
-        if( $purviews === false )
+        if ( $purviews === false )
         {
             // 用户权限 = 用户权限 + 组权限
             // 用户权限
@@ -569,14 +569,14 @@ class mod_auth extends cls_auth
     public function save_admin_log($msg)
     {
         $url = '?ct='.req::item('ct').'&ac='.req::item('ac');
-        foreach(req::$forms as $k => $v)
+        foreach (req::$forms as $k => $v)
         {
-            if( preg_match('/pwd|password|sign|cert/', $k) || $k=='ct' || $k=='ac' ) 
+            if ( preg_match('/pwd|password|sign|cert/', $k) || $k=='ct' || $k=='ac' ) 
             {
                 continue;
             }
             $nstr = "&{$k}=".(is_array($v) ? 'array()' : $v);
-            if( strlen($url.$nstr) < 100 ) 
+            if ( strlen($url.$nstr) < 100 ) 
             {
                 $url .= $nstr;
             } 

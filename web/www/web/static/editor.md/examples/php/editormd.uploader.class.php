@@ -72,7 +72,7 @@
         
         public function config($configs) 
         {
-            foreach($configs as $key => $value)
+            foreach ($configs as $key => $value)
             {
                 $this->$key = $value;
             }       
@@ -88,7 +88,7 @@
 
         public function upload($name)
         {            
-            if(empty($_FILES[$name]['name'])) //上传文件为空时
+            if (empty($_FILES[$name]['name'])) //上传文件为空时
             {
                $this->message($this->errors['empty']);
                 
@@ -97,14 +97,14 @@
             
             $this->files = $_FILES[$name];
             
-            if(!file_exists($this->savePath)) //目录不存在
+            if (!file_exists($this->savePath)) //目录不存在
             {
                 $this->message($this->errors['not_exist']);
                 
                 return false;
             }
 
-            if(!is_writable($this->savePath)) //目录不可写
+            if (!is_writable($this->savePath)) //目录不可写
             {
                 $this->message($this->errors['unwritable']);
                 
@@ -148,7 +148,7 @@
 
             if (!$this->cover) //当不能覆盖时
             {
-                if(file_exists($this->savePath.$this->saveName)) //有相同的文件存在
+                if (file_exists($this->savePath.$this->saveName)) //有相同的文件存在
                 {
                     $this->message($this->saveName . $this->errors['same_file']);
                     
@@ -254,7 +254,7 @@
          {             
             $this->saveName = $this->randomFileName().".".$this->fileExt;
              
-            if($this->saveName == '') //如果没生成随机文件名，就保留原文件名
+            if ($this->saveName == '') //如果没生成随机文件名，就保留原文件名
             {
                 $this->saveName = $this->files['name'];
             }

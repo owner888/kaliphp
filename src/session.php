@@ -197,7 +197,7 @@ class session implements \SessionHandlerInterface
      */
     public static function get(string $id, ?string $key = null)
     {
-        if( strlen($id) == 0 )
+        if ( strlen($id) == 0 )
         {
             return [];
         }
@@ -241,7 +241,7 @@ class session implements \SessionHandlerInterface
 
     public static function decode(string $sess_data): array
     {
-        if( strlen($sess_data) == 0 )
+        if ( strlen($sess_data) == 0 )
         {
             return [];
         }
@@ -261,7 +261,7 @@ class session implements \SessionHandlerInterface
         foreach ( $matches[2] as $value )
         {
             $offset = $value[1];
-            if(!is_null($last_offset))
+            if (!is_null($last_offset))
             {
                 $value_text = substr($sess_data, $last_offset, $offset - $last_offset);
                 $decode_data[$current_key] = unserialize($value_text);

@@ -95,11 +95,11 @@ class config
                 $config_path = '';
                 //如果有config$env优先使用，否则加载哪里config
                 //config优先顺序 数据库 -> app config -> 系统config
-                foreach($config_paths as $path)
+                foreach ($config_paths as $path)
                 {
                     $config_path = $path.$this->_module.'.php';
 
-                    if( file_exists($file = $path.$env.'.php') || file_exists($file = $path.$this->_module.'.php') )
+                    if ( file_exists($file = $path.$env.'.php') || file_exists($file = $path.$this->_module.'.php') )
                     {
                         $config = require $file; 
                         $this->_cfg_caches[$this->_source][$this->_module] = util::array_merge_multiple(
@@ -109,7 +109,7 @@ class config
                     }
                 }
 
-                if( empty($this->_cfg_caches[$this->_source][$this->_module]) )
+                if ( empty($this->_cfg_caches[$this->_source][$this->_module]) )
                 {
                     throw new Exception($config_path, 1002);
                 }
@@ -128,7 +128,7 @@ class config
     {
         $cache_key = __CLASS__ .':sys_db_config';
         $configs = cache::get($cache_key);
-        if( $update || empty($configs) )
+        if ( $update || empty($configs) )
         {
             $rsid = db::select('name,value,group')
                 ->from('#PB#_config')

@@ -392,7 +392,7 @@ class req
      */
     public static function cururl()
     {
-        if(!empty(self::server("REQUEST_URI")))
+        if (!empty(self::server("REQUEST_URI")))
         {
             $script_name = self::server("REQUEST_URI");
             $nowurl = $script_name;
@@ -469,7 +469,7 @@ class req
         }
 
         // 域名上了接入层获取方法
-        if( !empty(self::server('HTTP_X_REAL_COUNTRY_SHORT')) )
+        if ( !empty(self::server('HTTP_X_REAL_COUNTRY_SHORT')) )
         {
             return self::server('HTTP_X_REAL_COUNTRY_SHORT');
         }
@@ -597,9 +597,9 @@ class req
             ];
 
             $platform = 'Other';
-            foreach($mua as $plf => $regex)
+            foreach ($mua as $plf => $regex)
             {
-                if(preg_match($regex, $user_agent))
+                if (preg_match($regex, $user_agent))
                 {
                     $platform = $plf;
                     break;
@@ -689,7 +689,7 @@ class req
     public static function is_html5()
     {
         $rs = true;
-        if(!empty(self::server('HTTP_USER_AGENT')) && strpos(self::server('HTTP_USER_AGENT'), "MSIE")) 
+        if (!empty(self::server('HTTP_USER_AGENT')) && strpos(self::server('HTTP_USER_AGENT'), "MSIE")) 
         {
             preg_match("#msie (\d+)#i", self::server('HTTP_USER_AGENT'), $out);
             $version = empty($out[1]) ? 10 : intval($out[1]);
@@ -798,17 +798,17 @@ class req
      */
     public static function move_upload_file( $formname, $filename, $item = '' )
     {
-        if( self::is_upload_file( $formname, $item ) )
+        if ( self::is_upload_file( $formname, $item ) )
         {
-            if( preg_match(self::$filter_filename, $filename) )
+            if ( preg_match(self::$filter_filename, $filename) )
             {
                 return false;
             }
             else
             {
-                if( $item === '' ) 
+                if ( $item === '' ) 
                 {
-                    if( PHP_OS == 'WINNT')
+                    if ( PHP_OS == 'WINNT')
                     {
                         return copy(self::$files[$formname]['tmp_name'], $filename);
                     }
@@ -819,7 +819,7 @@ class req
                 }
                 else 
                 {
-                    if( PHP_OS == 'WINNT')
+                    if ( PHP_OS == 'WINNT')
                     {
 
                         return copy(self::$files[$formname]['tmp_name'][$item], $filename);
@@ -838,7 +838,7 @@ class req
      */
     public static function get_tmp_name( $formname, $defaultvalue = '', $item = '' )
     {
-        if( $item === '' ) 
+        if ( $item === '' ) 
         {
             return isset(self::$files[$formname]['tmp_name']) ? self::$files[$formname]['tmp_name'] :  $defaultvalue;
         }
@@ -853,7 +853,7 @@ class req
      */
     public static function get_shortname( $formname, $item = '' )
     {
-        if( $item === '' ) 
+        if ( $item === '' ) 
         {
             $filetype = strtolower(isset(self::$files[$formname]['type']) ? self::$files[$formname]['type'] : '');
         }
@@ -884,7 +884,7 @@ class req
             $shortname = 'bmp';
             break;
         default:
-            if( $item === '' )
+            if ( $item === '' )
             {
                 $filename = isset(self::$files[$formname]['name']) ? self::$files[$formname]['name'] : '';
             } 
@@ -892,7 +892,7 @@ class req
             {
                 $filename = isset(self::$files[$formname]['name'][$item]) ? self::$files[$formname]['name'][$item] : '';
             }
-            if( preg_match("/\./", $filename) )
+            if ( preg_match("/\./", $filename) )
             {
                 $fs = explode('.', $filename);
                 $shortname = strtolower($fs[ count($fs)-1 ]);
@@ -907,19 +907,19 @@ class req
      */
     public static function get_file_info( $formname, $item = '' )
     {
-        if( !isset( self::$files[$formname] ) )
+        if ( !isset( self::$files[$formname] ) )
         {
             return false;
         }
         else
         {
-            if($item === '')
+            if ($item === '')
             {
                 return self::$files[$formname];
             }
             else
             {
-                if( !isset(self::$files[$formname][$item]) ) 
+                if ( !isset(self::$files[$formname][$item]) ) 
                 {
                     return false;
                 }
@@ -936,9 +936,9 @@ class req
      */
     public static function is_upload_file( $formname,  $item = '' )
     {
-        if( $item === '' ) 
+        if ( $item === '' ) 
         {
-            if( isset(self::$files[$formname]['error']) && self::$files[$formname]['error']==UPLOAD_ERR_OK  ) 
+            if ( isset(self::$files[$formname]['error']) && self::$files[$formname]['error']==UPLOAD_ERR_OK  ) 
             {
                 return true;
             }
@@ -949,7 +949,7 @@ class req
         }
         else 
         {
-            if( isset(self::$files[$formname]['error'][$item]) && self::$files[$formname]['error'][$item]==UPLOAD_ERR_OK  ) 
+            if ( isset(self::$files[$formname]['error'][$item]) && self::$files[$formname]['error'][$item]==UPLOAD_ERR_OK  ) 
             {
                 return true;
             } 
@@ -970,7 +970,7 @@ class req
      */
     public static function check_subfix(string $formname, array $subfix = [], string $item = ''): bool
     {
-        if( !in_array(self::get_shortname($formname, $item), $subfix))
+        if ( !in_array(self::get_shortname($formname, $item), $subfix))
         {
             return false;
         }
@@ -987,12 +987,12 @@ class req
      */
     public static function assign_values(array $data, $method = 'GET')
     {
-        foreach($data as $k => $v)
+        foreach ($data as $k => $v)
         {
             self::$forms[$k] = $v;
 
             // 给值 gets/posts
-            if( strtoupper($method) == 'GET' ) 
+            if ( strtoupper($method) == 'GET' ) 
             {
                 self::$gets[$k] = $v;
             }
@@ -1144,7 +1144,7 @@ class req
         }
 
         // 命令行模式
-        if( $method === 'cli' ) 
+        if ( $method === 'cli' ) 
         {
             // 把命令行参数转化为get参数
             if ( count(cls_cli::$args) > 0) 
@@ -1160,31 +1160,31 @@ class req
         }
 
         // 上传的文件处理
-        if( isset($_FILES) && count($_FILES) > 0 )
+        if ( isset($_FILES) && count($_FILES) > 0 )
         {
             self::filter_files($_FILES);
         }
 
         // 处理 get
-        if( count($_GET) > 0 )
+        if ( count($_GET) > 0 )
         {
             self::$gets = $_GET;
         }
      
         // 处理 post
-        if( count($_POST) > 0 )
+        if ( count($_POST) > 0 )
         {
             self::$posts = $_POST;
         }
 
         // 处理 cookie
-        if( count($_COOKIE) > 0 )
+        if ( count($_COOKIE) > 0 )
         {
             self::$cookies = $_COOKIE;
         }
 
         // 处理 request
-        if( self::$gets || self::$posts )
+        if ( self::$gets || self::$posts )
         {
             // 修改成 gets 和 posts 的集合，更适合一点
             self::$forms = array_merge(self::$gets, self::$posts);
@@ -1201,9 +1201,9 @@ class req
         // 开启过滤
         if ( !ini_get('magic_quotes_gpc') && !empty(self::$config['use_magic_quotes']) ) 
         {
-            foreach(['forms', 'gets', 'posts'] as $f)
+            foreach (['forms', 'gets', 'posts'] as $f)
             {
-                if( self::${$f} )
+                if ( self::${$f} )
                 {
                     self::${$f} = self::add_s(self::${$f});
                 }
@@ -1213,9 +1213,9 @@ class req
         // 开启过滤
         if ( self::$config['global_xss_filtering'] ) 
         {
-            foreach(['forms', 'gets', 'posts'] as $f)
+            foreach (['forms', 'gets', 'posts'] as $f)
             {
-                if( self::${$f} )
+                if ( self::${$f} )
                 {
                     self::${$f} = cls_security::xss_clean(self::${$f});
                 }

@@ -79,11 +79,11 @@ class lang
         $default_idiom = empty(self::$config['default']) ? 'en' : self::$config['default'];
         //优先用户传的->默认idiom->配置中的fallback
         $idioms = array_unique([$idiom, $default_idiom, util::get_value(self::$config, 'fallback')]);
-        foreach([$basepath, $common_path, $app_path] as $path)
+        foreach ([$basepath, $common_path, $app_path] as $path)
         {
-            foreach($idioms as $k => $idiom)
+            foreach ($idioms as $k => $idiom)
             {
-                if( 
+                if ( 
                     !empty($idiom) && //空的idom忽略
                     file_exists($filepath = $path. DS .$idiom . DS .$langfile ) &&
                     ( $k == 0 || !isset($loaded_files[$filepath])) //系统配置的已经加载过的不需要加载

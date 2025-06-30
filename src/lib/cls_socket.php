@@ -88,7 +88,7 @@ class cls_socket
             $type = SOCK_STREAM;
         }
         $auto_throw = $config['auto-throw'] ?? true;
-        if( ($this->handler = socket_create(AF_INET, $type, $config['type'] ?: SOL_TCP)) === false) 
+        if ( ($this->handler = socket_create(AF_INET, $type, $config['type'] ?: SOL_TCP)) === false) 
         {
             if ($auto_throw) 
             {

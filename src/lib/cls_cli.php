@@ -66,7 +66,7 @@ class cls_cli
      */
     public static function _init()
     {
-        if( PHP_SAPI != 'cli' ) 
+        if ( PHP_SAPI != 'cli' ) 
         {
             throw new Exception('cls_cli class cannot be used outside of the command line.');
         }
@@ -489,7 +489,7 @@ class cls_cli
     public static function spawn($call, $output = '/dev/null')
     {
         // Windows
-        if(static::is_windows())
+        if (static::is_windows())
         {
             pclose(popen('start /b '.$call, 'r'));
         }

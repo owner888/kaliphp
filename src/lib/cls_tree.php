@@ -67,14 +67,14 @@ class cls_tree {
     public function get_parent($myid)
     {  
         $newarr = array();  
-        if(!isset($this->arr[$myid])) return false;  
+        if (!isset($this->arr[$myid])) return false;  
         $pid = $this->arr[$myid]['parentid'];  
         $pid = $this->arr[$pid]['parentid'];  
-        if(is_array($this->arr))
+        if (is_array($this->arr))
         {  
-            foreach($this->arr as $id => $a)
+            foreach ($this->arr as $id => $a)
             {  
-                if($a['parentid'] == $pid) $newarr[$id] = $a;  
+                if ($a['parentid'] == $pid) $newarr[$id] = $a;  
             }  
         }  
         return $newarr;  
@@ -88,11 +88,11 @@ class cls_tree {
     public function get_child($myid)
     {  
         $a = $newarr = array();  
-        if(is_array($this->arr))
+        if (is_array($this->arr))
         {  
-            foreach($this->arr as $id => $a)
+            foreach ($this->arr as $id => $a)
             {  
-                if($a['parentid'] == $myid) $newarr[$id] = $a;  
+                if ($a['parentid'] == $myid) $newarr[$id] = $a;  
             }  
         }  
         return $newarr ? $newarr : false;  
@@ -106,17 +106,17 @@ class cls_tree {
     public function get_pos($myid,&$newarr)
     {  
         $a = array();  
-        if(!isset($this->arr[$myid])) return false;  
+        if (!isset($this->arr[$myid])) return false;  
         $newarr[] = $this->arr[$myid];  
         $pid = $this->arr[$myid]['parentid'];  
-        if(isset($this->arr[$pid]))
+        if (isset($this->arr[$pid]))
         {  
             $this->get_pos($pid,$newarr);  
         }  
-        if(is_array($newarr))
+        if (is_array($newarr))
         {  
             krsort($newarr);  
-            foreach($newarr as $v)
+            foreach ($newarr as $v)
             {  
                 $a[$v['id']] = $v;  
             }  
@@ -171,14 +171,14 @@ class cls_tree {
     {
         static $tree;
         static $new_arr;
-        if(!isset($new_arr))
+        if (!isset($new_arr))
         {
             $new_arr = $this->arr;
         }
 
-        foreach($new_arr as $key=>$row)
+        foreach ($new_arr as $key=>$row)
         {
-            if($row['parentid'] == $parent_id)
+            if ($row['parentid'] == $parent_id)
             {
                 $tree[] = $row;
                 unset($new_arr[$key]);
@@ -199,14 +199,14 @@ class cls_tree {
     {
         static $ids;
 
-        if(!isset($new_arr))
+        if (!isset($new_arr))
         {
             $new_arr = $this->arr;
         }
 
-        foreach($new_arr as $key=>$row)
+        foreach ($new_arr as $key=>$row)
         {
-            if($row['parentid'] == $parent_id) {
+            if ($row['parentid'] == $parent_id) {
                 $ids[] = $row['id'];
                 unset($new_arr[$key]);
                 $this->get_all_child($row['id'],$new_arr);
@@ -228,14 +228,14 @@ class cls_tree {
     {  
         $number = 1;  
         $child = $this->get_child($myid);  
-        if(is_array($child))
+        if (is_array($child))
         {  
             $total = count($child);  
             $nstr = '';
-            foreach($child as $id=>$value)
+            foreach ($child as $id=>$value)
             {  
                 $j = $k = '';  
-                if($number==$total)
+                if ($number==$total)
                 {  
                     $j .= $this->icon[2];  
                 }
@@ -268,14 +268,14 @@ class cls_tree {
     {  
         $number = 1;  
         $child = $this->get_child($myid);  
-        if(is_array($child))
+        if (is_array($child))
         {  
             $total = count($child);  
             $nstr = '';
-            foreach($child as $id=>$a)
+            foreach ($child as $id=>$a)
             {  
                 $j=$k='';  
-                if($number==$total)
+                if ($number==$total)
                 {  
                     $j .= $this->icon[2];  
                 }
@@ -311,14 +311,14 @@ class cls_tree {
     {  
         $number = 1;  
         $child = $this->get_child($myid);  
-        if(is_array($child))
+        if (is_array($child))
         {  
             $total = count($child);  
             $nstr = '';
-            foreach($child as $id=>$a)
+            foreach ($child as $id=>$a)
             {  
                 $j=$k='';  
-                if($number==$total)
+                if ($number==$total)
                 {  
                     $j .= $this->icon[2];  
                 }
@@ -364,7 +364,7 @@ class cls_tree {
     public function get_treeview($myid,$effected_id='example',$str="<span class='file'>\$name</span>",$str2="<span class='folder'>\$name</span>",$showlevel = 0 ,$style='filetree ',$currentlevel = 1,$recursion=FALSE) 
     {  
         $child = $this->get_child($myid);  
-        if(!defined('EFFECTED_INIT'))
+        if (!defined('EFFECTED_INIT'))
         {  
             $effected = ' id="'.$effected_id.'"';  
             define('EFFECTED_INIT', 1);  
@@ -375,26 +375,26 @@ class cls_tree {
         }  
 
         $placeholder =  '<ul><li><span class="placeholder"></span></li></ul>';  
-        if(!$recursion) $this->str .='<ul'.$effected.'  class="'.$style.'">';
-        if($child)
+        if (!$recursion) $this->str .='<ul'.$effected.'  class="'.$style.'">';
+        if ($child)
         {
             $nstr = '';
-            foreach($child as $id=>$a)
+            foreach ($child as $id=>$a)
             {
                 @extract($a);
-                if($showlevel > 0 && $showlevel == $currentlevel && $this->get_child($id)) $folder = 'hasChildren'; //如设置显示层级模式@2011.07.01
+                if ($showlevel > 0 && $showlevel == $currentlevel && $this->get_child($id)) $folder = 'hasChildren'; //如设置显示层级模式@2011.07.01
                 $floder_status = isset($folder) ? ' class="'.$folder.'"' : '';
                 $this->str .= $recursion ? '<ul><li'.$floder_status.' id=\''.$id.'\'>' : '<li'.$floder_status.' id=\''.$id.'\'>';
                 $recursion = FALSE;
-                if($this->get_child($id))
+                if ($this->get_child($id))
                 {
                     eval("\$nstr = \"$str2\";");
                     $this->str .= $nstr;
-                    if( $id != 0 && ($showlevel == 0 || ($showlevel > 0 && $showlevel > $currentlevel)) )
+                    if ( $id != 0 && ($showlevel == 0 || ($showlevel > 0 && $showlevel > $currentlevel)) )
                     {
                         $this->get_treeview($id, $effected_id, $str, $str2, $showlevel, $style, $currentlevel+1, TRUE);
                     }
-                    elseif($showlevel > 0 && $showlevel == $currentlevel)
+                    elseif ($showlevel > 0 && $showlevel == $currentlevel)
                     {
                         $this->str .= $placeholder;
                     }
@@ -408,7 +408,7 @@ class cls_tree {
             }
         }
 
-        if(!$recursion)  $this->str .='</ul>';  
+        if (!$recursion)  $this->str .='</ul>';  
         return $this->str;  
     }  
 
@@ -421,10 +421,10 @@ class cls_tree {
     {  
         $sub_cats = $this->get_child($myid);  
         $n = 0;  
-        if(is_array($sub_cats)) foreach($sub_cats as $c) 
+        if (is_array($sub_cats)) foreach ($sub_cats as $c) 
         {            
             $data[$n]['id'] = iconv(CHARSET,'utf-8',$c['catid']);  
-            if($this->get_child($c['catid']))
+            if ($this->get_child($c['catid']))
             {  
                 $data[$n]['liclass'] = 'hasChildren';  
                 $data[$n]['children'] = array(array('text'=>' ','classes'=>'placeholder'));  
@@ -433,7 +433,7 @@ class cls_tree {
             } 
             else 
             {                  
-                if($str) 
+                if ($str) 
                 {  
                     @extract(array_iconv($c,CHARSET,'utf-8'));  
                     eval("\$data[$n]['text'] = \"$str\";");  

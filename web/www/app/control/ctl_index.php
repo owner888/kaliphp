@@ -92,13 +92,13 @@ class ctl_index
                 if ( self::$config['image_code'] ) 
                 {
                     $vdimg = new cls_securimage();
-                    if( empty($validate) || !$vdimg->check($validate) )
+                    if ( empty($validate) || !$vdimg->check($validate) )
                     {
                         throw new \Exception('请输入正确的验证码！');
                     }
                 }
 
-                if( $user = kali::$auth->check_user( $username, $password, $remember ) )
+                if ( $user = kali::$auth->check_user( $username, $password, $remember ) )
                 {
                     if ( $user['is_first_login'] ) 
                     {
@@ -287,7 +287,7 @@ class ctl_index
     public function adminmsg()
     {
         $addjob = req::item('addjob', '');
-        if($addjob=='del')
+        if ($addjob=='del')
         {
             db::update('#PB#_admin_log')
                 ->set(array(
@@ -305,7 +305,7 @@ class ctl_index
                 ->and_where('isread', '=', 0)
                 ->as_row()
                 ->execute();
-            if( is_array($row) && $row['count']>0 )
+            if ( is_array($row) && $row['count']>0 )
             {
                 exit($row['count']);
             }

@@ -95,7 +95,7 @@ class util
             {
                 if (@mkdir ( $pathinfo ['dirname'], 0777, true ) === false)
                 {
-                    if(file_exists ( $pathinfo ['dirname'] ))
+                    if (file_exists ( $pathinfo ['dirname'] ))
                     {
                         return $path;
                     }
@@ -192,7 +192,7 @@ class util
     public static function utf8_substr_num($str, $length)
     {
         preg_match_all('/./su', $str, $ar);
-        if( count($ar[0]) <= $length ) 
+        if ( count($ar[0]) <= $length ) 
         {
             return $str;
         }
@@ -200,7 +200,7 @@ class util
         $n = 0;
         for($i=0; isset($ar[0][$i]); $i++)
         {
-            if($n < $length)
+            if ($n < $length)
             {
                 $tstr .= $ar[0][$i];
                 $n++;
@@ -227,11 +227,11 @@ class util
             return 0;
         }
         // 大于一个小时
-        if( $seconds>3600 )
+        if ( $seconds>3600 )
         {
             $days_num = '';
             // 大于一天
-            if( $seconds>24*3600 )
+            if ( $seconds>24*3600 )
             {
                 $days       = (int)($seconds/86400);
                 $days_num   = $days."天";
@@ -242,7 +242,7 @@ class util
             $time = $days_num.$hours."小时".date('i分钟s秒', $minutes);
         }
         // 等于一个小时
-        elseif( $seconds == 3600 )
+        elseif ( $seconds == 3600 )
         {
             $time = date('1小时', $seconds);
         }
@@ -250,12 +250,12 @@ class util
         else
         {
             // 大于一分钟
-            if( $seconds>60 )
+            if ( $seconds>60 )
             {
                 $time = date('i分钟s秒', $seconds);
             }
             // 等于一分钟
-            elseif( $seconds == 60 )
+            elseif ( $seconds == 60 )
             {
                 $time = date('1分钟', $seconds);
             }
@@ -275,7 +275,7 @@ class util
      */
     public static function cn_strtotime( $dtime )
     {
-        if(!preg_match("/[^0-9]/", $dtime))
+        if (!preg_match("/[^0-9]/", $dtime))
         {
             return $dtime;
         }
@@ -289,34 +289,34 @@ class util
         $dtime = trim(preg_replace("/[ ]{1,}/", " ", $dtime));
         $ds = explode(" ", $dtime);
         $ymd = explode("-", $ds[0]);
-        if(!isset($ymd[1]))
+        if (!isset($ymd[1]))
         {
             $ymd = explode(".", $ds[0]);
         }
-        if(isset($ymd[0]))
+        if (isset($ymd[0]))
         {
             $dt[0] = $ymd[0];
         }
-        if(isset($ymd[1])) $dt[1] = $ymd[1];
-        if(isset($ymd[2])) $dt[2] = $ymd[2];
-        if(strlen($dt[0])==2) $dt[0] = '20'.$dt[0];
-        if(isset($ds[1]))
+        if (isset($ymd[1])) $dt[1] = $ymd[1];
+        if (isset($ymd[2])) $dt[2] = $ymd[2];
+        if (strlen($dt[0])==2) $dt[0] = '20'.$dt[0];
+        if (isset($ds[1]))
         {
             $hms = explode(":", $ds[1]);
-            if(isset($hms[0])) $dt[3] = $hms[0];
-            if(isset($hms[1])) $dt[4] = $hms[1];
-            if(isset($hms[2])) $dt[5] = $hms[2];
+            if (isset($hms[0])) $dt[3] = $hms[0];
+            if (isset($hms[1])) $dt[4] = $hms[1];
+            if (isset($hms[2])) $dt[5] = $hms[2];
         }
-        foreach($dt as $k=>$v)
+        foreach ($dt as $k=>$v)
         {
             $v = preg_replace("/^0{1,}/", '', trim($v));
-            if($v=='')
+            if ($v=='')
             {
                 $dt[$k] = 0;
             }
         }
         $mt = mktime($dt[3], $dt[4], $dt[5], $dt[1], $dt[2], $dt[0]);
-        if(!empty($mt))
+        if (!empty($mt))
         {
             return $mt;
         }
@@ -536,7 +536,7 @@ class util
         $lock_name = 'lock:'.$key;
 
         //创建订单号
-        if( $action == 'create' )
+        if ( $action == 'create' )
         {
             //声明静态变量，防止高并发统一进程出现重复
             static $ids = [];
@@ -545,7 +545,7 @@ class util
                 while( true )
                 {
                     $id = util::random($type, $num);
-                    if( !isset($ids[$id]) ) 
+                    if ( !isset($ids[$id]) ) 
                     {
                         $ids[$id] = 1;
                         break;
@@ -560,11 +560,11 @@ class util
             cls_redis_lock::unlock($lock_name, true);
         }
         //抛出一个id,没有没有了就重新取max_num条出来
-        else if( false == ($id = cls_redis::instance()->sPop($key)) )
+        else if ( false == ($id = cls_redis::instance()->sPop($key)) )
         {
             $id = util::random($type, $num);
             //进程结束后批量创建ID
-            if( false != cls_redis_lock::lock($lock_name, 0, 30) )
+            if ( false != cls_redis_lock::lock($lock_name, 0, 30) )
             {
                 util::shutdown_function(
                     [__CLASS__, __FUNCTION__],
@@ -774,11 +774,11 @@ class util
     {
 		$param = func_get_args();
         echo '<style>.php-print{background:#eee;padding:10px;border-radius:4px;border:1px solid #ccc;line-height:1.5;white-space:pre-wrap;font-family:Menlo,Monaco,Consolas,"Courier New",monospace;font-size:13px;}</style>', '<pre class="php-print">';
-        if( end($param) === .1 )
+        if ( end($param) === .1 )
         {
             // 去掉最后一个参数 .1
             array_splice($param, -1, 1);
-            foreach($param as $k => $v)
+            foreach ($param as $k => $v)
             {
                 echo $k>0 ? '<hr>' : '';
                 ob_start();
@@ -788,7 +788,7 @@ class util
         }
         else
         {
-            foreach($param as $k => $v)
+            foreach ($param as $k => $v)
             {
                 echo $k>0 ? '<hr>' : '', print_r($v, true);
             }
@@ -838,7 +838,7 @@ class util
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-            if( $referer_url != '' )  curl_setopt($ch, CURLOPT_REFERER, $referer_url);
+            if ( $referer_url != '' )  curl_setopt($ch, CURLOPT_REFERER, $referer_url);
             curl_setopt($ch, CURLOPT_USERAGENT, self::$user_agent);
             $result = curl_exec($ch);
             // $errno  = curl_errno($ch);
@@ -857,13 +857,13 @@ class util
             $contextid = stream_context_create($context);
             $sock = fopen($url, 'r', false, $contextid);
             stream_set_timeout($sock, $timeout);
-            if($sock)
+            if ($sock)
             {
                 $result = '';
                 while (!feof($sock)) {
                     //$result .= stream_get_line($sock, 10240, "\n");
                     $result .= fgets($sock, 4096);
-                    if( time() - $startt > $timeout ) {
+                    if ( time() - $startt > $timeout ) {
                         return '';
                     }
                 }
@@ -884,7 +884,7 @@ class util
     public static function http_post(string $url, $query_str, $timeout=30, $referer_url = '')
     {
         $startt = time();
-        if( function_exists('curl_init') )
+        if ( function_exists('curl_init') )
         {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_POST, 1);
@@ -917,7 +917,7 @@ class util
                 while (!feof($sock))
                 {
                     $result .= fgets($sock, 4096);
-                    if( time() - $startt > $timeout ) {
+                    if ( time() - $startt > $timeout ) {
                         return '';
                     }
                 }
@@ -939,7 +939,7 @@ class util
     public static function http_post_file($url, $files, $fields, $timeout = 30, string $referer_url = '')
     {
         // $startt = time();
-        if( function_exists('curl_init') )
+        if ( function_exists('curl_init') )
         {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_POST, true);
@@ -948,7 +948,7 @@ class util
             curl_setopt($ch, CURLOPT_REFERER, $referer_url);
             curl_setopt($ch, CURLOPT_USERAGENT, self::$user_agent );
             $need_class = class_exists('\CURLFile') ? true : false;
-            foreach($files as $k => $v)
+            foreach ($files as $k => $v)
             {
                 if ( $need_class ) {
                     $fields[$k] = new \CURLFile(realpath($v));
@@ -997,7 +997,7 @@ class util
      */
     static public function http_request($data, $multi = false)
     {
-        if(!isset($data['url']) && ($tmp = current($data)) && isset($tmp['url']))
+        if (!isset($data['url']) && ($tmp = current($data)) && isset($tmp['url']))
         {
             static $curl_multi;
             
@@ -1006,12 +1006,12 @@ class util
             strpos(ini_get('disable_functions'), 'curl_multi_init') === false;
             
             // curl并发模式
-            if($curl_multi && $multi)
+            if ($curl_multi && $multi)
             {
                 $mch = curl_multi_init();
                 
                 $ch = $ret = $error = array();
-                foreach($data as $k => $v)
+                foreach ($data as $k => $v)
                 {
                     $v['return_curl'] = true;
                     $ch[$k] = self::http_request($v);
@@ -1036,11 +1036,11 @@ class util
                         do {
                             $mrc = curl_multi_exec($mch, $active);
                             $info = curl_multi_info_read($mch);
-                            if($info !== false && $info['result'])
+                            if ($info !== false && $info['result'])
                             {
-                                foreach($ch as $k => $v)
+                                foreach ($ch as $k => $v)
                                 {
-                                    if($v === $info['handle'])
+                                    if ($v === $info['handle'])
                                     {
                                         $tmp = curl_getinfo($info['handle']);
                                         $error[$k] = array($info['result'], curl_error($info['handle']), $tmp['url']);
@@ -1056,9 +1056,9 @@ class util
                     $mrc = curl_multi_exec($mch, $active);
                     curl_multi_select($mch);
                     $info = curl_multi_info_read($mch);
-                    if($info !== false && $info['result']){
-                        foreach($ch as $k => $v){
-                            if($v === $info['handle']){
+                    if ($info !== false && $info['result']){
+                        foreach ($ch as $k => $v){
+                            if ($v === $info['handle']){
                                 $tmp = curl_getinfo($info['handle']);
                                 $error[$k] = array($info['result'], curl_error($info['handle']), $tmp['url']);
                                 break;
@@ -1068,9 +1068,9 @@ class util
                 }while($active > 0);*/
 
                 $error_log = '';
-                foreach($ch as $k => $v)
+                foreach ($ch as $k => $v)
                 {
-                    if(isset($error[$k]))
+                    if (isset($error[$k]))
                     {
                         $ret[$k]['body'] = null;
                         $ret[$k]['info']['status'] = 0;
@@ -1087,7 +1087,7 @@ class util
                     curl_multi_remove_handle($mch, $ch[$k]);
                 }
                 
-                if(!empty($error))
+                if (!empty($error))
                 {
                     log::error($error_log);
                 }
@@ -1100,7 +1100,7 @@ class util
             else
             {
                 $ret = array();
-                foreach($data as $k => $v)
+                foreach ($data as $k => $v)
                 {
                     $ret[$k] = self::http_request($v);
                 }
@@ -1127,14 +1127,14 @@ class util
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_USERAGENT, !empty($data['UA']) ? $data['UA'] : 'Mozilla/5.0');
-            if( !empty($data['ip']) ) 
+            if ( !empty($data['ip']) ) 
             {
                 $x_forwarded_for = $data['ip'];
                 $client = empty($data['client']) ? $x_forwarded_for : $data['client'];
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array("X-FORWARDED-FOR:{$x_forwarded_for}", "CLIENT-IP:{$client}"));
             }
 
-            if( $data['debug'] )
+            if ( $data['debug'] )
             {
                 curl_setopt($ch, CURLOPT_VERBOSE, true);
                 $fp = fopen($data['debug'], 'a');
@@ -1151,19 +1151,19 @@ class util
                 'Connection: '. $data['connection']
             ]));
             
-            if(stripos($data['url'], 'https://') === 0)
+            if (stripos($data['url'], 'https://') === 0)
             {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER , false);
                 // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             }
             
-            if(!empty($data['referer'])) curl_setopt($ch, CURLOPT_REFERER, $data['referer']);
-            if(!empty($data['cookie'])) curl_setopt($ch, CURLOPT_COOKIE, $data['cookie']);
-            if(!empty($data['cookie_file'])) curl_setopt($ch, CURLOPT_COOKIEFILE, $data['cookie_file']);
-            if(!empty($data['save_cookie'])) curl_setopt($ch, CURLOPT_COOKIEJAR, $data['save_cookie']);
-            if(!empty($data['proxy'])) curl_setopt($ch, CURLOPT_PROXY, $data['proxy']);
+            if (!empty($data['referer'])) curl_setopt($ch, CURLOPT_REFERER, $data['referer']);
+            if (!empty($data['cookie'])) curl_setopt($ch, CURLOPT_COOKIE, $data['cookie']);
+            if (!empty($data['cookie_file'])) curl_setopt($ch, CURLOPT_COOKIEFILE, $data['cookie_file']);
+            if (!empty($data['save_cookie'])) curl_setopt($ch, CURLOPT_COOKIEJAR, $data['save_cookie']);
+            if (!empty($data['proxy'])) curl_setopt($ch, CURLOPT_PROXY, $data['proxy']);
             
-            if(!empty($data['post']))
+            if (!empty($data['post']))
             {
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $data['post']);
@@ -1171,24 +1171,24 @@ class util
             
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $data['timeout']);
             curl_setopt($ch, CURLOPT_TIMEOUT, $data['timeout']);
-            if(!empty($data['option']))
+            if (!empty($data['option']))
             {
                 curl_setopt_array($ch, $data['option']);
             }
             
-            if(!empty($data['return_curl'])) return $ch;
+            if (!empty($data['return_curl'])) return $ch;
             
             $ret = curl_exec($ch);
             
             $errno = curl_errno($ch);
             
             $header = curl_getinfo($ch);
-            if( !empty($data['return_head']) ) 
+            if ( !empty($data['return_head']) ) 
             {
                 return $header;
             }
             
-            if($errno)
+            if ($errno)
             {
                 $error = curl_error($ch);
                 curl_close($ch);
@@ -1318,9 +1318,9 @@ class util
 
         for($i=0; $i < strlen($text); $i++)  
         {  
-            if( strlen(substr($text, $cind, 1)) > 0 )
+            if ( strlen(substr($text, $cind, 1)) > 0 )
             {  
-                if( ord(substr($text, $cind, 1)) < 0xA1 )
+                if ( ord(substr($text, $cind, 1)) < 0xA1 )
                 { 
                     //如果为英文则取1个字节  
                     array_push($arr_en_cont, substr($text, $cind, 1));  
@@ -1471,7 +1471,7 @@ class util
         }
 
         static $stack = array();
-        if( $func )
+        if ( $func )
         {
             $stack[] = array(
                 'func' => $func,
@@ -1479,10 +1479,10 @@ class util
             );
         }
 
-        if($end)
+        if ($end)
         {
             function_exists('fastcgi_finish_request') && fastcgi_finish_request();
-            foreach($stack as $v)
+            foreach ($stack as $v)
             {
                 call_user_func_array($v['func'], $v['params']);
             }
@@ -1567,7 +1567,7 @@ class util
      */
     public static function auto_lock($lock_name, $timeout = 0, $expire = 15)
     {
-        if( cls_redis_lock::lock($lock_name, $timeout, $expire) )
+        if ( cls_redis_lock::lock($lock_name, $timeout, $expire) )
         {
             util::shutdown_function(
                 ['kaliphp\lib\cls_redis_lock', 'unlock'],

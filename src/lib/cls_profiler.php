@@ -672,7 +672,7 @@ class cls_profiler
                 $(".kali_profiler_toggle").on("click",function(){
 
                     var txt = $(this).text();
-                    if(txt=="Hide"){
+                    if (txt=="Hide"){
                         $(this).text("Show");
 
                     }else{

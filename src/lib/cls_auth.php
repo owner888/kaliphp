@@ -113,7 +113,7 @@ class cls_auth
      */
     public function check_user(string $account, string $loginpwd, int $remember = 0)
     { 
-        if( $account == '' || $loginpwd == '' )
+        if ( $account == '' || $loginpwd == '' )
         {
             throw new Exception('请输入会员名密码');
         }
@@ -129,7 +129,7 @@ class cls_auth
                 ->as_field()
                 ->execute(true);
 
-            if( !$uid || false == ($user = $this->get_user($uid, 'uid', false)) )
+            if ( !$uid || false == ($user = $this->get_user($uid, 'uid', false)) )
             {
                 throw new Exception("输入的账号信息有误", -1);
             }
@@ -138,16 +138,16 @@ class cls_auth
         {
             // 检测用户名合法性.
             $ftype = 'username';
-            if( cls_validate::instance()->email($account) )
+            if ( cls_validate::instance()->email($account) )
             {
                 $ftype = 'email';
             }
-            else if( !cls_validate::instance()->username($account) )
+            else if ( !cls_validate::instance()->username($account) )
             {
                 throw new Exception('会员名格式不合法！');
             }
 
-            if( false == ($user = $this->get_user($account, $ftype, false)) )
+            if ( false == ($user = $this->get_user($account, $ftype, false)) )
             {
                 throw new Exception("输入的账号信息有误", -1);
             }
@@ -286,7 +286,7 @@ class cls_auth
         if ( !is_array($data_filter) ) return [];
 
         $where = [];
-        foreach($data_filter as $filed => $val)
+        foreach ($data_filter as $filed => $val)
         {
             $where[] = [$filed, is_array($val) ? 'IN' : '=', $val];
         }
@@ -351,7 +351,7 @@ class cls_auth
         ], $data);
 
         $where = [];
-        foreach($data_filter as $filed => $val)
+        foreach ($data_filter as $filed => $val)
         {
             $where[] = [$filed, is_array($val) ? 'IN' : '=', $val];
         }
@@ -454,7 +454,7 @@ class cls_auth
             $auth->user = $auth->get_user();
 
             // 登陆IP不在白名单，禁止操作
-            if(  
+            if (  
                 PHP_SAPI != 'cli' && 
                 !empty($auth->user['safe_ips']) && 
                 !in_array(IP, explode(',', str_replace('，', ',', $auth->user['safe_ips']))) 
@@ -485,7 +485,7 @@ class cls_auth
      */
     public function store_client_uid( $uid, $keeptime = null )
     {
-        if( empty($uid) )
+        if ( empty($uid) )
         {
             return false;
         }
@@ -533,7 +533,7 @@ class cls_auth
         }
 
         // 源数据
-        if( $uid && !$user )
+        if ( $uid && !$user )
         {
             // 读取用户数据
             $user = db::select(static::$table_fields)
@@ -559,7 +559,7 @@ class cls_auth
     // 获取用户头像
     public static function get_user_avatar($avatar_url)
     {
-        if(cls_validate::instance()->url($avatar_url))
+        if (cls_validate::instance()->url($avatar_url))
         {
             return $avatar_url;
         }
@@ -600,16 +600,16 @@ class cls_auth
     public function save_user($data)
     {
         // 明文加密字段
-        foreach(['password', 'fake_password', 'onetime_password'] as $f)
+        foreach (['password', 'fake_password', 'onetime_password'] as $f)
         {
-           if( isset($data[$f]) ) $data[$f] = static::password_hash($data[$f]);
+           if ( isset($data[$f]) ) $data[$f] = static::password_hash($data[$f]);
         }
 
         $dups = $data;
         // 不可以修改的字段
-        foreach(['uid', 'regtime', 'regip'] as $f)
+        foreach (['uid', 'regtime', 'regip'] as $f)
         {
-           if( isset($dups[$f]) ) unset($dups[$f]);
+           if ( isset($dups[$f]) ) unset($dups[$f]);
         }
 
         $data['uid']    = isset($data['uid']) ? $data['uid'] : util::random('web', 16);
@@ -681,7 +681,7 @@ class cls_auth
     {
         $key = static::$auth_hand.'_'.$key;
         setcookie($key, '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
-        if( $encode )
+        if ( $encode )
         {
             setcookie($key.'_kaliphp', '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
         }
@@ -695,12 +695,12 @@ class cls_auth
     public static function get_cookie($key, $encode = true)
     {
         $key = static::$auth_hand.'_'.$key;
-        if( !isset($_COOKIE[$key]) ) { return ''; }
+        if ( !isset($_COOKIE[$key]) ) { return ''; }
 
         // 加密的话先对比一下加密值是否一样，是才返回真正结果
-        if( $encode )
+        if ( $encode )
         {
-            if( !isset($_COOKIE[$key.'_kaliphp']) ) { return ''; }
+            if ( !isset($_COOKIE[$key.'_kaliphp']) ) { return ''; }
 
             $epwd = substr( md5(static::$config['cookie']['pwd'].$_COOKIE[$key]), 0, 24 );
             return ($_COOKIE[$key.'_kaliphp'] != $epwd ) ? '' : $_COOKIE[$key];
@@ -774,7 +774,7 @@ class cls_auth
     public function logout()
     {
         // 清空SESSION
-        if( false != ($sess_id = self::get_uid()) ) 
+        if ( false != ($sess_id = self::get_uid()) ) 
         {
             // 如果配置了需要绑定uid,才会进行uid和token的绑定，方便通过uid操作token
             if ( !empty(self::$config['app_name']) && !empty(static::$table_config['user_session']) ) 
@@ -864,14 +864,14 @@ class cls_auth
             ->limit(static::$login_error_num)
             ->execute();
 
-        if( $rows === null || count($rows) < static::$login_error_num )
+        if ( $rows === null || count($rows) < static::$login_error_num )
         {
             return false;
         }
         foreach ($rows as $row) 
         {
             // 最近3条有一条登录成功就不属于禁用账号
-            if( $row['loginsta'] > 0 ) 
+            if ( $row['loginsta'] > 0 ) 
             {
                 return false;
             }
@@ -895,7 +895,7 @@ class cls_auth
             ->limit(static::$login_error_num)
             ->execute();
 
-        if( $rows === null || count($rows) < static::$login_error_num )
+        if ( $rows === null || count($rows) < static::$login_error_num )
         {
             return false;
         }
@@ -903,7 +903,7 @@ class cls_auth
         foreach ($rows as $row) 
         {
             // 最近3条有一条登录成功就不属于禁用账号
-            if( $row['loginsta'] > 0 ) 
+            if ( $row['loginsta'] > 0 ) 
             {
                 return false;
             }
@@ -935,7 +935,7 @@ class cls_auth
             ->limit(2)
             ->offset(0)
             ->execute();
-        if( isset($datas[1]) )
+        if ( isset($datas[1]) )
         {
             return $datas[1];
         } 
@@ -959,14 +959,14 @@ class cls_auth
     public function save_admin_log($msg)
     {
         $url = '?ct='.req::item('ct').'&ac='.req::item('ac');
-        foreach(req::$forms as $k => $v)
+        foreach (req::$forms as $k => $v)
         {
-            if( preg_match('/pwd|password|sign|cert/', $k) || $k=='ct' || $k=='ac' ) 
+            if ( preg_match('/pwd|password|sign|cert/', $k) || $k=='ct' || $k=='ac' ) 
             {
                 continue;
             }
             $nstr = "&{$k}=".(is_array($v) ? 'array()' : $v);
-            if( strlen($url.$nstr) < 100 ) 
+            if ( strlen($url.$nstr) < 100 ) 
             {
                 $url .= $nstr;
             } 

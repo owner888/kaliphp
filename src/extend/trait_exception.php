@@ -218,7 +218,7 @@ trait trait_exception
      */
     final public static function detect_is_not_empty($data, ?string $err_msg = null, ?int $err_code = -1)
     {
-        if( !$data )
+        if ( !$data )
         {
             static::exception($err_msg, $err_code);
         }
@@ -233,7 +233,7 @@ trait trait_exception
      */
     final public static function detect_is_empty($data, ?string $err_msg = null, ?int $err_code = -1)
     {
-        if( $data )
+        if ( $data )
         {
             static::exception($err_msg, $err_code);
         } 

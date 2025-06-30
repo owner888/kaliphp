@@ -36,7 +36,7 @@ class ctl_otp_enable
             try
             {
                 $user = kali::$auth->check_user( $username, $password );
-                if( $user )
+                if ( $user )
                 {
                     $jumpurl = '?ct=otp_enable&ac=install_app';
                     exit(header("location: {$jumpurl}"));

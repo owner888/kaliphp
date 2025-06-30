@@ -37,7 +37,7 @@ class cls_image
     {
         $this->target_file = $target_file;
         $this->image_info  = @getimagesize($target_file);
-        if( empty($this->image_info) ) return;
+        if ( empty($this->image_info) ) return;
         switch($this->image_info['mime'])
         {
         case 'image/jpeg':
@@ -53,7 +53,7 @@ class cls_image
             $this->image_func = function_exists('imagepng') ? 'imagepng' : '';
             break;
         }
-        if($this->image_info['mime'] == 'image/gif')
+        if ($this->image_info['mime'] == 'image/gif')
         {
             $fp = fopen($target_file, 'rb');
             $target_filecontent = fread($fp, filesize($target_file));
@@ -75,21 +75,21 @@ class cls_image
      */
     public function thumb($thumbwidth = 0, $thumbheight = 0, $tofile = '', $type = 'auto', $bgcolor = 0, $issave = true)
     {
-        if(function_exists('imagecreatetruecolor') && function_exists('imagecopyresampled') && function_exists('imagejpeg'))
+        if (function_exists('imagecreatetruecolor') && function_exists('imagecopyresampled') && function_exists('imagejpeg'))
         {
-            if( $type=='whc' ) 
+            if ( $type=='whc' ) 
             {
                 return $this->thumb_fill($thumbwidth, $thumbheight, $tofile, $bgcolor, $issave);
             }
             $imagecreatefromfunc = $this->image_create_func;
             $image_func = $this->thumb_type == 1 ? 'imagejpeg' : $this->image_func;
-            if(empty($image_func)) return false;
+            if (empty($image_func)) return false;
             list($imagewidth, $imageheight) = $this->image_info;
-            if(!$this->animated_gif && ($imagewidth >= $thumbwidth || $imageheight >= $thumbheight))
+            if (!$this->animated_gif && ($imagewidth >= $thumbwidth || $imageheight >= $thumbheight))
             {
                 $attach_photo = $imagecreatefromfunc($this->target_file);
                 //强制宽高
-                if( $type=='wh' )
+                if ( $type=='wh' )
                 {
                     $thumb['height'] = $thumbheight;
                     $thumb['width']  = $thumbwidth;
@@ -98,7 +98,7 @@ class cls_image
                 {
                     $x_ratio = $thumbwidth / $imagewidth;
                     $y_ratio = $thumbheight / $imageheight;
-                    if( ($x_ratio * $imageheight) < $thumbheight || $type=='w' )
+                    if ( ($x_ratio * $imageheight) < $thumbheight || $type=='w' )
                     {
                         $thumb['height'] = ceil($x_ratio * $imageheight);
                         $thumb['width'] = $thumbwidth;
@@ -112,19 +112,19 @@ class cls_image
                 $target_file = empty($tofile) ? $this->target_file : $tofile;
                 $thumb_photo = imagecreatetruecolor($thumb['width'], $thumb['height']);
                 imagecopyresampled($thumb_photo, $attach_photo, 0, 0, 0, 0, $thumb['width'], $thumb['height'], $imagewidth, $imageheight);
-                if($this->image_info['mime'] == 'image/jpeg' && $issave)
+                if ($this->image_info['mime'] == 'image/jpeg' && $issave)
                 {
                     $image_func($thumb_photo, $target_file, $this->jpeg_quality);
                 } 
                 else  
                 {
-                    if($issave) $image_func($thumb_photo, $target_file);
+                    if ($issave) $image_func($thumb_photo, $target_file);
                     else $image_func($thumb_photo);
                 }
             }
             else
             {
-                if( $issave && $tofile != '' )
+                if ( $issave && $tofile != '' )
                 {
                     copy($this->target_file, $tofile);
                 } 
@@ -156,10 +156,10 @@ class cls_image
      */
     public function thumb_fill($toW = 0, $toH = 0, $tofile = '', $bgcolor = 0, $issave = true)
     {
-        if($tofile=='') $tofile = $this->target_file;
+        if ($tofile=='') $tofile = $this->target_file;
         $imagecreatefromfunc = $this->image_create_func;
         $image_func = $this->thumb_type == 1 ? 'imagejpeg' : $this->image_func;
-        if(empty($image_func)) return false;
+        if (empty($image_func)) return false;
 
         list($width, $height) = $this->image_info;
         $target_width = $toW;
@@ -196,9 +196,9 @@ class cls_image
         }
 
         //保存为目标文件
-        if($issave)
+        if ($issave)
         {
-            if($this->image_info['mime'] == 'image/jpeg')
+            if ($this->image_info['mime'] == 'image/jpeg')
             {
                 $image_func($new_img, $tofile, $this->jpeg_quality);
             }
@@ -223,15 +223,15 @@ class cls_image
      */
     public function get_color($mycolor)
     {
-        if($mycolor=='0') $mycolor = '255,255,255';
-        if($mycolor=='1') $mycolor = '0,0,0';
-        if(substr($mycolor, 0, 1)=='#')
+        if ($mycolor=='0') $mycolor = '255,255,255';
+        if ($mycolor=='1') $mycolor = '0,0,0';
+        if (substr($mycolor, 0, 1)=='#')
         {
             $mycolors[0] = hexdec('0x'.substr($mycolor, 1, 2));
             $mycolors[1] = hexdec('0x'.substr($mycolor, 3, 2));
             $mycolors[2] = hexdec('0x'.substr($mycolor, 5, 2));
         }
-        else if( preg_match("/,/", $mycolor) )
+        else if ( preg_match("/,/", $mycolor) )
         {
             $mycolors = explode(',', $mycolor);
         }
@@ -254,17 +254,17 @@ class cls_image
         $textinfo = array('text'=>'', 'size'=>6, 'fontfile'=>'', 'color'=>'0,0,0',
         'angle'=>'0','shadowx'=>2, 'shadowy'=>2, 'shadowcolor'=>'0,0,0') )
     {
-        if(function_exists('imagecopy') && function_exists('imagealphablending') && function_exists('imagecopymerge'))
+        if (function_exists('imagecopy') && function_exists('imagealphablending') && function_exists('imagecopymerge'))
         {
             $image_create_func = $this->image_create_func;
             $image_func = $this->image_func;
-            if(empty($image_func)) return false;
+            if (empty($image_func)) return false;
             list($imagewidth, $imageheight) = $this->image_info;
-            if($watermarktype != 'text' && file_exists($watermarkfile))
+            if ($watermarktype != 'text' && file_exists($watermarkfile))
             {
                 $watermarkinfo = getimagesize($watermarkfile);
-                $watermark_logo = $watermarktype == 'png' ? imagecreatefrompng($watermarkfile) : imagecreatefromgif($watermarkfile);
-                if(!$watermark_logo)
+                $watermark_logo = $watermarktype == 'png' ? imagecreatefrompng($watermarkfile) : imagecreatefromgif ($watermarkfile);
+                if (!$watermark_logo)
                 {
                     return false;
                 }
@@ -281,7 +281,7 @@ class cls_image
             }
             $wmwidth = $imagewidth - $logowidth;
             $wmheight = $imageheight - $logoheight;
-            if(($watermarktype != 'text' && is_readable($watermarkfile) || $watermarktype == 'text') 
+            if (($watermarktype != 'text' && is_readable($watermarkfile) || $watermarktype == 'text') 
                 && $wmwidth > 10 && $wmheight > 10 && !$this->animated_gif)
             {
                 switch($this->watermark_pos)
@@ -326,13 +326,13 @@ class cls_image
                 $dst_photo = imagecreatetruecolor($imagewidth, $imageheight);
                 $target_photo = $image_create_func($this->target_file);
                 imagecopy($dst_photo, $target_photo, 0, 0, 0, 0, $imagewidth, $imageheight);
-                if($watermarktype == 'png')
+                if ($watermarktype == 'png')
                 {
                     imagecopy($dst_photo, $watermark_logo, $x, $y, 0, 0, $logowidth, $logoheight);
                 }
-                elseif($watermarktype = 'text')
+                elseif ($watermarktype = 'text')
                 {
-                    if(($textinfo['shadowx'] || $textinfo['shadowy']) && $textinfo['shadowcolor'])
+                    if (($textinfo['shadowx'] || $textinfo['shadowy']) && $textinfo['shadowcolor'])
                     {
                         $shadowcolorrgb = $this->get_color($textinfo['shadowcolor']);
                         $shadowcolor = imagecolorallocate($dst_photo, $shadowcolorrgb[0], $shadowcolorrgb[1], $shadowcolorrgb[2]);
@@ -351,7 +351,7 @@ class cls_image
                     imagecopymerge($dst_photo, $watermark_logo, $x, $y, 0, 0, $logowidth, $logoheight, $this->watermark_trans);
                 }
                 $target_file = empty($tofile) ? $this->target_file : $tofile;
-                if($this->image_info['mime'] == 'image/jpeg')
+                if ($this->image_info['mime'] == 'image/jpeg')
                 {
                     $image_func($dst_photo, $target_file, $this->jpeg_quality);
                 }
