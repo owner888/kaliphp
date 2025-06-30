@@ -293,7 +293,7 @@ class cls_analysis
 
     /**
      * 获得某个词的词性及词频信息
-     * @parem $word unicode编码的词
+     * @param $word unicode编码的词
      * @return void
      */
     public function get_word_property($word)
@@ -307,8 +307,8 @@ class cls_analysis
 
     /**
      * 指定某词的词性信息（通常是新词）
-     * @parem $word unicode编码的词
-     * @parem $infos array('c' => 词频, 'm' => 词性);
+     * @param $word unicode编码的词
+     * @param $infos array('c' => 词频, 'm' => 词性);
      * @return void;
      */
     public function set_word_infos($word, $infos)
@@ -327,7 +327,7 @@ class cls_analysis
 
     /**
      * 开始执行分析
-     * @parem bool optimize 是否对结果进行优化
+     * @param bool optimize 是否对结果进行优化
      * @return bool
      */
     public function run($optimize = true)
@@ -498,9 +498,9 @@ class cls_analysis
 
     /**
      * 深入分词
-     * @parem $str
-     * @parem $ctype (2 英文类， 3 中/韩/日文类)
-     * @parem $spos   当前粗分结果游标
+     * @param $str
+     * @param $ctype (2 英文类， 3 中/韩/日文类)
+     * @param $spos   当前粗分结果游标
      * @return bool
      */
     private function _deep_analysis(&$str, $ctype, $spos, $optimize = true)
@@ -556,7 +556,7 @@ class cls_analysis
 
     /**
      * 中文的深入分词
-     * @parem $str
+     * @param $str
      * @return void
      */
     private function _deep_analysis_cn(&$str, $lastec, $spos, $slen, $optimize = true)
@@ -617,7 +617,7 @@ class cls_analysis
 
     /**
      * 对最终分词结果进行优化（把simpleresult结果合并，并尝试新词识别、数词合并等）
-     * @parem $optimize 是否优化合并的结果
+     * @param $optimize 是否优化合并的结果
      * @return bool
      */
     //t = 1 中/韩/日文, 2 英文/数字/符号('.', '@', '#', '+'), 3 ANSI符号 4 纯数字 5 非ANSI符号或不支持字符
@@ -805,7 +805,7 @@ class cls_analysis
 
     /**
      * 把uncode字符串转换为输出字符串
-     * @parem str
+     * @param str
      * return string
      */
     private function _out_string_encoding(&$str)
@@ -965,7 +965,7 @@ class cls_analysis
 
     /**
      * 编译词典
-     * @parem $sourcefile utf-8编码的文本词典数据文件<参见范例/not-build/base_dic_full.txt>
+     * @param $sourcefile utf-8编码的文本词典数据文件<参见范例/not-build/base_dic_full.txt>
      * 注意, 需要PHP开放足够的内存才能完成操作
      * @return void
      */
@@ -1014,7 +1014,7 @@ class cls_analysis
 
     /**
      * 导出词典的词条
-     * @parem $targetfile 保存位置
+     * @param $targetfile 保存位置
      * @return void
      */
     public function export_dict($targetfile)

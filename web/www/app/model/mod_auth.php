@@ -114,7 +114,7 @@ class mod_auth extends cls_auth
     /**
      * 构造函数，根据池的初始化检测用户登录信息
      *
-     * @parem $uid  用户ID
+     * @param $uid  用户ID
      */
     public function __construct( $uid = 0 )
     {
@@ -263,7 +263,7 @@ class mod_auth extends cls_auth
     /**
      * 获取用户具体信息
      *
-     * @return mix array|false
+     * @return mixed array|false
      */
     public function get_user( ?string $account = null, string $ftype = 'uid', bool $use_cache = true )
     {
@@ -350,9 +350,9 @@ class mod_auth extends cls_auth
     /**
      * 检测权限
      *
-     * @parem $mod
-     * @parem $action
-     * @parem backtype 返回类型， 1--是由权限控制程序直接处理
+     * @param $mod
+     * @param $action
+     * @param backtype 返回类型， 1--是由权限控制程序直接处理
      * @return int  对于没权限的用户会提示或跳转到 ct=index&ac=login
      */
     public function check_purview( string $mod, string $action, int $backtype = 1 )
@@ -562,8 +562,8 @@ class mod_auth extends cls_auth
 
     /**
      *  保存管理日志
-     *  @parem $username 管理员登录id 
-     *  @parem $msg 具体消息（如有引号，无需自行转义）
+     *  @param $username 管理员登录id 
+     *  @param $msg 具体消息（如有引号，无需自行转义）
      *  @return bool
      */
     public function save_admin_log($msg)

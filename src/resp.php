@@ -12,6 +12,7 @@
 
 namespace kaliphp;
 
+use kaliphp\errorhandler;
 use kaliphp\lib\cls_crypt;
 
 /**
@@ -21,9 +22,24 @@ use kaliphp\lib\cls_crypt;
  */
 class resp
 {
+    public static function error(int $code = -1, string $msg = 'faild')
+    {
+        self::response($code, [], $msg);
+    }
+
+    public static function success(array $data = [], string $msg = 'successful')
+    {
+        self::response(0, $data, $msg);
+    }
+
     public static function response_error(int $code = -1, string $msg = 'faild')
     {
         self::response($code, [], $msg);
+    }
+
+    public static function response_success(array $data = [], string $msg = 'successful')
+    {
+        self::response(0, $data, $msg);
     }
 
     public static function response(int $code = 0, array $data = [], string $msg = 'successful')
@@ -36,6 +52,13 @@ class resp
             'data'      => $data,
             'timestamp' => FRAME_TIMESTAMP,
         ];
+
+        if (defined('SYS_DEBUG') && SYS_DEBUG)
+        {
+            $data['trace']  = errorhandler::$_debug_error_msg;
+            $data['sqlnum'] = count(db::$queries);
+            $data['sqls']   = db::$queries;
+        }
 
         $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 

@@ -59,7 +59,7 @@ class cls_rewrite
     
    /**
     * 转换要输出的内容里的网址
-    * @parem string $html
+    * @param string $html
     */
     public static function convert_html(&$html)
     {
@@ -78,7 +78,7 @@ class cls_rewrite
     
     /**
     * 转换单个网址
-    * @parem string $url
+    * @param string $url
     */
     public static function convert_url($url)
     {

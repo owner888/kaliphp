@@ -804,7 +804,7 @@ class db_connection
      * @param   array   $params index
      * @param   mixed   $sql 如果传了，就直接执行这个sql，用于Mysql等待超时重新执行使用
      *
-     * @return  object  SELECT queries
+     * @return  mixed   SELECT queries
      */
     public function execute($is_master = false, $params = [], $sql = null)
     {
@@ -902,7 +902,7 @@ class db_connection
                 }
                 else if ( $this->_result )
                 {
-                    $rows = array();
+                    $rows = [];
                     while ($row = mysqli_fetch_array($this->_result, MYSQLI_ASSOC))
                     {
                         if ( !empty($this->_atts['row_fn']) )
@@ -921,16 +921,16 @@ class db_connection
 
                     if ( $this->_as_field ) 
                     {
-                        $result = reset($rows);
-                        $result && $result = reset($result);
+                        $result = reset($rows) ?: NULL;
+                        $result && $result = reset($result) ?: NULL;
                     }
                     elseif ( $this->_as_row ) 
                     {
-                        $result = reset($rows);
+                        $result = reset($rows) ?: [];
                     }
                     else 
                     {
-                        $result = $rows;
+                        $result = $rows ?: [];
                     }
 
                     mysqli_free_result($this->_result);
@@ -3505,7 +3505,7 @@ class db_connection
 
     /**
     * SQL语句过滤程序（检查到有不安全的语句仅作替换和记录攻击日志而不中断）
-    * @parem string $sql 要过滤的SQL语句 
+    * @param string $sql 要过滤的SQL语句 
     */
     public function filter_sql($sql)
     {

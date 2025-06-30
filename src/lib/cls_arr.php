@@ -376,7 +376,7 @@ class cls_arr
      *
      *     cls_arr::to_assoc(array('foo','bar'));
      *
-     * @param   string      $arr  the array to change
+     * @param   array      $arr  the array to change
      * @return  array|null  the new array or null
      * @throws  \BadMethodCallException
      */
@@ -1617,4 +1617,201 @@ class cls_arr
         return array_values($new_data);
     }
 
+    /**
+     * 把二维数组分组
+     *
+     * @param array $arr
+     * @param string $key
+     *
+     * @return array
+     *  [
+     *      "{$key}" => [
+     *          [], [], ...
+     *      ]
+     * ]
+     */
+    public static function group_arr(array $arr, $key)
+    {
+        // 非二维数组
+        if (!is_array(current($arr))) return $arr;
+
+        $data = [];
+        foreach ($arr as $item)
+        {
+            if (!isset($item[$key])) continue;
+
+            if (!isset($data[$item[$key]]))
+            {
+                $data[$item[$key]] = [];
+            }
+
+            $data[$item[$key]][] = $item;
+        }
+
+        return $data;
+    }
+
+    // 创建树形结构
+    public static function array_to_tree($arr_data, $str_child_id = 'id', $str_parent_id = 'pid', $str_node_name = 'nodes', &$arr_result = null)
+    {
+        if (!is_array($arr_data))
+        {
+            return [];
+        }
+        foreach ($arr_data as $key => $val)//初始化$str_node_name,保证元素都有$str_node_name
+        {
+            $arr_data[$key][$str_node_name]  = array();
+            $arr_result[$val[$str_child_id]] = &$arr_data[$key];
+        }
+
+        $arr_tree = array();//用于保存树状数据
+        foreach ($arr_data as $offset => $row)
+        {
+            $int_parent_id = $row[$str_parent_id];
+            if (!empty($int_parent_id))
+            {
+                if (!isset($arr_result[$int_parent_id]))
+                {
+                    $arr_tree[] = &$arr_data[$offset];
+                    continue;
+                }
+
+                $arr_parent                   = &$arr_result[$int_parent_id];
+                $arr_parent[$str_node_name][] = &$arr_data[$offset]; //把$arr_data[$offset]转移到父元素$arr_parent[$str_node_name]下面
+            }
+            else
+            {
+                $arr_tree[] = &$arr_data[$offset];
+            }
+        }
+
+        return $arr_tree;
+    }
+
+    /**
+     * @desc arraySort php二维数组排序 按照指定的key 对数组进行排序
+     * 
+     * @param array  $arr    将要排序的数组
+     * @param string $keys   指定排序的key
+     * @param mixed  $type   排序类型 asc | desc /按照指定的数组排序
+     * @param bool   $unique 是否唯一
+     * @return array
+     */
+    public static function array_sort($arr, $keys, $type = null, $unique = true)
+    {
+        $key_values = $new_array = [];
+        if (is_array($keys))
+        {
+            $key_values = $keys;
+        }
+        else if ($type)
+        {
+            foreach ($arr as $k => $v)
+            {
+                $key_values[$k] = $v[$keys];
+            }
+
+            if (is_array($type) && $key_values)
+            {
+                $tmp = [];
+                //unique按某个key排序不排重
+                if (!$unique)
+                {
+                    foreach ($type as $sort_v)
+                    {
+                        foreach ($key_values as $k => $v)
+                        {
+                            if ($sort_v == $v)
+                            {
+                                $tmp[] = $k;
+                            }
+                        }
+                    }
+
+                    $key_values = $tmp;
+                }
+                else
+                {
+                    $key_values = array_flip($key_values);
+                    foreach ($type as $k)
+                    {
+                        if (isset($key_values[$k]))
+                        {
+                            $tmp[$k] = $key_values[$k];
+                        }
+                    }
+
+                    $key_values = array_flip($tmp);
+                }
+            }
+            else
+            {
+                $type == 'asc' ? asort($key_values) : arsort($key_values);
+            }
+
+            $unique && $key_values = array_keys($key_values);
+        }
+
+        $key_values = array_unique($key_values);
+        foreach ($key_values as $k)
+        {
+            if (isset($arr[$k]))
+            {
+                $new_array[$k] = $arr[$k];
+                unset($arr[$k]);
+            }
+        }
+
+        $arr && $new_array = array_merge($new_array, $arr);
+        return $new_array;
+    }
+
+    /**
+     * 二维数组按某个字段排序
+     *
+     * @param $data
+     * @param $field
+     * @param int $sort
+     * 
+     * @return mixed
+     */
+    public static function array_sort_by_field($data, $field, $sort = SORT_DESC)
+    {
+        if (!is_array($data) || !isset(current($data)[$field])) return [];
+        $tmp = [];
+        foreach ($data as $k => $item)
+            $tmp[$k] = $item[$field];
+        array_multisort($tmp, $sort, $data);
+
+        return $data;
+    }
+
+    /**
+     * 打乱数组（保持键不变，用法和shuffle一致）
+     *
+     * @param mixed $array
+     * @return void
+     */
+    public static function kshuffle(&$array)
+    {
+        if (!is_array($array) || empty($array))
+        {
+            return false;
+        }
+
+        $tmp = array();
+        foreach ($array as $key => $value)
+        {
+            $tmp[] = array('k' => $key, 'v' => $value);
+        }
+
+        shuffle($tmp);
+        $array = array();
+        foreach ($tmp as $entry)
+        {
+            $array[$entry['k']] = $entry['v'];
+        }
+
+        return true;
+    }
 }

@@ -143,7 +143,7 @@ class cls_spam
             }
         }
 
-        true != $ret && log::error($key, "cls_spam:check_error:{$ret}");
+        true != $ret && log::error([$key, $spam], __METHOD__);
         return $ret;
     }
 

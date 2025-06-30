@@ -11,10 +11,11 @@
  */
 
 namespace kaliphp;
+
 use kaliphp\kali;
+use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_redis;
 use kaliphp\lib\cls_redis_lock;
-// use kaliphp\lib\cls_snowflake;
 
 /**
  * 实用函数集合
@@ -1731,6 +1732,39 @@ class util
         }
     }
 
+    /**
+     * 获取服务器 IP
+     * 
+     * @return string
+     */
+    public static function get_server_ip()
+    {
+        $server_ip = '127.0.0.1'; // 默认本地IP
+        $env_file  = '/data/web/.server_env.json'; // 运维指定文件
+        if ( file_exists($env_file) ) 
+        {
+            $json      = file_get_contents($env_file);
+            $server_ip = cls_arr::get(json_decode($json, true), 'local_ip', $server_ip);
+        }
+
+        return $server_ip;
+    }
+
+    /**
+     * 获取服务器ID
+     * 
+     * @return int
+     */
+    public static function get_server_id()
+    {
+        static $servers = [];
+        if ( !$servers ) 
+        {
+            $servers = config::instance('server')->get('servers');
+        }
+
+        return $servers[self::get_server_ip()] ?? 1;
+    }
 }
 
 /* vim: set expandtab: */

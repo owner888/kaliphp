@@ -4,13 +4,11 @@ namespace control;
 use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
-use kaliphp\log;
 use kaliphp\kali;
 use kaliphp\util;
-use kaliphp\config;
+use kaliphp\lib\cls_menu;
 use kaliphp\lib\cls_msgbox;
 use kaliphp\lib\cls_page;
-use kaliphp\lib\cls_menu;
 
 /**
  * 权限组管理

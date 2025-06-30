@@ -93,7 +93,7 @@ class cls_muti_process
      * 3.类似crond方式
      * cls_muti_process::instance()->insert('xxx.php', null, true);
      * @Author han
-     * @param  mix     $func    函数/文件
+     * @param  mixed   $func    函数/文件
      * @param  array   $params  函数传递的参数/文件不可用
      * @param  boolean $is_file 是否为文件
      * @return 返回当前对象

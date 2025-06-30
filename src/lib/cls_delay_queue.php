@@ -174,7 +174,7 @@ class cls_delay_queue
 
     /**
      * 添加延时数据
-     * @param  mix  $data     数据
+     * @param  mixed  $data     数据
      * @param  int  $delay    默认为0
      * @param  int  $priority 优先级0～5
      * @return int  大于0表示添加成功
@@ -223,7 +223,7 @@ class cls_delay_queue
 
     /**
      * 重新返回release队列
-     * @param  mix  $job      job任务数据，为空表示当前的任务
+     * @param  mixed  $job      job任务数据，为空表示当前的任务
      * @param  int  $delay    默认为0
      * @param  int  $priority 优先级0～5
      * @return bool           大于0表示成功
@@ -250,7 +250,7 @@ class cls_delay_queue
      * 预定消息
      * @param  integer $block_millisecond    阻塞时间（微秒）
      * @param  boolean $after_reserve_delete 预定后是否删除，如果为false,需要自己手动删除
-     * @return mix                           null or array
+     * @return mixed                           null or array
      */
     public function reserve($block_millisecond = null, $after_reserve_delete = true)
     {
@@ -297,7 +297,7 @@ class cls_delay_queue
 
     /**
      * 把消息放到冻结队列
-     * @param  mix $job 如果为空，则冻结当前预选的job
+     * @param  mixed $job 如果为空，则冻结当前预选的job
      * @return int      大于0表示成功
      */
     public function bury($job = null)
@@ -324,7 +324,7 @@ class cls_delay_queue
 
     /**
      * 删除任务
-     * @param  mix  $job 如果不传则删除当前的job
+     * @param  mixed  $job 如果不传则删除当前的job
      * @return bool 大于0表示成功
      */
     public function delete($job = null, $queue_name = null)

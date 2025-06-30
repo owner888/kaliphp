@@ -229,7 +229,7 @@ class cls_menu
 
     /**
      * 处理应用菜单的操作
-     * @parem string $menu
+     * @param string $menu
      * @return bool
      */
     public static function replace_app_menu( $xml )
@@ -259,8 +259,8 @@ class cls_menu
 
     /**
      * 检测用户是否有指定权限
-     * @parem string $ct
-     * @parem string $ac
+     * @param string $ct
+     * @param string $ac
      * @return bool
      */
     protected static function _has_purview($ct, $ac)

@@ -1,13 +1,11 @@
 <?php
 namespace control;
 
+use kaliphp\kali;
 use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
-use kaliphp\log;
-use kaliphp\kali;
 use kaliphp\config;
-use kaliphp\cache;
 use kaliphp\lib\cls_msgbox;
 
 /**

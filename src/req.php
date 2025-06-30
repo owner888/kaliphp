@@ -12,9 +12,6 @@
 
 namespace kaliphp;
 
-// 解决单独使用时找不到定义问题
-defined('CRYPT_KEY') or define('CRYPT_KEY', (string) ($_ENV['CRYPT_KEY'] ?? ''));
-
 use kaliphp\lib\cls_cli;
 use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_crypt;
@@ -263,6 +260,7 @@ class req
 
     public static function language()
     {
+        $lang = 'en';
         if ($lang = self::cookie("language"))
         {
             return $lang;
@@ -273,13 +271,8 @@ class req
         {
             $languages = explode(',', preg_replace('/(;\s?q=[0-9\.]+)|\s/i', '', strtolower(trim(self::server('HTTP_ACCEPT_LANGUAGE')))));
         }
-
-        if (count($languages) === 0)
-        {
-            $languages = array('Undefined');
-        }
-
-        $lang = !in_array($languages[0], array("zh-cn", "zh-tw", "en")) ? "zh-cn" : $languages[0];
+        $lang = $languages[0] ?? 'en';
+        $lang = !in_array($lang, array("zh-cn", "zh-tw", "en")) ? "en" : $lang;
         return $lang;
     }
 
@@ -1023,8 +1016,9 @@ class req
         // fetch the raw input data
         $php_input = self::raw();
 
-        // var_dump(self::get_encrypt_key(), self::get_use_encrypt(), self::get_use_base64(), self::get_use_compress()); exit;
+        // print_r(['req::hydrate', self::get_encrypt_key(), self::get_use_encrypt(), self::get_use_base64(), self::get_use_compress()]);
 
+        // 已经测试 workerman 下面所有判断都不会走，自己做了解密
         // 是否开启加密，客户端要求加密 或者 配置强制加密
         if ( self::get_use_encrypt() ) 
         {
@@ -1035,21 +1029,21 @@ class req
 
             $php_input = cls_crypt::decode(
                 $php_input, 
-                self::get_encrypt_key(), 
+                self::get_encrypt_key(),
                 self::get_use_compress(),
                 self::get_use_base64()
             );
 
             if (empty($php_input)) 
             {
-                resp::response(-1, [], 'gzinflate error');
+                resp::error(-1, 'gzinflate error');
             }
 
             $data = (array) json_decode($php_input, true);
 
             if ( json_last_error() != JSON_ERROR_NONE )
             {
-                resp::response(-1, [], 'decrypt error: ' . json_last_error());
+                resp::error(-1, 'decrypt error: ' . json_last_error());
             }
 
             // 清空请求数据
@@ -1189,7 +1183,7 @@ class req
             // 修改成 gets 和 posts 的集合，更适合一点
             self::$forms = array_merge(self::$gets, self::$posts);
         }
-    
+
         $_GET = $_POST = $_REQUEST = [];
 
         // store the parsed data based on the request method

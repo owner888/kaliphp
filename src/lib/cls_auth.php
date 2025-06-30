@@ -501,7 +501,7 @@ class cls_auth
     /**
      * 获取用户具体信息
      *
-     * @return mix array|false
+     * @return mixed array|false
      */
     public function get_user( ?string $account = null, string $ftype = 'uid', bool $use_cache = true )
     {
@@ -525,7 +525,7 @@ class cls_auth
             $uid = $account;
         }
 
-        $user = false;
+        $user = [];
         if ( $use_cache )
         {
             // 缓存读取

@@ -528,7 +528,6 @@ class ctl_admin
      * 清除用户的独立权限
      * 
      * @return void
-     * @author seatle <seatle@foxmail.com> 
      * @created time :2016-08-29 22:41
      */
     public function purview_del()

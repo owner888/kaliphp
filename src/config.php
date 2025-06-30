@@ -20,11 +20,6 @@ use Exception;
 
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);
 
-defined('SYS_ENV') or define('SYS_ENV', 'pub');
-defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
-defined('ENV_PRE') or define('ENV_PRE', SYS_ENV === 'pre');
-defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
-
 /**
  * 配置文件类
  */
@@ -35,6 +30,23 @@ class config
     private $_source = 'file';
     private $_cfg_caches = [];
     private $_alias = [];
+
+    public static function _init()
+    {
+        if ( defined('ENVPATH') )
+        {
+            if (file_exists(ENVPATH) && ($envs = parse_ini_file(ENVPATH))) 
+            {
+                foreach ($envs as $k => $v) 
+                {
+                    if (strpos($k, "# ") === false) // 过滤注释的行
+                    {
+                        $_ENV[$k] = $v;
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * 单例
@@ -68,7 +80,7 @@ class config
 
     /**
      * 加载系统配置文件
-     * 先加载对应的配置，比如database.php，看看有没有相应环境的配置，比如database_dev.php，有就覆盖
+     * 先加载对应的配置，比如 database.php，看看有没有相应环境的配置，比如 database_dev.php，有就覆盖
      *
      * @throws Exception
      */
@@ -84,7 +96,11 @@ class config
             }
             else 
             {
-                $env = $this->_module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
+                $env = $this->_module;
+                if ( defined('ENV_DEV') )
+                {
+                    $env = $this->_module. (ENV_DEV ? '_dev' : (ENV_PRE ? '_pre' : (ENV_PUB ? '_pub' : '')));
+                }
 
                 $config_paths[] = __DIR__ . DS . 'config' . DS;
                 if ( defined('APPPATH')) 
@@ -93,8 +109,8 @@ class config
                 }
 
                 $config_path = '';
-                //如果有config$env优先使用，否则加载哪里config
-                //config优先顺序 数据库 -> app config -> 系统config
+                // 如果有config$env优先使用，否则加载哪里config
+                // config优先顺序 数据库 -> app config -> 系统config
                 foreach ($config_paths as $path)
                 {
                     $config_path = $path.$this->_module.'.php';

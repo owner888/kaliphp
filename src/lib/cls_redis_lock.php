@@ -11,7 +11,7 @@
  */
 
 namespace kaliphp\lib;
-use kaliphp\config;
+
 use kaliphp\lib\cls_redis;
 
 /**

@@ -1,7 +1,6 @@
 <?php
 use kaliphp\req;
 use kaliphp\kali;
-// use kaliphp\lib\cls_profiler;
 
 define('ENVPATH', __DIR__.'/../../.env');
 define('APPPATH', __DIR__.'/../app');

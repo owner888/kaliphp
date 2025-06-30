@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use kaliphp\req;
 use kaliphp\util;
 use kaliphp\kali;
 
@@ -12,10 +11,6 @@ defined('APPPATH') or define('APPPATH',  __DIR__.'/../');
 kali::registry();
 
 $time_start = microtime(true);
-
-// 支持参数获取，操作如下
-//php crond_test.php name=kaka
-//echo req::item('name')."\n";
 
 $lock_key = basename(__FILE__, '.php');;
 if ( !util::lock($lock_key))

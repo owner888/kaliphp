@@ -15,7 +15,7 @@ use kaliphp\config;
 
 /**
  * Kafka 生产类 
- * Kafka 操作文档: https://arnaud.le-blanc.net/php-rdkafka-doc/phpdoc/book.rdkafka.html
+ * Kafka 操作文档:   https://arnaud.le-blanc.net/php-rdkafka-doc/phpdoc/book.rdkafka.html
  * Kafka 异步操作类: https://github.com/weiboad/kafka-php
  * 一个实现挺好的类: https://github.com/qkl9527/php-rdkafka-class
  * ex:
@@ -100,7 +100,7 @@ class cls_kafka_producer
         }
 
         // 在 set_topic 方法 new
-        //$this->handler = new \RdKafka\Producer($this->conf);
+		// $this->handler = new \RdKafka\Producer($this->conf);
 
         $this->topic_conf = new \RdKafka\TopicConf();
         // -1必须等所有brokers确认 1当前服务器确认 0不确认，这里如果是0回调里的offset无返回，如果是1和-1会返回offset
@@ -129,7 +129,7 @@ class cls_kafka_producer
      *          echo $message->errstr(), "\n";
      *      }
      *      echo var_export($message, true).PHP_EOL;
-     *      //file_put_contents("./dr_cb.log", var_export($message, true), FILE_APPEND);
+     *      // file_put_contents("./dr_cb.log", var_export($message, true), FILE_APPEND);
      *  })
      */
     public function set_msg_callback( \Closure $callback ): self
@@ -169,6 +169,7 @@ class cls_kafka_producer
         return $this;
     }
 
+	// 是否需要回执
     public function set_require_ack( int $required_acks = -1 ): self
     {
         $this->topic_conf->set('request.required.acks', $required_acks);
@@ -203,7 +204,7 @@ class cls_kafka_producer
      * 
      * @return bool
      */
-    public function send(string $topic_name, string $payload, ?string $key = null, ?array $headers = null, $partition = RD_KAFKA_PARTITION_UA)
+    public function send(string $topic_name, string $payload, ?string $key = null, ?array $headers = null, $partition = \RD_KAFKA_PARTITION_UA)
     {
         $this->set_topic($topic_name);
 
@@ -216,7 +217,7 @@ class cls_kafka_producer
             $this->topic->producev($partition, 0, $payload, $key, $headers);
         }
 
-        while(($len = $this->handler->getOutQLen()) > 0)
+        while(($this->handler->getOutQLen()) > 0)
         {
             // 避免客户端过快exit导致数据未完整发完
             $this->handler->poll(50);
@@ -234,7 +235,6 @@ class cls_kafka_producer
      */
     public function get_avaliable_partitions($topic_name): array
     {
-
         return [];
     }
 

@@ -1,16 +1,16 @@
 <?php
 namespace common\model;
 
-use common\extend\pub_func;
 use kaliphp\db;
-use kaliphp\lib\cls_arr;
 use kaliphp\log;
-use kaliphp\req;
 use kaliphp\util;
 use kaliphp\cache;
 use kaliphp\config;
-use kaliphp\lib\cls_filter;
+use kaliphp\lib\cls_arr;
 use kaliphp\lib\cls_bbcode;
+use kaliphp\lib\cls_filter;
+use kaliphp\extend\trait_exception;
+use kaliphp\database\db_connection;
 
 /**
  * 这个类一般都作为基类被继承(数据库相关操作，尽量用里面的函数，避免每个人一套，造成日后维护艰难)
@@ -229,68 +229,62 @@ use kaliphp\lib\cls_bbcode;
  */
 class pub_mod_model
 {
+    use trait_exception;
     const YES    = 1;
     const NO     = 0;
     const MD_KEY = 'BASE_MD_KEY';
 
     public static
-        $pk                = '', //主键
-        $table             = '', //表名
-        $pagesize          = 10, //页码
-        $fields            = [], //查询字段，不设置会自动分析表结构获取表名
-        $table_ifnos       = [], //表信息
-        $exclude_fields    = [], //查询忽略的字段，自动获取字段实用化
-        $config            = [], //配置信息
-        $cache_time        = 86400,
-        $enable_slave      = false,//默认是false
-        //如果需要默认加载其他数据库配置，继承类里面定义 ['实例子名称', '配置名称名称']
+        $pk                = '',    // 主键
+        $table             = '',    // 表名
+        $pagesize          = 10,    // 页码
+        $fields            = [],    // 查询字段，不设置会自动分析表结构获取表名
+        $table_ifnos       = [],    // 表信息
+        $exclude_fields    = [],    // 查询忽略的字段，自动获取字段实用化
+        $config            = [],    // 配置信息
+        $cache_time        = 86400, // 缓存时间，1小时
+        $enable_slave      = false, // 默认是false
+        // 如果需要默认加载其他数据库配置，继承类里面定义 ['实例子名称', '配置名称名称']
         $module_db         = [ 
-            'name'           => null,   //实例名称
-            'config_file'    => null,   //配置文件名称 database:xxx or xxxx
-            'set_default_db' => false,  //是否每次查询都设置当前模块数据库为默认数据库
-            'slave_index'    => null,   //配置将使用指定的index,0开始
-            'auto_load_db'   => false,  //是否自动加载模块数据库
+            'name'           => null,   // 实例名称
+            'config_file'    => null,   // 配置文件名称 database:xxx or xxxx
+            'set_default_db' => false,  // 是否每次查询都设置当前模块数据库为默认数据库
+            'slave_index'    => null,   // 配置将使用指定的index,0开始
+            'auto_load_db'   => false,  // 是否自动加载模块数据库
         ],
-        $unknow_err_status = -1211, // 未知错误,一般都是数据库死锁
         $dead_lock_status  = -1213, // 死锁全局返回状态
         $func_not_fund     = -1214, // 方法不存在
-        $msg_maps          = [],    // 错误映射
         $_module_dbs       = [],
         $_default_dbs      = [],   //多库第一次设置的时候保存
         $_load_tables      = [],
         $muti_dbs          = [],   // 多库的时候用到
-        //$data_rules        = [],
         $muti_trans        = [],
         $data_rules        = [],
         $auto_data_rule    = false,
-        $max_pagesize      = 1000,
+        $max_pagesize      = 10000,
         $data              = [], //model往外传数据，可以用这个属性
         $bool_map          = [self::YES => '是', self::NO => '否'],
         $func_allow_fields = [ // conds 允许的字段
-            'where', 'count', 'page', 'pagesize', 'next_page', 'formatter', 
+            'where', 'count', 'page', 'pagesize', 'next_page', 'formatter', 'row_formatter',
             'fields', 'lock', 'share', 'table', 'is_master', 'filter_where',
             'alias', 'force_index', 'index', 'id', 'order_by', 'group_by',
             'offset', 'limit', 'limit_by', 'having', 'total', 'as_sql',
             'join', 'pk', 'func', 'union', 'db_table', 'batch_num', 'batch_field',
             'is_union_table', 'count_fields', 'cache_data', 'cache_total', 'nearly_count',
-            'db_row_fn',
+            'db_row_fn', 'db_name', 'fetch_all', 'un_log',
         ];
 
     /**
-     * 加载class的时候会执行一次
-     * @return   void
+     * 加载当前类的时候会执行一次
+     * 
+     * @return void
      */
     public static function _init()
     {
-        //是否自动加载模块数据库
+        // 是否自动加载模块数据库
         if ( !empty(static::$module_db['auto_load_db']) )
         {
-            db::init_db(
-                static::$module_db['name'],
-                static::$module_db['config_file'],
-                static::$module_db['set_default_db'],
-                static::$module_db['slave_index']
-            );
+            self::new_db(static::$module_db);
         }
 
         // 表过滤规则
@@ -299,15 +293,35 @@ class pub_mod_model
             static::$data[static::class]['data_rule'] = static::$data_rules;
         }
 
-        //保证每个类都是用自己的配置
+        // 保证每个类都是用自己的配置
         static::set_mod_db(static::$module_db);
+        // 重置属性
+        self::$muti_trans = self::$data_rules = [];
         //static::$_module_dbs[static::class] = static::$module_db;
     }
 
     /**
+     * 初始化当前model的db
+     * @param array|null $module_db
+     * @return object
+     */
+    public static function new_db(?array $module_db = null)
+    {
+        $module_db = $module_db ?: static::get_current_db_config();
+        return db_connection::new_db(
+            $module_db['name'],
+            $module_db['config_file']    ?? null,
+            $module_db['set_default_db'] ?? null,
+            $module_db['slave_index']    ?? null
+        );
+    }
+
+    /**
      * cli模式加上进程ID,防止多进程实例串行
+     * 
      * @param  string $name 实例名称
-     * @return string       cli下带进程号的实例名称
+     * 
+     * @return string cli下带进程号的实例名称
      */
     public static function get_muti_name(string $name):string
     {
@@ -326,6 +340,7 @@ class pub_mod_model
 
     /**
      * 设置模块db信息
+     * 
      * @param    array      $module_db
      */
     final public static function set_mod_db(array $module_db)
@@ -344,6 +359,8 @@ class pub_mod_model
             static::$_load_tables[static::$table][$module_db['name'] ?? null] = 1;
         }
 
+        // 重置当前配置, 否则没配置库的类会出问题
+        self::$module_db = ['name' => null, 'config_file' => null];
         return true;
     }
 
@@ -358,9 +375,11 @@ class pub_mod_model
 
     /**
      * 设置模块数据库配置(set_mod_db别名函数)
+     * 
      * @param    string       $name          
      * @param    string|null  $config_file   
      * @param    bool|boolean $set_default_db
+     * @param    mixed $name
      */
     final public static function set_module_config(
         ?string $name        = null, 
@@ -370,8 +389,8 @@ class pub_mod_model
     )
     {
         return static::set_mod_db([
-            'name'           => $name ?? static::$module_db['name'],
-            'config_file'    => $config_file ?? static::$module_db['config_file'] ?? null,
+            'name'           => $name,
+            'config_file'    => $config_file,
             'set_default_db' => $set_default_db,
             'slave_index'    => $slave_index,
         ]);
@@ -409,7 +428,8 @@ class pub_mod_model
 
     /**
      * 如果当前类的方法需要开启事物，只需要方法前加serv_即可（如果还有其他关联业务的，最好开一个service层）
-     * @param  mix   $method
+     * 
+     * @param  mixed $method
      * @param  array $args
      * @return mix
      */
@@ -421,18 +441,61 @@ class pub_mod_model
     /**
      * 返回有效的查询参数
      * @param    array        $conds    参数说明可以看lists方法
-     * @param    bool|boolean $conds_is_where conds是否为条件数组，如果为true,则认为conds为where
-     * @return   array              
+     * @param    bool|boolean $conds_is_where conds是否为条件数组，如果为true,则认为conds为where, null自动判断
+     * @return   array
      */
-    private static function _format_conds(array $conds, bool $conds_is_where = false)
+    private static function _format_conds(array $conds, ?bool $conds_is_where = null)
     {
+        // 不带where的自动判断
+        if ( !isset($conds_is_where) ) 
+        {
+            $conds_is_where = true;
+            foreach ($conds as $f => $fv)
+            {
+                if ( in_array($f, static::$func_allow_fields) ) 
+                {
+                    $conds_is_where = false;
+                    break;
+                }
+            }
+        }
+
         if ( $conds_is_where && !isset($conds['where']) ) 
         {
             $where['where'] = $conds;
             $conds = $where;
         }
 
+        if ( !empty($conds['where']) ) 
+        {
+            // 替换[pk]变量
+            $conds['where'] = static::_replace_where_key($conds['where']);
+        }
+
         return $conds;
+    }
+
+    /**
+     * 替换where关键字
+     * @param  mixed $where
+     * @return mixed
+     */
+    private static function _replace_where_key($where)
+    {
+        if ( is_array($where) ) 
+        {
+            foreach ($where as $k => $v)
+            {
+                $pk_pattern = '[pk]';
+                if ( substr($k, 0, 4) === $pk_pattern && static::$pk ) 
+                {
+                    unset($where[$k]);
+                    $where[str_replace($pk_pattern, static::$pk, $k)] = $v;
+                }
+            }
+        }
+
+        return $where;
     }
 
     /**
@@ -456,14 +519,14 @@ class pub_mod_model
      *     'table1' => ['field1' => 'field2'] //需要别名，'table1 (as) xx' => ['field1' => 'field2']
      *      //field1会默认使用table1 field2不处理, 如果field3要等于某个值，使用expr
      *      //如果需要使用 left/right/inner等操作，只需要在表名后加[left]
-     *     'table2[left]' => ['field1' => 'xxxx.field2', 'field3' => pub_mod_model::expr(22222)]
+     *     'table2[left]' => ['field1' => 'xxxx.field2', 'field3' => model::expr(22222)]
      *     .....
      * ]
      * alias    别名
      *
      * 支持子语句做jion的表
      *  $sql = mod_test::lists([
-     *       'table'  => 'dx_stat_test',
+     *       'table'  => 'stat_test',
      *       'as_sql' => 'bb',
      *   ]);
      *
@@ -507,10 +570,10 @@ class pub_mod_model
      *
      * 需要分批查询，只需加上 batch_num 和 batch_field batch_num必须和where中需要分批的关键字对应
      * 参数都可为空
-     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where
+     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where，为null会自动判断
      * @return   mixed
      */
-    final public static function lists(array $conds = [], bool $conds_is_where = false)
+    final public static function lists(array $conds = [], ?bool $conds_is_where = null)
     {
         $data    = [];
         $conds   = static::_format_conds($conds, $conds_is_where);
@@ -539,6 +602,12 @@ class pub_mod_model
             return isset($conds['count']) ? ['data' => [], 'total' => 0] : [];
         }
 
+        // 设置数据库
+        if ( isset($conds['db_name']) ) 
+        {
+            static::set_current_db($conds['db_name']);
+        }
+
         // 没有直接声明跨库 自动判断是否需要跨库
         if ( empty($conds['db_table']) && !empty($conds['join']) ) 
         {
@@ -563,7 +632,7 @@ class pub_mod_model
             $_table = db::expr($_table);
         }
 
-        //table为子语句不进行解析
+        // table为子语句不进行解析
         if ( is_string($_table) && preg_match('#\(.*\)#', $_table)) 
         {
             $_table = db::expr($_table);
@@ -571,14 +640,14 @@ class pub_mod_model
         else if ( static::$pk && is_string(static::$pk) && !empty($conds[static::$pk]) )
         {
             /**
-             * 主要是获取主键信息，没有缓存或者之前没执行init_table的话会执行db_connection的reset()方法
+             * 主要是获取主键信息，没有缓存或者之前没执行 init_table 的话会执行 db_connection 的 reset() 方法
              * 导致查询配置被初始化
-             * 所以为了避免影响到当前的主要查询要在db::select之前执行下
+             * 所以为了避免影响到当前的主要查询要在 db::select 之前执行下
              */
             static::init_table($table);
         }
 
-        //过滤掉空条件，减少调用的判断
+        // 过滤掉空条件，减少调用的判断
         if ( !empty($conds['filter_where']) )
         {
             foreach ($conds['where'] as $f => $w)
@@ -599,109 +668,109 @@ class pub_mod_model
         $tmp_data = [];
         if ( !empty($conds['cache_data']) ) 
         {
-            $cache_key = md5(serialize(array_diff_key(
-                $conds, 
-                ['cache_data' => null, 'cache_total' => null])
-            ));
+            $cache_key = md5(
+                $_table . 
+                serialize(static::get_current_db_config()) . 
+                serialize(array_diff_key(
+                    $conds, 
+                    ['cache_data' => null, 'cache_total' => null])
+                )
+            );
             $tmp_data  = cache::get($cache_key);
         }
 
         if ( !$tmp_data ) 
         {
-            $query = static::from_module_db(db::select($columns))
-                ->from($_table);
-            //锁表只走主库，要不很容易悲剧
+            $query = static::new_db()->select($columns)->from($_table);
+            // 锁表只走主库，要不很容易悲剧
             if ( !empty($conds['lock']) || !empty($conds['share']) )
             {
-                //排他锁
+                // 排他锁
                 if ( !empty($conds['lock']) )
                 {
                     $query->lock();
                 }
-                //共享锁
+                // 共享锁
                 else if ( !empty($conds['share']) )
                 {
                     $query->share();
                 }
 
-                //强制走主库
+                // 强制走主库
                 $conds['is_master'] = 1;
             }
 
             $alias = $is_join || !empty($conds['alias']) ? self::get_alias($conds) : '';
-            //强制index
-            !empty($conds['force_index']) && $query->force_index($conds['force_index']);
+            // 强制index
+            !empty($conds['force_index'])  && $query->force_index($conds['force_index']);
+            // 某些语句/执行时间不需要记录的时候，可以启用这个参数
+            !empty($conds['un_log']) && $query->un_log($conds['un_log']);
             !empty($is_join) && $query = self::_join($query, $conds);
             if ( !empty($conds['id']) )
             {
                 $query->where(static::get_column(static::get_pk($conds), $alias), $conds['id']);
             }
-            //分析where条件
+            // 分析where条件
             else if ( !empty($conds['where']) )
             {
                 self::_where($query, $conds['where'], $alias);
             }
 
-            //排序，支持数组和string
+            // 排序，支持数组和string
             if ( !empty($conds['order_by']) )
             {
                 $query = static::_order_by($query, $conds['order_by']);
             }
 
-            //没有条件最大pagesize数量，防止手抖
-            $pagesize = ($conds['pagesize'] ?? $conds['limit'] ?? null) ?? static::$pagesize;
-            $limit    = $conds['limit'] ?? ($conds['pagesize'] ?? null);
+            $pagesize  = ($conds['pagesize'] ?? ($conds['limit'] ?? null)) ?? static::$pagesize;
+            $limit     = $conds['limit'] ?? ($conds['pagesize'] ?? null);
+            // 判断是否有条件或者有必要返回全部记录数，防止手抖，全表返回
             if ( 
-                !isset($conds['as_sql'])  &&
-                empty($conds['where'])   && 
-                empty($conds['group_by']) && 
-                empty($conds['page'])     && 
+                !isset($conds['as_sql'])   &&
+                empty($conds['where'])     && 
+                empty($conds['group_by'])  && 
+                empty($conds['page'])      && 
+                empty($conds['fetch_all']) &&
                 empty($conds['limit']) 
             ) 
             {
-                $conds['limit'] = $conds['pagesize'] ?? static::$max_pagesize;
+                $limit = static::$max_pagesize;
             }
 
-            //对于一些大表，因为innodb统计总数不像myisam那样本来已经统计好了，
-            //所以会非常慢，一般不做分页，只显示是否有下一页
+            // 对于一些大表，因为innodb统计总数不像myisam那样本来已经统计好了，
+            // 所以会非常慢，一般不做分页，只显示是否有下一页
             if ( !empty($conds['next_page']) )
             {
                 $_pagesize = $pagesize;
                 ++$pagesize;
             }
 
-            //分页显示数据
+            // 分页显示数据
             if ( isset($conds['page']) || isset($conds['offset']) )
             {
-                $page = max(1, (isset($conds['page']) ? $conds['page'] : 1));
-                $offset = !empty($conds['offset']) ?
-                intval($conds['offset']) : $pagesize*($page-1);
-
-                if ( !empty($conds['next_page']) )
-                {
-                    $offset -= ($page - 1);
-                }
+                $page   = max(1, ($conds['page'] ?? 1));
+                $offset = !empty($conds['offset']) ? intval($conds['offset']) : ($_pagesize ?? $pagesize) * ($page - 1);
                 $query->limit($pagesize)->offset($offset);
             }
-            //返回N条
+            // 返回 N 条
             else if ( $limit )
             {
                 $query->limit($limit);
             }
 
-            //clickhouse专有函数
+            // clickhouse专有函数
             if ( !empty($conds['limit_by']) )
             {
                 $query->limit_by($conds['limit_by']);
             }
 
-            //分组
+            // 分组
             if ( !empty($conds['group_by']) )
             {
                 $query->group_by($conds['group_by']);
             }
 
-            //使用聚合计算出来的字段来过滤
+            // 使用聚合计算出来的字段来过滤
             if ( !empty($conds['having']) )
             {
                 self::_having($query, $conds['having']);
@@ -740,7 +809,7 @@ class pub_mod_model
 
                 return $data;
             }
-
+ 
             //返回sql
             if ( isset($conds['as_sql']) ) 
             {
@@ -768,34 +837,8 @@ class pub_mod_model
             );
         }
 
-        $index = -1;
-        $stack = [];
-        //指定返回数组的key
-        foreach ($tmp_data as $row)
-        {
-            if ( !empty($conds['index']) && is_array($conds['index']) ) 
-            {
-                $index = [];
-                foreach ($conds['index'] as $f)
-                {
-                    $index[] = $row[$f] ?? null;
-                }
-
-                $index = implode(":", $index);
-            }
-            else if ( !empty($conds['index']) && isset($row[$conds['index']]) )
-            {
-                $index = $row[$conds['index']];
-            }
-            else
-            {
-                ++$index;
-            }
-
-            $stack[$index] = $row;
-        }
-
-        //是否有下一页，一般用作app的下一页
+        $stack = self::get_stack_data($tmp_data, $conds);
+        // 是否有下一页，一般用作 app 的下一页
         if ( !empty($conds['next_page']) )
         {
             $has_next_page = false;
@@ -806,9 +849,11 @@ class pub_mod_model
             }
 
             $data = [
-                'data'      => $stack,
-                'next_page' => $has_next_page, 
-                'prev_page' => !empty($conds['page']) && $conds['page'] > 1,
+                'data'          => $stack,
+                'current_page'  => $conds['page'] ?? 1,
+                'next_page'     => ($conds['page'] ?? 1) + 1,
+                'has_next_page' => $has_next_page, 
+                'has_prev_page' => !empty($conds['page']) && $conds['page'] > 1,
             ];
         }
         //是否汇总分页
@@ -817,39 +862,143 @@ class pub_mod_model
             $data = [
                 'data'  => $stack,
                 //有些大表需要缓存总数的，可以传进来，如果没有数据则不需要查询总数
-                'total' => $conds['total'] ?? (!$stack ? 0 : static::count(array_merge(
-                    $conds, 
-                    [
-                        'orgin_fields' => $conds['fields'] ?? null,
-                        'fields'       => $conds['count_fields'] ?? '*', 
-                        'formatter'    => null,
-                        'offset'       => null,
-                        'cache_data'   => $conds['cache_total'] ?? null,
-                    ]
-                ))),
+                'total' => $conds['total'] ?? (
+                    // 第一页数据如果小于当前分页大小，则就是当前数据量
+                    isset($page) && 1 == $page && ($count = count($stack)) < $pagesize ? 
+                    $count : 
+                    static::count(array_merge(
+                        $conds, 
+                        [
+                            'orgin_fields' => $conds['fields'] ?? null,
+                            'fields'       => $conds['count_fields'] ?? '*', 
+                            'formatter'    => null,
+                            'offset'       => null,
+                            'cache_data'   => $conds['cache_total'] ?? null,
+                        ]
+                    ))
+                ),
             ];
         }
         else
         {
             $data = $stack;
         }
-        
+
         return (array) static::data_formatter($data, $conds['formatter'] ?? null);
+    }
+
+    /**
+     * 带分页列表的列表
+     * @param  integer $page      当前分页
+     * @param  integer $pagesize  每页大小
+     * @param  array   $conds     和list的参数一样
+     * @return array
+     */
+    final public static function page_list(int $page = 1, int $pagesize = 20, array $conds = [])
+    {
+        $conds = array_merge($conds, [
+            'page'     => $page,
+            'pagesize' => $pagesize,
+            'count'    => true,
+        ]);
+
+        return self::lists($conds);
+    }
+
+    /**
+     * 根据index，格式化数据
+     * 带有.表示多维数组
+     * 为数组，表示将使用:把值链接起来当作key
+     * @xxx 表示按照 xxx字段进行分组
+     * xxx 表示xxx字段的值作为key
+     * 默认 返回枚举数组
+     * @param    array      $tmp_data
+     * @param    array      $conds  
+     * @param    string     $df_implode 
+     * @return   array         
+     */
+    final public static function get_stack_data(array $tmp_data, array $conds, string $df_implode = ':'):array
+    {
+        $index   = -1;
+        $stack   = [];
+        $has_dot = !empty($conds['index']) && is_string($conds['index']) && strpos($conds['index'], '.') > 0;
+        //指定返回数组的key
+        foreach ($tmp_data as $row)
+        {
+            if ( isset($conds['row_formatter']) ) 
+            {
+                $row = call_user_func_array($conds['row_formatter'], [$row]);
+                if ( !$row ) continue;
+            }
+
+            if ( !empty($conds['index']) ) 
+            {
+                // index有.或者数组
+                if ( $has_dot || is_array($conds['index']) ) 
+                {
+                    $df_implode = '.';
+                    if ( $has_dot ) 
+                    {
+                        $tmp_arr = explode($df_implode, $conds['index']);
+                    }
+                    else
+                    {
+                        $tmp_arr = $conds['index'];
+                    }
+
+                    $index_arr = [];
+                    foreach ($tmp_arr as $f)
+                    {
+                        $index_arr[] = $row[$f] ?? null;
+                    }
+
+                    // 只有一个key,就是分组
+                    if ( 1 === count($index_arr) ) 
+                    {
+                        $stack[$index_arr[0]][] = $row;
+                        continue;
+                    }
+
+                    $index = implode($df_implode, $index_arr);
+                }
+                // 分组
+                else if ( $conds['index'][0] === '@' )
+                {
+                    $index = substr($conds['index'], 1);
+                    $stack[$row[$index]][] = $row;
+                    continue;
+                }
+                // 字段当key
+                else if ( isset($row[$conds['index']]) )
+                {
+                    $index = $row[$conds['index']];
+                }
+            }
+            else
+            {
+                ++$index;
+            }
+
+            $stack[$index] = $row;
+        }
+
+        $has_dot && $stack = util::format_mutiple_array($stack, $df_implode);
+        return $stack;
     }
 
     /**
      * 获取一条数据，参数和lists完全一致
      * @param    array        $conds          和lists一致
-     * @param    bool|boolean $conds_is_where bool|boolean $conds_is_where 如果为true,则认为conds为where
+     * @param    bool|boolean $conds_is_where bool|boolean $conds_is_where 如果为true,则认为conds为where，为null会自动判断
      * @return   mixed
      */
-    final public static function find(array $conds, bool $conds_is_where = false)
+    final public static function find(array $conds, ?bool $conds_is_where = null)
     {
         $conds = static::_format_conds($conds, $conds_is_where);
         $data  = (array) self::lists(array_merge($conds, [
-            'limit' => 1,    //强制获取一条
-            'page'  => null, //会影响取单条数据
-            'count' => null, //会影响取单条数据
+            'limit' => 1,    // 强制获取一条
+            'page'  => null, // 会影响取单条数据
+            'count' => null, // 会影响取单条数据
         ]));
 
         return $data ? current($data) : $data;
@@ -875,6 +1024,10 @@ class pub_mod_model
 
             $data && $data = is_array($pk_val) ? $data : reset($data);
         }
+        else
+        {
+            self::exception('主键不能为空');
+        }
 
         return $data ?? [];
     }
@@ -885,7 +1038,7 @@ class pub_mod_model
      * @param    mixed      $table  表名一般不需要，会用默认表名(如果是数组，可以设置table/ignore/delay/dups等)
      * @param    boolean    $ignore 是否忽略错误
      * @param    boolean    $delay  是否延时更新，操作业务禁止使用，一般是不太重要的数据可以使用
-     * @return   array            
+     * @return   array
      */
     final public static function insert(
         array $data, 
@@ -894,9 +1047,10 @@ class pub_mod_model
         bool $delay  = false
     )
     {
-        if ( empty($data) )
+        $err_vals = [0, false];
+        if ( !$data )
         {
-            return false;
+            return $err_vals;
         }
   
         $extr  = []; //扩展属性
@@ -904,38 +1058,42 @@ class pub_mod_model
         if ( is_array($table) )
         {
             $extr   = $table;
-            $table  = isset($extr['table']) ? $extr['table'] : static::$table;
-            $ignore = isset($extr['ignore']) ? $extr['ignore'] : $ignore;
-            $delay  = isset($extr['delay']) ? $extr['delay'] : $delay;
+            $table  = $table['table'] ?? '';
+            $ignore = $table['ignore'] ?? $ignore;
+            $delay  = $table['delay'] ?? $delay;
+            $un_log = $table['un_log'] ?? false;
         }
 
         // 批量分批插入
         if ( !empty($extr['batch_num']) && $extr['batch_num'] > 1 ) 
         {
-            $muti_data = array_chunk($data, $extr['batch_num']);
-            unset($extr['batch_num']);
-
-            $suc_num = 0;
-            foreach ($muti_data as $data)
+            $first     = reset($data);
+            if ( is_array($first) ) 
             {
-                list($last_id, $status) = self::insert($data, $extr, $ignore, $delay);
-                $suc_num += $status;
-                if ( !empty($extr['usleep_time']) ) 
+                $muti_data = array_chunk($data, $extr['batch_num']);
+                unset($extr['batch_num']);
+                $suc_num = 0;
+                foreach ($muti_data as $data)
                 {
-                    usleep($extr['usleep_time']);
+                    list($last_id, $status) = self::insert($data, $extr, $ignore, $delay);
+                    $suc_num += $status;
+                    if ( !empty($extr['usleep_time']) ) 
+                    {
+                        usleep($extr['usleep_time']);
+                    }
                 }
-            }
 
-            return [$last_id, $suc_num];
+                return [$last_id, $suc_num];
+            }
         }
 
         $keys     = array_keys($data);
         //判断是否为批量插入
         $mutipule = is_array(reset($data)) && is_numeric(reset($keys)) ? true : false;
         $table    = empty($table) ? static::$table : $table;
-        if ( empty($table) ) return false;
+        if ( empty($table) ) return $err_vals;
      
-        $query = static::from_module_db(db::insert($table))
+        $query = static::new_db()->insert($table)
             ->ignore($ignore)
             ->delay($delay);
 
@@ -952,6 +1110,12 @@ class pub_mod_model
         if ( !empty($extr['dups']) )
         {
             $query->dup($extr['dups']);
+        }
+
+        // 不记录日志
+        if ( !empty($un_log) ) 
+        {
+            $query->un_log($un_log);
         }
 
         return $query->execute();
@@ -992,16 +1156,15 @@ class pub_mod_model
         //如果table为数组有可能带有其他参数
         if ( is_array($table) )
         {
-            $tmp    = $table;
-            $table  = isset($tmp['table']) ? $tmp['table'] : static::$table;
-            $ignore = isset($tmp['ignore']) ? $tmp['ignore'] : $ignore;
-            $delay  = isset($tmp['delay']) ? $tmp['delay'] : $delay;
-            $limit  = $tmp['limit'] ?? null;
-            unset($tmp);
+            $table  = $table['table'] ?? '';
+            $ignore = $table['ignore'] ?? $ignore;
+            $delay  = $table['delay'] ?? $delay;
+            $limit  = $table['limit'] ?? null;
+            $un_log = $table['un_log'] ?? false;
         }
 
         if ( empty($table) || !$data ) return false;
-        $query = static::from_module_db(db::update($table))
+        $query = static::new_db()->update($table)
             ->set($data)
             ->ignore($ignore)
             ->delay($delay);
@@ -1014,16 +1177,22 @@ class pub_mod_model
             $query = $query->set_update_cmp_field($where['_cmp_field_']);
             unset($where['_cmp_field_']);
         }
-        
+
         if ( !empty($where) ) 
         {
-            self::_where($query, $where);
+            self::_where($query, static::_replace_where_key($where));
         }
- 
+
         //强制带where或者批量更新才可以执行
-        if ( !empty($is_batch) || false != db::has_where() )
+        if ( !empty($is_batch) || false != static::new_db()->has_where() )
         {
             $result = $query->execute();
+        }
+
+        // 不记录日志
+        if ( !empty($un_log) ) 
+        {
+            $query->un_log($un_log);
         }
 
         return $result;
@@ -1051,9 +1220,9 @@ class pub_mod_model
         if ( !$table || !$where ) return false;
 
         $result = false;
-        $query  = static::from_module_db(db::delete($table))->ignore($ignore);
+        $query  = static::new_db()->delete($table)->ignore($ignore);
 
-        static::_where($query, $where);
+        static::_where($query, static::_replace_where_key($where));
         $limit    && $query->limit($limit);
         $order_by && static::_order_by($query, $order_by);
 
@@ -1084,10 +1253,10 @@ class pub_mod_model
     /**
      * 求总数，参数和lists是一样的，可以为空
      * @param    array        $conds          和lists的一样
-     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where
+     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where，为null会自动判断
      * @return   int
      */
-    final public static function count(array $conds = [], bool $conds_is_where = false)
+    final public static function count(array $conds = [], ?bool $conds_is_where = null)
     {
         $conds = static::_format_conds($conds, $conds_is_where);
         if ( empty($conds['fields']) )
@@ -1127,9 +1296,11 @@ class pub_mod_model
         $orgin_fields    = $conds['orgin_fields'] ?? null;
         unset($conds['order_by'], $conds['orgin_fields']);
         // 求大约值
-        $is_nearly_count = empty($conds['where']) && !empty($conds['nearly_count']);
-        //有group by的统计要先加一个子查询
-        if ( isset($conds['group_by']) || isset($conds['union']) ) 
+        $is_nearly_count = empty($conds['where']) && empty($conds['having']) && 
+            empty($conds['group_by']) && !empty($conds['nearly_count']);
+            
+        // 有group by的统计要先加一个子查询
+        if ( isset($conds['group_by']) || isset($conds['union']) || isset($conds['having']) ) 
         {
             $sub_sql = static::lists(array_merge($conds, [
                 'fields'   => $orgin_fields ?? $conds['fields'],
@@ -1140,7 +1311,7 @@ class pub_mod_model
             ])) ?: [];
 
             $ret = static::find([
-                'table'  => static::expr($sub_sql),
+                'table'  => db::expr($sub_sql),
                 'fields' => $fields,
                 'func'   => $conds['func'] ?? null,
                 'count'  => true,
@@ -1167,7 +1338,7 @@ class pub_mod_model
             }
         }
 
-        return (1 == count($fields) || is_object($conds['fields'])) ? reset($ret) : $ret;
+        return count($ret) == 1 ? reset($ret) : $ret;
     }
 
     /**
@@ -1185,10 +1356,10 @@ class pub_mod_model
     /**
      * 求总和，参数和lists是一样的，可以为空
      * @param    array      $conds
-     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where
+     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where，为null会自动判断
      * @return   mixed           
      */
-    final public static function sum(array $conds, bool $conds_is_where = false)
+    final public static function sum(array $conds, ?bool $conds_is_where = null)
     {
         return static::count(array_merge($conds, ['func' => 'SUM']), $conds_is_where);
     }
@@ -1196,20 +1367,20 @@ class pub_mod_model
     /**
      * 求平均值，参数和lists是一样的，可以为空
      * @param    array      $conds
-     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where
+     * @param    bool|boolean $conds_is_where 如果为true,则认为conds为where，为null会自动判断
      * @return   mixed           
      */
-    final public static function avg(array $conds = [], bool $conds_is_where = false)
+    final public static function avg(array $conds = [], ?bool $conds_is_where = null)
     {
         return static::count(array_merge($conds, ['func' => 'AVG']), $conds_is_where);
     }
 
     /**
      * @param    array        $conds           参数和lists一样
-     * @param    bool|boolean $conds_is_where  如果为true,则认为conds为where
+     * @param    bool|boolean $conds_is_where  如果为true,则认为conds为where，为null会自动判断
      * @return   mixed                         返回fields中的第一个字段的值
      */
-    final public static function field(array $conds, bool $conds_is_where = false)
+    final public static function field(array $conds, ?bool $conds_is_where = null)
     {
         $data = static::find($conds, $conds_is_where);
         return $data ? reset($data) : null;
@@ -1217,8 +1388,9 @@ class pub_mod_model
 
     /**
      * 使用模块数据库，实际是对db的from_db函数的封装 和 db::selet(xxx)->from_db('实例名称')效果一样
+     * (一般不需要使用，最好使用 new_db 返回一个当前 model 的专属对象)
      * @param  object $query 当前查询
-     * @return $query
+     * @return object
      */
     final public static function from_module_db($query)
     {
@@ -1248,7 +1420,7 @@ class pub_mod_model
      * 2.不联表的情况下 可以使用 ['fields' => 'a,b,c']/['fields' => [a, b, c]]
      * 3.如果除了查主表还要查询联表的字段的话
      * ['table1' => [a, b, c], 'table2' => 'd,e,f']
-     * @param  上方法提交的数组
+     * @param  array  $conds 上方法提交的数组
      * @return string
      * 返回查询字段
      */
@@ -1261,7 +1433,7 @@ class pub_mod_model
         {
             if ( !empty($table) && is_string($table) )
             {
-                $table = db::table_prefix($table);
+                $table = static::new_db()->table_prefix($table);
                 if ( empty($database_config) )
                 {
                     $database_config = config::instance('database')->get();
@@ -1328,7 +1500,11 @@ class pub_mod_model
         {
             foreach ($fields as $k => $f)
             {
-                if ( preg_match('#\(.*\)#', $f) ) 
+                if ( !$f ) 
+                {
+                    continue;
+                }
+                else if ( preg_match('#\(.*\)#', $f) ) 
                 {
                     $f = db::expr($f);
                 }
@@ -1350,7 +1526,7 @@ class pub_mod_model
             }
         }
 
-        //fields存在对象需要返回数组
+        // fields存在对象需要返回数组
         if ( $has_object )
         {
             return $fields;
@@ -1399,7 +1575,7 @@ class pub_mod_model
 
 
     /**
-     * @param  上层方法提交的数组
+     * @param  array $conds 上层方法提交的数组
      * @return string
      * 返回查询字段
      */
@@ -1438,22 +1614,32 @@ class pub_mod_model
      */
     final public static function get_alias($table)
     {
-        if ( is_array($table) ) 
+        if ( is_object($table) ) 
+        {
+            return '';
+        }
+        else if ( is_array($table) ) 
         {
             $table = $table['alias'] ?? static::table($table);
         }
 
-        if ( is_string($table) && preg_match('#\([^\(\)]+\)\s(?<alias>[^\s]+)#', $table, $mat) ) 
-        {
-            $table = $mat['alias'];
-        }
-        else if ( 
+        if ( 
             is_string($table) && 
             !preg_match('#\([^\(\)]+\)#', $table, $mat) &&
-            preg_match('#[\w]\s+(as\s+)?(?<alias>[^\s]+)#i', $table, $mat)
+            preg_match('#[\w]\s+(as\s+)?(?<alias>[^\s]+)$#i', $table, $mat)
         )
         {
             $table = $mat['alias'];
+        }
+        else if ( is_string($table) && preg_match('#\([^\(\)]+\)\s+(as\s+)?(?<alias>[^\s]+)$#i', $table, $mat) ) 
+        {
+            $table = $mat['alias'];
+        }
+
+        // 有特殊字符表示不是真正的表名
+        if ( $table && preg_match('#[\s,\(\)]+#', $table) ) 
+        {
+            $table = null;
         }
 
         return $table;
@@ -1470,8 +1656,8 @@ class pub_mod_model
     }
 
     /**
-     * @param  表
-     * @return 表结构数据
+     * @param  ?string  $table 表
+     * @return array    表结构数据
      */
     final public static function init_table($table = null)
     {
@@ -1493,7 +1679,7 @@ class pub_mod_model
             $table_cache_time = config::instance('config', 'db')->get('table_cache_time', 0);
         }
 
-        $cache_key = md5(static::MD_KEY . '_' . $table . '_' . $table_cache_time);
+        $cache_key = md5(static::MD_KEY . '_' . (static::get_current_db_config()['name'] ?? '') . ':' . $table . '_' . $table_cache_time);
         static::$table_ifnos = cache::get($cache_key);
         if ( empty(static::$table_ifnos) || !is_array(static::$table_ifnos) )
         {
@@ -1574,8 +1760,8 @@ class pub_mod_model
      *     //都没有写表名，field1会默认使用table1,field2会使用主表，即conds中的table
      *     'table1' => ['field1' => 'field2'],需要别名，'table1 (as) xx' => ['field1' => 'field2']
      *      //field1会默认使用table1 field2不处理, 如果field3要等于某个值，使用expr
-     *      //如果需要使用 left/right/inner等操作，只需要在表名后加[left]
-     *     'table2[left]' => ['field1' => 'xxxx.field2', 'field3' => pub_mod_model::expr(22222)]
+     *      //如果需要使用 left/right/inner等操作，只需要在表名后加[left],别名支持放链接类型前面/后面
+     *     'table2[left]' => ['field1' => 'xxxx.field2', 'field3' => model::expr(22222)]
      *     .....
      * ]
      * @param  object $query
@@ -1591,7 +1777,7 @@ class pub_mod_model
             foreach ($conds['join'] as $table => $relation)
             {
                 $pattern_sub = $alias = $tmp_table = null;
-                //先把子语句替换成一个随机的字符串，后面再替换回来
+                // 先把子语句替换成一个随机的字符串，后面再替换回来
                 if ( preg_match('#(?<sub_sql>\(.*\))#is', $table, $mat) ) 
                 {
                     $tmp_table   = uniqid();
@@ -1601,15 +1787,15 @@ class pub_mod_model
                 }
 
                 $join_type = '';
-                //匹配出连表方式和别名
-                $pattern   = '#(?<table>[^\[\]\s]+)(\s*\[(?<join_type>[^\[\]]+)\])?(\s+(as\s+)?\s*(?<alias>[^\s\[\]]+))?#is';
+                // 匹配出连表方式和别名，兼容链接类型放别名前面和后面
+                $pattern   = '#(?<table>[^\[\]\s]+)(\s*\[(?<join_type>[^\[\]]+)\])?(\s+(as\s+)?\s*(?<alias>[^\s\[\]]+))?(\s*\[(?<join_type2>[^\[\]]+)\])?#is';
                 if ( 
                     (isset($pattern_sub) && preg_match($pattern_sub, $table, $mat)) || 
                     preg_match($pattern, $table, $mat) 
                 )
                 {
                     $table     = $mat['table'];
-                    $join_type = $mat['join_type'] ?? null;
+                    $join_type = !empty($mat['join_type']) ? $mat['join_type'] : ($mat['join_type2'] ?? null);
                     $alias     = $mat['alias'] ?? null;
                 }
 
@@ -1655,7 +1841,7 @@ class pub_mod_model
             {
                 if ( isset($tmp_table_maps[$table]) ) 
                 {
-                    $table = $tmp_table_maps[$table];
+                    $table = db::expr($tmp_table_maps[$table]);
                 }
 
                 if ( isset($config['alias']) ) 
@@ -1710,7 +1896,7 @@ class pub_mod_model
      * @param  mixed  $value 
      * @param  string $table 
      * @param  string $func  
-     * @return void     
+     * @return mixed     
      */
     final public static function parse_where_item($query, $column, $value, $table = '', $func = 'where')
     {
@@ -1749,6 +1935,7 @@ class pub_mod_model
                         'op'    => 'BETWEEN',
                         'value' => db::expr(sprintf(" %s AND %s ", $first, $last))
                     ];
+
                     break;
                 case '><': // > xx < xx
                     if ( $func ) 
@@ -1765,10 +1952,10 @@ class pub_mod_model
                             'value' => db::expr(sprintf(" %s < '%s' ", $field, end($value)))
                         ];
                     }
-     
+
                     break;
                 default:
-                    //用&把多个操作符连起来，表示2个操作符
+                    // 用&把多个操作符连起来，表示2个操作符
                     if (preg_match('#(?<op1>[^&]+)&(?<op2>[^&]+)#', $mat['op'], $sub_mat) )
                     {
                         if ( !$func ) 
@@ -1863,10 +2050,15 @@ class pub_mod_model
      *           'game_id[>]' => 5, 
      *           'or'  => ['game_id[>]' => 6, 'game_id[<]' => 7],
      *           'and' => ['hour' => 1, 'or' => ['hour' => 1, 'hour[>]' => 10]]
+     *       ],
+     *       // 会解析成 第一层是or，里面是and
+     *       'or' => [
+     *           ['a' => 1, 'b' => 2],
+     *           ['c' => 3, 'd' => 4]
      *       ] 
      *   ]
      *],
-     *
+     * 不过太复杂条件的不建议这样写，可读性太差，可以使用 expr 裸写
      * 字段支持操作符：
      *  * %$% => like '%xx%'
      * %$  => like '%xx'
@@ -1900,24 +2092,37 @@ class pub_mod_model
             return $query->$mod_func($where);
         }
 
-        //优先处理or 和 and 关键字
+        // 优先处理 or 和 and 关键字
         foreach (['or' => $func_arr['or'], 'and' => $func_arr['and']] as $or_and => $or_and_func)
         {
             if ( !isset($where[$or_and]) ) continue;
-            $_first_item  = current($where[$or_and]);
+            $_first_item = current($where[$or_and]);
+            $_first_key  = current(array_keys($where[$or_and])); 
             //是否是多个or查询
-            $is_multi_or = (
+            $is_multi_or = is_numeric($_first_key) || (
                 (is_array($_first_item) && is_string(current(array_keys($_first_item)))) ||
                 (is_array($_first_item) && is_array(current($_first_item))) //兼容多维数组写法
             );
 
             $where[$or_and] = $is_multi_or ? $where[$or_and] : [$where[$or_and]];
             $query->{$func_arr['open']}();
-            foreach ($where[$or_and] as $or_item)
+            foreach ($where[$or_and] as $or_key => $or_item)
             {
                 if ( is_object($or_item) ) 
                 {
-                    $query->$mod_func($or_item);
+                    $query->$or_and_func($or_item);
+                }
+                // 里面本来就是一个数组，直接当成一组
+                // 'or' => [
+                //      ['a' => 1, 'b' => 2],
+                //      ['c' => 1]
+                // ]
+                else if ( $is_multi_or && is_numeric($or_key) && is_array($or_item)  )
+                {
+                    call_user_func([$query, $or_and_func . '_open']);
+                    self::_where($query, $or_item, $table, $mod_func);
+                    call_user_func([$query, $or_and_func . '_close']);
+                    continue;
                 }
                 else
                 {
@@ -1939,12 +2144,12 @@ class pub_mod_model
             unset($where[$or_and]);
         }
 
-        // exists/not_exist 关键字
-        if ( isset($where['exists']) || isset($where['not_exist']) ) 
+        // exists/not_exists 关键字
+        if ( isset($where['exists']) || isset($where['not_exists']) ) 
         {
             $exists_maps = [
-                'exists'    => 'EXISTS',
-                'not_exist' => 'NOT EXISTS',
+                'exists'     => 'EXISTS',
+                'not_exists' => 'NOT EXISTS',
             ];
             foreach ($exists_maps as $k => $v)
             {
@@ -2010,7 +2215,7 @@ class pub_mod_model
      */
     final public static function get_where_sql(array $where, ?string $table = null)
     {
-        $query = static::from_module_db(db::select('*'));
+        $query = static::new_db()->select('*');
         $where = static::_where($query, $where, $table)->_compile_conditions();
         
         $query->reset();
@@ -2030,7 +2235,7 @@ class pub_mod_model
      *       'g'       => 9,
      *       'h'       => 10,
      *   ];
-     *   $arr = mod_agent_server::format_where($D, [
+     *   $arr = mod_xxx::format_where($D, [
      *       'base_fields'      => ['a' => function($v) { return 'a1'; }, 'b'],
      *       'range_fields'     => ['c' => function($v) { return ['c1', 'c2'];}, 'd'],
      *       'like_fields'      => ['e'],
@@ -2038,21 +2243,23 @@ class pub_mod_model
      *       'left_like_fields' => ['h'],
      *       '>='               => ['d_start'],
      *       '<='               => ['d_end'],
+     *       'func_fields' //fn => ['a' => function($val, $field) { return ['a' => 1, $field => 2]}]
+     *       'expr'             => ['a' => 1],  // 不需要解析的类型
      *   ]);
      *   如果数据库查询字段和值字段不一样的时候，匿名函数可以多加一个引用类型参数，函数体里面定义一下即可,
      *   比如 'base_fields'      => ['a' => function($v, &$n_f) { $n_f = 'fck'; return 'a1'; }, 'b'],
      *   a会变成fck
      *   也可以通过在字段中通过[真实数据库字段名]的方式，比如：
-     *   比如 'base_fields'      => ['a[a1]' => 2, 'b[b2]' => 'strtotime'],
+     *   比如 'base_fields'      => ['a[a1]' => 2, 'b[b2]' => 'strtotime', 'c[c1]' => function($v) {return 111;}],
      *   a会变成a1 a1 => $D['a']
      * @param    array      $filter_data 数据
      * @param    array      $rules       规则，支持如下
-     * base_fields       基础查询
-     * rangs_fields      区间查询，值为数组
-     * or_fields         or查询
-     * like_fields       全模糊查询
-     * left_like_fields  左模糊查询
-     * right_like_fields 右模糊查询
+     * base_fields/=        基础查询
+     * rangs_fields/in      区间查询，值为数组
+     * or_fields/or         or查询
+     * like_fields/%        全模糊查询
+     * left_like_fields/%$  左模糊查询
+     * right_like_fields/$% 右模糊查询
      * 除了上面的，也可以定于自己想要的类型
      * 也可以使用任何mysql支持的，比如 > | >= | <=....
      * @return   array
@@ -2064,6 +2271,13 @@ class pub_mod_model
         {
             $type   = strtolower($type);
             $fields = (array) $fields;
+            // 不需要解析的类型
+            if ( 'expr' === $type ) 
+            {
+                $where = array_merge($where, $fields);
+                continue;
+            }
+
             foreach ($fields as $k => $v)
             {
                 $field     = is_numeric($k) ? $v : $k;
@@ -2076,24 +2290,28 @@ class pub_mod_model
                 }
  
                 $field_val = $filter_data[$field] ?? null;
-                $field_val = static::_parse_format_where_item($k, $v, $field_val, $new_field);
                 // 字段不存在，跳过
                 if ( !isset($field_val) )
                 {
                     continue;
                 }
+                else if ( !in_array($type, ['func_fields', 'fn', 'expr']) ) 
+                {
+                    $field_val = static::_parse_format_where_item($k, $v, $field_val, $new_field);
+                }
+
                 // 如果数据库查询字段和值字段不一样的时候，匿名函数可以多加一个引用类型参数，函数体里面定义一下即可
-                else if ( $new_field ) 
+                if ( $new_field ) 
                 {
                     $field = $new_field;
                 }
 
                 switch ($type) 
                 {
-                    case 'eq_fields': case 'base_fields': // 基础查询
+                    case 'eq_fields': case 'base_fields': case '=': // 基础查询
                         $where[$field] = $field_val;
                         break;
-                    case 'range_fields': // 区间查询
+                    case 'range_fields': case 'bt': // 区间查询
                         // 数组方式
                         if ( !is_array($field_val) ) 
                         {
@@ -2136,6 +2354,30 @@ class pub_mod_model
                         }
 
                         $where["{$field}[BETWEEN]"] = $field_val;
+                        break;
+                    case 'func_fields': case 'fn':
+                        if ( $tmp_where = call_user_func_array($v, [$field_val, $field, $filter_data]) ) 
+                        {
+                            if ( is_object($tmp_where) ) 
+                            {
+                                $where[] = $tmp_where;
+                            }
+                            else
+                            {
+                                foreach ($tmp_where as $_f => $_fv)
+                                {
+                                    if ( is_object($_fv) ) 
+                                    {
+                                        $where[] = $_fv;
+                                    }
+                                    else
+                                    {
+                                        $where[$_f] = $_fv;
+                                    }
+                                }
+                            }
+                        }
+
                         break;
                     default: // 其他mysql支持的查询类型
                         $where["{$field}[{$type}]"] = $field_val;
@@ -2238,17 +2480,24 @@ class pub_mod_model
 
     /**
      * 直接写sql, 会查询子类配置的数据库
-     * @param    string     $sql 
+     * @param mixed   $sql 如果为数组的时候，必须包含0和1，0表示sql模版，1为数组，表示模版里面的变量
+     * self::query([
+     *   'select * from xxxx where xxx1 in {xxx1} and xxx2={xxx2}',
+     *    [
+     *        'xxx1' => 1,
+     *        'xxx2' => [2, 3, 'a'],
+     *    ]
+     *]);
      * @param    bool       $is_master 是否为主库
      * @param    array      $params=>[
      *               'execute'      => true,  // 是否执行，默认执行sql
      *               'close_filter' => true   // close_filter为true 关闭过滤
      *           ] 
-     * @return   object
+     * @return   mixed
      */
     final public static function query(
-        string $sql, 
-        ?bool  $is_master = false, 
+        string $sql,
+        ?bool  $is_master = false,
         array  $params    = ['execute' => true]
     )
     {
@@ -2258,9 +2507,9 @@ class pub_mod_model
             static::$data_rules = static::filter_rules();
         }
 
-        $execute      = cls_arr::get($params, 'execute', true);
-        $close_filter = cls_arr::get($params, 'close_filter', false);
-        $query        = static::from_module_db(db::query($sql, $close_filter));
+        $execute      = $params['execute'] ?? true;
+        $close_filter = $params['close_filter'] ?? false;
+        $query        = static::new_db()->query($sql, $close_filter);
         if ( $execute ) 
         {
             return $query->execute($is_master, $params);
@@ -2271,15 +2520,49 @@ class pub_mod_model
         }
     }
 
-    final public static function get_instance_master_name()
+    /**
+     * 关闭过滤的query
+     * @param    mixed        $sql
+     * @param    bool|boolean $is_master
+     * @return   mixed
+     */
+    public static function real_query($sql, ?bool $is_master = false)
     {
-        //需要取主库一般都是开启事物，所以先实例化
-        $db_name = db::init_db(
-            static::$module_db['name'] ?? null, 
-            static::$module_db['config_file'] ?? null
-        );
+        return static::query($sql, $is_master, ['close_filter' => true]);
+    }
 
-        return !empty(static::$module_db['name']) ? $db_name.'_w' : null;
+    /**
+     * 裸写sql分页数据
+     * self::query_page_data([
+     *   'select * from xxxx where xxx1 in {xxx1} and xxx2={xxx2}',
+     *    [
+     *        'xxx1' => 1,
+     *        'xxx2' => [2, 3, 'a'],
+     *    ], 1, 10
+     *]);
+     * @param mixed   $sql
+     * @param integer $page
+     * @param integer $pagesize
+     * @param boolean $is_master
+     * @return array
+     */
+    public static function query_page_data($sql, int $page = 1, ?int $pagesize = null, bool $is_master = false)
+    {
+        $sql      = static::new_db()->query($sql)->compile();
+        $pagesize = $pagesize ?? static::$pagesize;
+        return [
+            'data'  => static::real_query(sprintf('%s LIMIT %d, %d', $sql, max(0, $pagesize * ($page -1)), $pagesize), $is_master),
+            'total' => static::real_query(sprintf('SELECT COUNT(1) total FROM (%s) tmp', $sql))[0]['total'] ?? 0
+        ];
+    }
+
+    /**
+     * 获取当前主库名称
+     * @return   ?string
+     */
+    final public static function get_instance_master_name(bool $is_master = true)
+    {
+        return static::new_db()->get_instance_group(!$is_master ? 'slave' : 'master');
     }
 
     /**
@@ -2335,9 +2618,9 @@ class pub_mod_model
         if ( !static::_muti_start_trans($muti_id, __function__) ) 
         {
             static::_load_module_env();
-            db::enable_slave(false);
+            static::new_db()->enable_slave(false);
             static::$enable_slave = true;
-            db::start(static::get_instance_master_name());
+            static::new_db()->start();
         }
 
         return true;
@@ -2353,8 +2636,8 @@ class pub_mod_model
         if ( !static::_muti_start_trans($muti_id, __function__) ) 
         {
             static::_load_module_env();
-            static::$enable_slave && db::enable_slave(true);
-            db::end(static::get_instance_master_name());
+            static::$enable_slave && static::new_db()->enable_slave(true);
+            static::new_db()->end();
         }
 
         return true;
@@ -2371,16 +2654,16 @@ class pub_mod_model
         if ( !static::_muti_start_trans($muti_id, __function__) ) 
         {
             static::_load_module_env();
-            // 事务完成后统一发送统计数据
-            if ( method_exists('common\extend\pub_func', 'dsrs') )
+            //事务完成后统一发送统计数据
+            if ( defined('DB_COMMIT_FUNC_CB') && method_exists(DB_COMMIT_FUNC_CB[0], DB_COMMIT_FUNC_CB[1]) )
             {
                 util::shutdown_function(
-                    ['common\extend\pub_func', 'dsrs'],
+                    DB_COMMIT_FUNC_CB,
                     [null, null, true]
                 );
             }
 
-            db::commit(static::get_instance_master_name());
+            static::new_db()->commit();
         }
 
         return true;
@@ -2396,13 +2679,16 @@ class pub_mod_model
         if ( !static::_muti_start_trans($muti_id, __function__) ) 
         {
             static::_load_module_env();
-            // 事务回滚，清空统计日志
-            if ( method_exists('common\extend\pub_func', 'dsrs') )
+            //事务回滚，清空统计日志
+            if ( defined('DB_COMMIT_FUNC_CB') && method_exists(DB_COMMIT_FUNC_CB[0], DB_COMMIT_FUNC_CB[1]) )
             {
-                pub_func::dsrs(null, null, 'clear');
+                util::shutdown_function(
+                    DB_COMMIT_FUNC_CB,
+                    [null, null, 'clear']
+                );
             }
 
-            db::rollback(static::get_instance_master_name());
+            static::new_db()->rollback();
         }
 
         return true;
@@ -2466,7 +2752,7 @@ class pub_mod_model
      *       ],
      *       [
      *           'order_map' => [
-     *               'table' => 'mp_wallet',//表名
+     *               'table' => 'xxx_table',//表名
      *               'index' => 'id',//外键
      *               'fields' => ['uid', 'currency_code']//获取字段
      *               'implode' => '|' 留空返回数组
@@ -2482,12 +2768,14 @@ class pub_mod_model
      *               [name] => 111
      *               [w_uid] => c27b6f5b05261298f51d13aa0460530b|CNY
      *           )
+     *
      *       [1] => Array
      *           (
      *               [wid] => 525
      *               [name] => 222
      *               [w_uid] => 50d8c583a2b94aa7b73b4fbf2f152b7a|CNY
      *           )
+     *
      *   )
      *
      *  $data = self::data_map([
@@ -2518,7 +2806,7 @@ class pub_mod_model
         {
             if ( isset($data[$map]) )
             {
-                $fields[$map] = isset($fields[$map]) ? $fields[$map] : [];
+                $fields[$map] = $fields[$map] ?? [];
                 $fields[$map] = array_merge($fields[$map], array_keys($data[$map]));
             }
         }
@@ -2610,21 +2898,22 @@ class pub_mod_model
                 {
                     $mf = $data[$map][$f];
                     // 获取配置中全部字段
-                    if ( 
-                        in_array('*', (array) $mf) && 
-                        isset($maps[$map]['fields']) && 
-                        is_array($maps[$map]['fields']) 
-                    ) 
+                    if ( in_array('*', (array) $mf) ) 
                     {
+                        if ( in_array('*', (array) $maps[$map]['fields']) ) 
+                        {
+                            $maps[$map]['fields'] = isset($group[$map]) ? array_keys(reset($group[$map])) : [];
+                        }
+
                         foreach ($maps[$map]['fields'] as $_f)
                         {
                             if ( !isset($row[$f]) || !isset($group[$map][$row[$f]][$_f]) ) 
                             {
-                                $data['data'][$key][$_f] = '';
+                                $data['data'][$key][$_f] = $row[$_f] ?? null;
                             }
                             else
                             {
-                                $data['data'][$key][$_f] = $group[$map][$row[$f]][$_f];
+                                $data['data'][$key][$_f] = $data['data'][$key][$_f] ?? $group[$map][$row[$f]][$_f];
                             }
                         }
                     }
@@ -2636,7 +2925,7 @@ class pub_mod_model
                             $_orgin_key = is_numeric($_fk) ? $_f : $_fk;
                             if ( !isset($row[$f]) || !isset($group[$map][$row[$f]][$_orgin_key]) ) 
                             {
-                                $data['data'][$key][$_f] = '';
+                                $data['data'][$key][$_f] = null;
                             }
                             else
                             {
@@ -2646,13 +2935,14 @@ class pub_mod_model
                     }
                     else if ( !isset($row[$f]) || !isset($group[$map][$row[$f]])  )//不存在的字段，跳过
                     {
-                        $data['data'][$key][$mf] = isset($maps[$map]['default']) ? $maps[$map]['default'] : '';
+                        $data['data'][$key][$mf] = isset($maps[$map]['default']) ? $maps[$map]['default'] : null;
                     }
                     else
                     {
                         $data['data'][$key][$mf] = $group[$map][$row[$f]];
                     }
 
+                    // 运行callback
                     if ( isset($maps[$map]['callback']) && is_callable($maps[$map]['callback']) )
                     {
                         $data['data'][$key][$mf] = call_user_func($maps[$map]['callback'], $data['data'][$key][$mf]);
@@ -2662,6 +2952,41 @@ class pub_mod_model
         }
 
         return $is_single ? reset($data['data']) : $data['data'];
+    }
+
+    /**
+     * 自动添加表关联数据
+     * $data = mod_b::use_data_map($a_data, ['a_field' => ['b.x1', 'b.xx2]], b.field_map_a_field)
+     * @param  array      $data     列表数据
+     * @param  array|null $map_atts ['关联字段' => [想获取的字段]] 默认返回全部
+     * 关联字段 是指数据中的字段
+     * 想获取的字段 是指想获取的信息
+     * @param  mixed      $index    是指获取数据的表中和关联字段对应的字段名称，默认拿主键
+     * @return   array
+     */
+    final public static function use_data_map(array $data, ?array $map_atts = null, $index = null)
+    {
+        $index = $index ?? static::$pk;
+        if ( !$map_atts && $index ) 
+        {
+            $map_atts = [$index => '*'];
+        }
+
+        return static::data_map(
+            [
+                'data'         => $data,
+                static::$table => $map_atts,
+            ], 
+            [
+                static::$table => [
+                    'model'   => static::class,
+                    'table'   => static::$table,
+                    'index'   => $index,
+                    'fields'  => ['*'],
+                    'implode' => 'array',
+                ]
+            ]
+        );
     }
 
     /**
@@ -2692,7 +3017,7 @@ class pub_mod_model
 
     /**
      * 加载外表数据
-     * pub_mod_model::load([
+     * model::load([
      *      'is_multi' => 是否是1:n，1=是，0=否,
      *      'data' => 主表数据,
      *      'index' => 关联表id,
@@ -2740,7 +3065,7 @@ class pub_mod_model
             $ids[] = $item[$foreign_id];
         }
 
-        $query = static::from_module_db(db::select($fields))
+        $query = static::new_db()->select($fields)
             ->from($table)
             ->where($index, 'in', $ids);
 
@@ -2803,133 +3128,33 @@ class pub_mod_model
     }
 
     /**
-     * 获取exception抛出的异常信息
-     * @param    int      $status     
-     * @param    ?string  $default_msg
-     * @return   string                 
-     */
-    final public static function get_err_msg(?int $status, ?string $default_msg = null)
-    {
-        return static::$msg_maps[$status] ?? ($default_msg ?? 'Unknow error!');
-    }
-
-    /**
-     * 防止业务把一些不安全的错误信息出去，所以业务的异常code不能大于-800
-     * @param  \Exception $e 
-     * @return string   
-     */
-    final public static function get_exception_msg(\Exception $e, ?int $code = null)
-    {
-        $code    = $code ?? $e->getCode();
-        $err_msg = $e->getMessage();
-        $pattern = '#Duplicate.*entry.*for\s+key\s+\'[^\.]+\.(?<dup_field>[^\s]+)\'#is';
-        //重复unique key特殊处理
-        if ( preg_match($pattern, $err_msg, $mat) ) 
-        {
-            $err_msg = "{$mat['dup_field']}已存在";
-        }
-        else
-        {
-            //小于1000的，显示系统繁忙，要不很容易把数据库错误都丢出去了
-            $err_msg = $code < -1000 ? '系统繁忙，请稍后重试' : $err_msg;
-        }
- 
-        return $err_msg;
-    }
-
-    /**
-     * 抛异常封装
-     * @param  string $msg 
-     * @param  int    $code
-     * @return Exception  
-     */
-    final public static function exception(string $msg = '', ?int $code = null)
-    {
-        $code = $code || $code === 0 ? $code : static::$unknow_err_status;
-        throw new \Exception($msg, $code);
-    }
-
-    /**
-     * 统一处理错误后的status值，防止乱抛出
-     * @param  \Exception $e Exception
-     * @return int
-     */
-    final public static function get_exception_status(\Exception $e)
-    {
-        $err_code = $e->getCode();
-        $status   = $err_code >= 0 ? static::$unknow_err_status : $err_code;
-        self::$msg_maps[$status] = self::get_exception_msg($e, $status);
-        return $status;
-    }
-
-    /**
-     * 记录错误日志
-     * 
-     * @param    \Exception $e   
-     * @param    string     $func 
-     * @param    array|null $data
-     * 
-     * @return   void        
-     */
-    final public static function log_exception(
-        \Exception $e, 
-        ?string    $func      = null, 
-        ?array     $data      = null, 
-        ?string    $file_path = null
-    )
-    {
-        if ( $func && !strstr($func, '::') ) 
-        {
-            $func = (static::class ? static::class . '::' : '') . $func;
-        }
-
-        $log = [
-            'data'  => $data ?? req::$forms,
-            'code'  => $e->getCode(),
-            'msg'   => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ];
-
-        if ( !$file_path ) 
-        {
-            log::error($log, $func);
-        }
-        else
-        {
-            log::write($file_path, $log);
-        }
-    }
-
-    /**
-     * call_service 别名函数
-     * 
+     * call_service别名函数
      * @param  mixed $func
      * @param  array  $params
-     * 
-     * @return mixed  大于 0 表示成功
+     * @param  mixed  $finally_func 最后执行函数
+     * @return mixed  大于0表示成功
      */
-    final public static function transaction($func, $params = [])
+    final public static function transaction($func, $params = [], $finally_func = null)
     {
-        return static::call_service($func, $params);
+        return static::call_service($func, $params, $finally_func);
     }
 
     /**
      * 服务层调用模型层公共函数，如果服务层还涉及其他的逻辑，请自己实现
-     * 
-     * @param  mixed $func
-     * @param  array $params
-     * 
-     * @return mixed  大于 0 表示成功
+     * @param  mixed  $func
+     * @param  array  $params
+     * @param  mixed  $finally_func 最后执行函数
+     * @return mixed  大于0表示成功
      */
-    final public static function call_service($func, $params = [])
+    final public static function call_service($func, $params = [], $finally_func = null)
     {
         self::_load_module_env();
         try
         {
-            // 提交事物前运行钩子
+            //提交事物前运行钩子
             static::run_hook($func, $params, 'start');
             self::db_start();
-            // 防止参数带有引用报错
+            //防止参数带有引用报错
             foreach ($params as &$p) {}
             $status = call_user_func_array($func, $params);
         }
@@ -2970,15 +3195,21 @@ class pub_mod_model
             );
         }
 
+        // 最后执行
+        if ( $finally_func ) 
+        {
+            call_user_func_array($finally_func, [$status, $params]);
+        }
+
         return $status;
     }
 
     /**
      * 如果当前类的方法需要开启事物，只需要方法前加serv_即可（如果还有其他关联业务的，最好开一个service层）
-     *public static function __callStatic($method, $args)
-     *{
-     *   return static::call_serv_static(__class__, $method, $args);
-     *}
+     * public static function __callStatic($method, $args)
+     * {
+     *    return static::call_serv_static(__class__, $method, $args);
+     * }
      * @param  string $method
      * @param  array  $args
      * @param  string $class
@@ -3009,7 +3240,7 @@ class pub_mod_model
 
     /**
      * 运行钩子函数
-     * @param  array $func 如果不是一个数组，则会认为是当前类的一个hook,如果是数组，则直接运行
+     * @param  mxied  $func 如果不是一个数组，则会认为是当前类的一个hook,如果是数组，则直接运行
      * @param  array  $data
      * @return mixed  false表示函数存在或者执行返回false
      */
@@ -3024,7 +3255,7 @@ class pub_mod_model
             ];
             if ( null !== self::class && !is_array($func) )
             {
-                $func  = [self::class, $func];
+                $func  = [static::class, $func];
             }
              
             if ( is_array($func) )
@@ -3093,10 +3324,10 @@ class pub_mod_model
      * 
      * @param  array  $data
      * @param  string $table
-     * 
+     * @param  mixed  $json_field_cb
      * @return array
      */
-    final public static function json_format(array $data, ?string $table = null)
+    final public static function json_format(array $data, ?string $table = null, $json_field_cb = null)
     {
         $is_multi = is_array(reset($data));
         if ( $is_multi ) 
@@ -3107,8 +3338,12 @@ class pub_mod_model
         }
 
         $table       = $table ?? static::$table;
-        $json_fields = self::get_config('database', 'json_fields');
-        $table       = db::table_prefix($table);
+        $json_fields = self::get_config(
+            static::$module_db['config_file'] ?? 'database', 
+            static::$module_db['name'] ?? null
+        )['json_fields'] ?? self::get_config('database', 'json_fields');
+
+        $table = db::table_prefix($table);
         if ( $json_fields ) 
         {
             $fields = cls_arr::get($json_fields, $table, []);
@@ -3117,6 +3352,10 @@ class pub_mod_model
                 if ( isset($data[$field]) )
                 {
                     $data[$field] = is_array($data[$field]) ? $data[$field] : json_decode($data[$field], true);
+                    if ( $json_field_cb ) 
+                    {
+                        $data[$field] = call_user_func_array($json_field_cb, [$data[$field]]);
+                    }
                 }
             }
         }
@@ -3139,9 +3378,12 @@ class pub_mod_model
         return $data;
     }
 
+    /**
+     * @return   void
+     */
     private static function _load_module_env()
     {
-        //因为基础类定义了__callStatic，所以这里无法使用is_callable判断
+        // 因为基础类定义了__callStatic，所以这里无法使用 is_callable 判断
         if ( method_exists(static::class, 'load_module_env') ) 
         {
             call_user_func([static::class, 'load_module_env']);
@@ -3149,85 +3391,11 @@ class pub_mod_model
     }
 
     /**
-     * 并发/者服务器/常驻等一些不可控的因素偶尔会出现因为异常导致程序退出，用这个函数包装一下
-     * 使用方法 self::try_catch_func(function() use($a){
-     *     var_dump($a);
-     * });
-     *
-     * 可以通过 set_mod_data 绑定一个调试函数，比如:
-     * return self::try_catch_func(function() use($data) {
-     *    // 绑定一个调试函数，会在 try_catch_func 结束后调用
-     *    self::set_mod_data('debug_func', function($status) use($data) {
-     *        var_dump($status);
-     *        log::error($data);
-     *    });
-     *    self::exception('test', -1);
-     *    return $status;
-     *}, true);
-     * @param    mixed     $func 
-     * @param    mixed     $log_error 如果是数组，只有status是数组种的值的时候才会记录
-     * @param    mixed     $exclude_status 需要排除的状态值
-     * @return   mixed        
-     */
-    public static function try_catch_func($func, $log_error = true, array $exclude_status = [])
-    {
-        // 方法不可用直接抛异常
-        if ( !is_callable($func) ) 
-        {
-            static::exception("方法{$func}不可用", static::$unknow_err_status);
-        }
-
-        try 
-        {
-            $status = call_user_func($func);
-        } 
-        catch (\Exception $e) 
-        {
-            $status = static::get_exception_status($e);
-            // 是否记录日志
-            if ( 
-                $log_error && (!is_array($log_error) || in_array($status, $log_error)) &&
-                (!$exclude_status || !in_array($status, $exclude_status))
-            ) 
-            {
-                // 只拿上一层的调用信息
-                $debug_info = debug_backtrace(0, 2)[1] ?? [];
-                // 获取调用函数名，如果是数组，直接使用
-                if ( is_array($func) ) 
-                {
-                    $tmp = $func;
-                }
-                // 字符串或者闭包方式
-                else
-                {               
-                    $tmp  = [
-                        static::class,
-                        is_string($func) ? $func :
-                        ($debug_info['function'] ?? '')
-                    ];
-                }
-            
-                $func_name = implode('::', $tmp);
-                static::log_exception($e, $func_name, $debug_info['args'] ?? []);
-                pub_mod_system_error::trigger_error($e->getMessage() . "[{$status}]");
-            }
-        }
-        
-        // 是否有绑定调试函数
-        if ( ($debug_func = static::get_mod_data('debug_func')) && is_callable($debug_func) ) 
-        {
-            static::set_mod_data('debug_func', null);
-            self::try_catch_func(function() use($debug_func, $status) {
-                call_user_func($debug_func, $status);
-            });
-        }
-
-        return $status;
-    }
-
-    /**
      * 获取表过滤规则
-     * @param    stirng|null $action
+     * 
+     * @param    string|null $action
+     * @param    mixed       $assign_rules
+     * @param    bool        $use_default
      * @return   array
      */
     final public static function filter_rules(
@@ -3264,6 +3432,7 @@ class pub_mod_model
                     'is_pk'    => $conf['Key'] == 'PRI',
                     'required' => 'edit' != $action && !$conf['Null'] && !$conf['Default'],
                     'default'  => 'edit' != $action && $use_default && strlen($conf['Default']) ? $conf['Default'] : null,
+                    'comment'  => !empty($conf['Comment']) ? mb_substr($conf['Comment'], 0, 30) : '',
                 ];
 
                 //是否有自定义的属性
@@ -3297,6 +3466,7 @@ class pub_mod_model
 
     /**
      * 获取表的规则规则
+     * 
      * @param    array      $append_rules  需要添加/覆盖的规则,字段设置为null，会删除
      * @param    array      $unset_fields  需要删除的规则
      * @return   array                  
@@ -3317,10 +3487,9 @@ class pub_mod_model
         return $data_rules;
     }
 
-
-
     /**
-     * 设置当前类数据,一般用于model处理过程中，想往外，比如control输出一些信息的时候可以用使用
+     * 设置当前类数据, 一般用于model处理过程中，想往外，比如control输出一些信息的时候可以用使用
+     * 
      * @param    string     $key            
      * @param    mixed      $data           
      * @return   bool
@@ -3330,7 +3499,7 @@ class pub_mod_model
         if ( $data ) 
         {
             static::$data[static::class][$key] = $data;
-            //最大保存1000个key
+            // 最大保存 1000 个 key
             $max_length = 1000;
             if ( isset(static::$data[static::class]) && count(static::$data[static::class]) > $max_length ) 
             {
@@ -3347,6 +3516,7 @@ class pub_mod_model
 
     /**
      * 获取类型数据信息
+     * 
      * @param    string|null $key 不传返回全部
      * @return   mixed           
      */
@@ -3358,6 +3528,7 @@ class pub_mod_model
 
     /**
      * 根据过滤规则生成测试数据
+     * 
      * @param    array      $rules
      * @return   array         
      */
@@ -3427,7 +3598,7 @@ class pub_mod_model
         }
  
         // 判断是否存在数据data
-        if ( isset($data['data']) &&  is_array($data['data']) ) 
+        if ( isset($data['data']) && is_array($data['data']) ) 
         {
             $keys     = array_keys($data['data']);
             $has_data = !is_string(reset($keys)); // number or null
@@ -3443,7 +3614,7 @@ class pub_mod_model
             $data = $new;
         }
 
-        // formatter不可用，则尝试调用类
+        // formatter 不可用，则尝试调用类
         $formatter = is_callable($formatter) ? $formatter : 
         [static::class, is_bool($formatter) ? 'format_data' : $formatter];
         // 如果数据中存在data,而且为数组，则认为是分页数据结构
@@ -3460,18 +3631,90 @@ class pub_mod_model
     }
 
     /**
-     * 获取时间偏移 db 对象
+     * 循环执行fn(成功返回大于0，失败返回<= 0)，计算data数组执行成功的次数
+     * @param    array    $data
+     * @param    mixed    $fn  
+     * @return   int      
+     */
+    final public static function data_iterator_fn(array $data, $fn):int 
+    {
+        $suc_num = 0;
+        foreach ($data as $row)
+        {
+            $status = call_user_func_array($fn, [$row]);
+            if ( $status > 0 ) 
+            {
+                $suc_num++;
+            }
+        }
+
+        return $suc_num;
+    }
+
+    /**
+     * 获取时间偏移db对象
      * @param    int        $diff        
      * @param    string     $interval_str
      * @return   string
      */
-    protected static function get_time_interval(int $diff, string $interval_str = 'MONTH')
+    final public static function get_time_interval(
+        int    $diff, 
+        string $interval_str = 'MONTH', 
+        string $start = 'NOW()'
+    )
     {
         return db::expr(sprintf(
-            ' NOW() - interval %d %s',
+            ' %s - interval %d %s',
+            $start,
             $diff,
             $interval_str
         ));
+    }
+
+    /**
+     * 获取当前db执行的sqls
+     * @return   array
+     */
+    final public static function get_db_queries()
+    {
+        return db::$queries;
+    }
+
+    /**
+     * 获取as_sql真实的sql,去掉参数化站位符
+     * @param  string $sql
+     * @return string
+     */
+    final public static function get_real_sql(string $sql)
+    {
+        return self::new_db()->convert_back_sql($sql);
+    }
+
+    /**
+     * 创建默认的lists/find/等的conds参数的数组
+     * @param    array      $conds array
+     * @return   array
+     */
+    final public static function create_default_conds(array $conds, ?array $new_conds = null):array
+    {
+        $conds = [
+            'where'     => $conds['where'] ?? null,
+            'join'      => $conds['join'] ?? null,
+            'fields'    => $conds['fields'] ?? null,
+            'order_by'  => $conds['order_by'] ?? null,
+            'count'     => $conds['count'] ?? null,
+            'next_page' => $conds['next_page'] ?? null,
+            'index'     => $conds['index'] ?? null,
+            'page'      => $conds['page'] ?? null,
+            'pagesize'  => $conds['pagesize'] ?? null,
+            'formatter' => $conds['formatter'] ?? null,
+        ];
+        if ( isset($new_conds) )
+        {
+            $conds = array_merge($conds, $new_conds);
+        }
+        
+        return $conds;
     }
 
 }

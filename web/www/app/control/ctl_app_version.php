@@ -5,7 +5,6 @@ use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
 use kaliphp\kali;
-use kaliphp\config;
 use kaliphp\lib\cls_page;
 use kaliphp\lib\cls_msgbox;
 use common\extend\pub_app_version;

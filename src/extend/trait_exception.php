@@ -4,7 +4,6 @@ namespace kaliphp\extend;
 use kaliphp\{
     log,
     req,
-    util,
 };
 
 /**
@@ -14,7 +13,7 @@ trait trait_exception
 {
     public static
         $unknow_err_status = -1211, // 未知错误,一般都是数据库死锁
-        $msg_maps          = [],   // 错误映射
+        $msg_maps          = [],    // 错误映射
         $df_err_msg        = '系统繁忙，请稍后重试'; // 默认显示错误提示
 
     /**
@@ -23,7 +22,7 @@ trait trait_exception
      *     var_dump($a);
      * });
      *
-     * //可以通过set_mod_data绑定一个调试函数，比如
+     * // 可以通过 set_mod_data 绑定一个调试函数，比如
      * return self::try_catch_func(function() use($data) {
      *    //绑定一个调试函数，会在try_catch_func结束后调用
      *    self::set_mod_data('debug_func', function($status) use($data) {
@@ -41,7 +40,7 @@ trait trait_exception
      */
     final public static function try_catch_func($func, $log_error = true, ?array $exclude_status = null, $final_func = null)
     {
-        //方法不可用直接抛异常
+        // 方法不可用直接抛异常
         if ( !is_callable($func) ) 
         {
             static::exception("方法{$func}不可用", static::$unknow_err_status);
@@ -54,20 +53,20 @@ trait trait_exception
         catch (\Exception $e) 
         {
             $status = static::get_exception_status($e);
-            //是否记录日志
+            // 是否记录日志
             if ( 
                 $log_error && (!is_array($log_error) || in_array($status, $log_error)) &&
                 (!$exclude_status || !in_array($status, $exclude_status))
             ) 
             {
-                //只拿上一层的调用信息
+                // 只拿上一层的调用信息
                 $debug_info = debug_backtrace(0, 2)[1] ?? [];
-                //获取调用函数名，如果是数组，直接使用
+                // 获取调用函数名，如果是数组，直接使用
                 if ( is_array($func) ) 
                 {
                     $tmp = $func;
                 }
-                //字符串或者闭包方式
+                // 字符串或者闭包方式
                 else
                 {               
                     $tmp  = [
@@ -94,7 +93,7 @@ trait trait_exception
                 $final_func = static::get_mod_data('debug_func');
             }
             
-            //是否有绑定调试函数
+            // 是否有绑定调试函数
             if ( $final_func && is_callable($final_func) ) 
             {
                 $has_get_mod_data_func && static::set_mod_data('debug_func', null);

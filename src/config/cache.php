@@ -11,8 +11,8 @@ return [
     'memcache'   => [
         'servers' => [
             [
-                'host'       => $_ENV['MEMCACHE_HOST'], 
-                'port'       => $_ENV['MEMCACHE_PORT'], 
+                'host'       => $_ENV['MEMCACHE_HOST'] ?? '127.0.0.1', 
+                'port'       => $_ENV['MEMCACHE_PORT'] ?? 11211, 
                 'weight'     => 1, 
                 'keep-alive' => false
             ],
@@ -21,9 +21,9 @@ return [
     // redis目前只支持单台服务器，使用短连接，长链接在php7以上有问题，经常会被莫名回收
     'redis' => [
         'server' => [
-            'host'       => $_ENV['REDIS_HOST'], 
-            'port'       => $_ENV['REDIS_PORT'], 
-            'pass'       => $_ENV['REDIS_PASSWORD'], 
+            'host'       => $_ENV['REDIS_HOST'] ?? '127.0.0.1', 
+            'port'       => $_ENV['REDIS_PORT'] ?? 6379, 
+            'pass'       => $_ENV['REDIS_PASSWORD'] ?? '', 
             'keep-alive' => false, 
             'timeout'    => 5,
             'dbindex'    => 1

@@ -50,6 +50,7 @@ class event
      * @var array
      */
     private static $monitors = [];
+    private static $_hooks = [];
 
     public static function _init()
     {
@@ -62,7 +63,7 @@ class event
      * @param $event
      * @param null $times
      * @return int
-     * @throws TXException
+     * @throws Exception
      */
     public static function bind($method, $event, $times=null)
     {
@@ -88,7 +89,7 @@ class event
      */
     public static function bind_by_config($events)
     {
-        foreach ($events as $event_name => $callbacks)
+        foreach ($events as $hookname => $callbacks)
         {
             foreach ($callbacks as $callback) 
             {
@@ -97,11 +98,11 @@ class event
 
                     $callback[0] = ucfirst($callback[0]).'Hook';
                 }
-                else if (is_null($callBack)) 
+                else if (is_null($callback)) 
                 {
-                    self::$_hooks[$hookName] = array();
+                    self::$_hooks[$hookname] = array();
                 }
-                self::bindHook($hookName,$callBack);
+                self::bindHook($hookname, $callback);
             }
         }
     }

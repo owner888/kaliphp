@@ -1,17 +1,15 @@
 <?php
 namespace control;
+
 use kaliphp\kali;
 use kaliphp\db;
 use kaliphp\req;
 use kaliphp\tpl;
-use kaliphp\log;
 use kaliphp\util;
-use kaliphp\config;
 use kaliphp\session;
 use kaliphp\lib\cls_msgbox;
 use kaliphp\lib\cls_page;
 use model\mod_session;
-
 
 /**
  * SESSION 管理

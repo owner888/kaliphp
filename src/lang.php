@@ -11,7 +11,6 @@
  */
 
 namespace kaliphp;
-use kaliphp\kali;
 
 /**
  * 语言类
@@ -26,6 +25,13 @@ class lang
      * @var array
      */
     public static $language  = array();
+
+    /**
+     * @var array
+     */
+    public static $language_list = [];
+
+    public static $current_idiom = 'en';
 
     /**
      * List of loaded language files
@@ -70,28 +76,28 @@ class lang
         $langfile .= '.ini';
 
         // Load the base file, so any others found can override it
-        //$basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
+        // $basepath = kali::$base_root.'/lang/'.$idiom.'/'.$langfile;
         $basepath    = __dir__ . DS . 'lang' . DS; //src语言地址
         $app_path    = APPPATH . DS . 'lang' . DS; //app语言地址
         $common_path = $app_path . DS . '..' . DS . '..' . DS . '..' . DS . 'common/lang';
 
-        //默认语言
-        $default_idiom = empty(self::$config['default']) ? 'en' : self::$config['default'];
-        //优先用户传的->默认idiom->配置中的fallback
+        // 默认语言
+        $default_idiom = self::$config['default'] ?? 'en';
+        // 优先用户传的->默认idiom->配置中的fallback
         $idioms = array_unique([$idiom, $default_idiom, util::get_value(self::$config, 'fallback')]);
         foreach ([$basepath, $common_path, $app_path] as $path)
         {
             foreach ($idioms as $k => $idiom)
             {
                 if ( 
-                    !empty($idiom) && //空的idom忽略
+                    !empty($idiom) && // 空的 idom 忽略
                     file_exists($filepath = $path. DS .$idiom . DS .$langfile ) &&
-                    ( $k == 0 || !isset($loaded_files[$filepath])) //系统配置的已经加载过的不需要加载
+                    ( $k == 0 || !isset($loaded_files[$filepath])) // 系统配置的已经加载过的不需要加载
                 )
                 {
                     $lang = parse_ini_file($filepath);
                     self::$is_loaded[$langfile] = $idiom;
-                    //合并其他语言包
+                    // 合并其他语言包
                     self::$language = util::array_merge_multiple((array)self::$language, (array)$lang);
                     // 将数组的所有的键都转换为大写字母或小写字母
                     self::$language = array_change_key_case(self::$language);
@@ -121,14 +127,14 @@ class lang
      * Fetches a single line of text from the language array
      *
      * @param   string  $key            Language line key
-     * @param   string  $defaultvalue   key不存在时的默认值
+     * @param   string  $defaultvalue   key 不存在时的默认值
      * @param   array   $replace        替换的模版
      * @param   bool    $log_errors     如果key对应的语言找不到，是否提示警告信息
      * @return  string  Translation
      */
     public static function get($key, $defaultvalue = null, $replace = array(), $log_errors = true)
     {
-        $value = isset(self::$language[$key]) ? self::$language[$key] : null;
+        $value = self::$language[$key] ?? null;
 
         // 模版中找不到变量定义
         if ( $value === null )
@@ -203,6 +209,33 @@ class lang
             }
         }
         return $str;
+    }
+
+    /**
+     * 设置当前的语言环境
+     * @param $idiom
+     */
+    public static function set_idiom($idiom)
+    {
+        self::$current_idiom = $idiom;
+    }
+
+    /**
+     * 根据语言和 key 来获取文字
+     * 用于在推送的时候，一群人不同语言，避免频繁的解析 ini 文件
+     * @param $key
+     * @param string $module
+     * @param string $idiom
+     * @return string
+     */
+    public static function get_lang($key, $module = 'im', $idiom = '' )
+    {
+        $idiom = empty($idiom) ? self::$current_idiom : $idiom;
+        if (!isset(self::$language_list[$idiom][$module]))
+        {
+            self::load($module,$idiom);
+        }
+        return empty(self::$language_list[$idiom][$module][$key]) ? '' : self::$language_list[$idiom][$module][$key];
     }
 }
 

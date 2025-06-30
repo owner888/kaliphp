@@ -66,6 +66,35 @@ class kali
     public static string $ct = '';
     public static string $ac = '';
 
+    public static function _init()
+    {
+        // 先调用 config::_init()，否则 .env 配置获取不到
+        $timezone_set = config::instance('config')->get('timezone_set');
+        date_default_timezone_set($timezone_set);
+
+        self::define();
+    }
+
+    /**
+     * 初始化定义
+     */
+    private static function define()
+    {
+        // mvim://open?url=file://%file&line=%line
+        // subl://open?url=file://%file&line=%line
+        // idea://open?file=%file&line=%line
+        defined('SYS_EDITOR')  or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
+        // 是否打开调试功能
+        defined('SYS_DEBUG')   or define('SYS_DEBUG',  (bool) ($_ENV['APP_DEBUG'] ?? false));
+        // 打印 Chrome console 日志，需要安装 Chrome Logger 插件: https://chrome.google.com/webstore/detail/chrome-logger/noaneddfkdjfnfdakjjmocngnfkfehhd
+        defined('SYS_CONSOLE') or define('SYS_CONSOLE', (bool) ($_ENV['APP_CONSOLE'] ?? false));
+        // 系统环境
+        defined('SYS_ENV') or define('SYS_ENV', $_ENV['APP_ENV'] ?? 'dev');
+        defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
+        defined('ENV_PRE') or define('ENV_PRE', SYS_ENV === 'pre');
+        defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
+    }
+
     /**
      * Initializes the framework.  This can only be called once.
      *
@@ -76,19 +105,6 @@ class kali
     {
         // 获取配置
         self::$config = $config;
-
-        defined('ENVPATH') or define('ENVPATH', '.env');
-
-        if (file_exists(ENVPATH) && ($envs = parse_ini_file(ENVPATH))) 
-        {
-            foreach ($envs as $k => $v) 
-            {
-                if (strpos($k, "# ") === false) // 过滤注释的行
-                {
-                    $_ENV[$k] = $v;
-                }
-            }
-        }
 
         if ( !defined('APPPATH'))
         {
@@ -123,8 +139,6 @@ class kali
         // 设置一下路径，让 use 类生效
         autoloader::set_root_path(APPPATH);
 
-        self::define();
-
         if ( PHP_SAPI != 'cli' && !empty(self::$config['session_start']) ) 
         {
             $token = $_SERVER['HTTP_TOKEN'] ?? $_REQUEST['token'] ?? '';
@@ -138,35 +152,10 @@ class kali
     }
 
     /**
-     * 初始化定义
-     */
-    private static function define()
-    {
-        defined('CRYPT_KEY') or define('CRYPT_KEY', (string) ($_ENV['CRYPT_KEY'] ?? ''));
-
-        // mvim://open?url=file://%file&line=%line
-        // subl://open?url=file://%file&line=%line
-        // idea://open?file=%file&line=%line
-        defined('SYS_EDITOR')  or define('SYS_EDITOR', 'mvim://open?url=file://%file&line=%line');
-        // 是否打开调试功能
-        defined('SYS_DEBUG')   or define('SYS_DEBUG',  (bool) ($_ENV['APP_DEBUG'] ?? false));
-        // 打印 Chrome console 日志，需要安装 Chrome Logger 插件: https://chrome.google.com/webstore/detail/chrome-logger/noaneddfkdjfnfdakjjmocngnfkfehhd
-        defined('SYS_CONSOLE') or define('SYS_CONSOLE', (bool) ($_ENV['APP_CONSOLE'] ?? false));
-        // 系统环境
-        defined('SYS_ENV') or define('SYS_ENV', $_ENV['APP_ENV'] ?? 'pub');
-        defined('ENV_DEV') or define('ENV_DEV', SYS_ENV === 'dev');
-        defined('ENV_PRE') or define('ENV_PRE', SYS_ENV === 'pre');
-        defined('ENV_PUB') or define('ENV_PUB', SYS_ENV === 'pub');
-    }
-
-    /**
      * 核心初始化
      */
     private static function init()
     {
-        $timezone_set = config::instance('config')->get('timezone_set');
-        date_default_timezone_set($timezone_set);
-
         register_shutdown_function(['kaliphp\errorhandler', 'shutdown_handler']);
         set_error_handler(['kaliphp\errorhandler', 'error_handler'], E_ALL);
         set_exception_handler(['kaliphp\errorhandler', 'exception_handler']);
@@ -192,7 +181,7 @@ class kali
      * 路由映射
      * 
      * @param $ctl  控制器
-     * @parem $ac   动作
+     * @param $ac   动作
      * @return void
      */
     public static function run(?array $req_data = null)

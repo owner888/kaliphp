@@ -15,7 +15,7 @@ use kaliphp\config;
 
 /**
  * Kafka 消费类 
- * Kafka 操作文档: https://arnaud.le-blanc.net/php-rdkafka-doc/phpdoc/book.rdkafka.html
+ * Kafka 操作文档:   https://arnaud.le-blanc.net/php-rdkafka-doc/phpdoc/book.rdkafka.html
  * Kafka 异步操作类: https://github.com/weiboad/kafka-php
  * 一个实现挺好的类: https://github.com/qkl9527/php-rdkafka-class
  * ex:
@@ -60,9 +60,9 @@ class cls_kafka_consumer
     private static $def_config;
     private static $broker_config;
 
-    //public $topics = [];
-    //public $partitions = [];
-    //public $offsets = [];
+	// public $topics = [];
+	// public $partitions = [];
+	// public $offsets = [];
 
     private $group_name       = 'my-group-name';
     private $topic_name       = null;
@@ -70,6 +70,7 @@ class cls_kafka_consumer
     private $offset           = 0;
     private $timeout          = 12 * 1000;
     private $timeout_callback = null;
+    private $max_bytes        = 0;
 
     public static function _init()
     {
@@ -235,7 +236,7 @@ class cls_kafka_consumer
 
     public function set_max_bytes(int $max_bytes = 102400): self
     {
-        $this->max_bytes  = $max_bytes;
+        $this->max_bytes = $max_bytes;
 
         return $this;
     }
@@ -253,13 +254,13 @@ class cls_kafka_consumer
      * 
      * @return self
      */
-    public function set_topic( string $topic_name, int $partition = 0, int $offset = RD_KAFKA_OFFSET_STORED ): self
+    public function set_topic( string $topic_name, int $partition = 0, int $offset = \RD_KAFKA_OFFSET_STORED ): self
     {
         $this->topic_name = $topic_name;
         $this->partition  = $partition;
 
         // low level
-        //$this->handler = $this->conf->newQueue();
+		// $this->handler = $this->conf->newQueue();
         $this->handler = new \RdKafka\Consumer($this->conf);
         $this->topic = $this->handler->newTopic($topic_name, $this->topic_conf);
 
@@ -349,12 +350,12 @@ class cls_kafka_consumer
             $partitions = $topic->getPartitions();
             foreach ($partitions as $partition) 
             {
-                //$rf = new \ReflectionClass(get_class($partition));
-                //foreach ($rf->getMethods() as $f) 
-                //{
-                //print_r($f);
-                //}
-                //die();
+				// $rf = new \ReflectionClass(get_class($partition));
+				// foreach ($rf->getMethods() as $f)
+				// {
+				//     print_r($f);
+				// }
+				// die();
 
                 $topPartition = new \RdKafka\TopicPartition($topicName, $partition->getId());
                 echo "topic: ".$topPartition->getTopic()." - partition: ".$partition->getId()." - "."offset: ".$topPartition->getOffset().PHP_EOL;

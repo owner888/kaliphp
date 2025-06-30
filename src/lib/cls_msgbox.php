@@ -25,10 +25,10 @@ class cls_msgbox
     /**
     * 显示一个简单的对话框
     *
-    * @parem $title 标题
-    * @parem $msg 消息
-    * @parem $gourl 跳转网址（其中 javascript:; 或 空 表示不跳转）
-    * @parem $limittime 跳转时间
+    * @param $title 标题
+    * @param $msg 消息
+    * @param $gourl 跳转网址（其中 javascript:; 或 空 表示不跳转）
+    * @param $limittime 跳转时间
     *
     * @return void
     *

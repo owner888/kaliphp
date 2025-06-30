@@ -11,7 +11,10 @@
  */
 
 namespace kaliphp\lib;
+
 use kaliphp\config;
+use kaliphp\log;
+use RedisException;
 
 /**
  * Redis操作类
@@ -24,7 +27,7 @@ class cls_redis
     private static $_instances = [];
 
     /**
-     * @var resource
+     * @var Object
      */
     private $handler;
     private $_name;
@@ -48,7 +51,7 @@ class cls_redis
             if ( $config === null ) 
             {
                 $config = self::$config['redis']['server'];
-                // 如果把redis当cache用，增加一个 :cache 字符用于 Redis UI 分文件夹查看
+                // 如果把 redis 当 cache 用，增加一个 :cache 字符用于 Redis UI 分文件夹查看
                 $config['prefix'] = ($name == 'cache') ? self::$config['prefix'].':cache' : self::$config['prefix'];
             }
             self::$_instances[$_name] = new self($name, $config);
@@ -71,7 +74,7 @@ class cls_redis
     /**
      * 选择 Redis 实例
      * @param $name
-     * @return cls_redis
+     * @return Object
      */
     public function choose($name)
     {
@@ -80,7 +83,6 @@ class cls_redis
 
     /**
      * 创建 handler
-     * @throws TXException
      */
     private function connect($config = null)
     {
@@ -130,7 +132,7 @@ class cls_redis
             {
                 $this->handler->select($config['dbindex']);
             }
-            
+
             if ( $config['prefix'] ) 
             {
                 $this->handler->setOption(\Redis::OPT_PREFIX, $config['prefix'] . ":");
@@ -141,13 +143,13 @@ class cls_redis
                 $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_JSON);
                 $this->connect['serializer'] = 'json';
             }
-     
+
             // 不需要了，连不上Redis自己会throw
-            //throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
+            // throw new \Exception(serialize([$config['host'], $config['port']]), 4005);
             // 不序列化的话不能存数组，用php的序列化方式其他语言又不能读取，所以这里自己用json序列化了，性能还比php的序列化好1.4倍
-            //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_NONE);         // don't serialize data
-            //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
-            //$this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
+            // $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_NONE);         // don't serialize data
+            // $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);          // use built-in serialize/unserialize
+            // $this->handler->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);     // use igBinary serialize/unserialize
         }
      
         return $this;
@@ -164,7 +166,15 @@ class cls_redis
         if ( !isset(self::$_instances[$name]->handler) ) 
         {
             self::instance($this->_name);
-            $this->connect();
+            try
+            {
+                $this->connect();
+            }
+            catch (RedisException $e)
+            {
+                echo "Failed to connect to Redis: " . $e->getMessage();
+                log::error($e->getMessage(), __METHOD__);
+            }
         }
 
         return $this->handler;
@@ -182,11 +192,13 @@ class cls_redis
     {
         if ( empty($value) ) 
         {
-            // trigger_error('Cache value cannot be empty');
             return false;
         }
 
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         $value = $this->encode($value);
         if ( $expire > 0 ) 
         {
@@ -201,84 +213,126 @@ class cls_redis
     public function get( $key )
     {
         $this->_handle();
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->decode($this->handler->get($key));
     }
 
     public function hset( $key, $hash, $value )
     {
-        $this->_handle();
+        $this->_handle();  
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->hSet($key, $hash, $this->encode($value));
     }
 
     public function hget( $key, $hash )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->decode($this->handler->hGet($key, $hash));
     }
 
     public function hdel( $key, $hash )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->hDel($key, $hash);
     }
 
     public function hgetall( $key )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->decode($this->handler->hGetAll($key));
     }
 
     public function hlen( $key )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->hLen($key);
     }
 
     public function hmget( $key, array $hashs = [] )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->hMget($key, $hashs);
     }
 
     public function hmset( $key, array $array = [] )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->hMset($key, $array);
     }
 
     public function lpush( $key, $value )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->lpush($key, $this->encode($value));
     }
 
     public function rpop( $key )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->decode($this->handler->rpop($key));
     }
 
     public function rpush( $key, $value )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->handler->rpush($key, $this->encode($value));
     }
 
     public function lpop( $key )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->decode($this->handler->lpop($key));
     }
 
     public function lindex( $key, $index )
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return $this->decode($this->handler->lindex($key, $index));
     }
 
-    public function scan($keyword)
+    public function scan($keyword): array
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return [];
+        }
         $keys = [];
         if ( !empty($this->connect['is_cluster']) )
         {
@@ -353,9 +407,9 @@ class cls_redis
     }
 
     /**
-     * cli模式加上进程ID,防止多进程实例串行
+     * cli模式加上进程ID, 防止多进程实例串行
      * @param  string $name 实例名称
-     * @return string       cli下带进程号的实例名称
+     * @return string cli下带进程号的实例名称
      */
     public static function get_muti_name(string $name = 'redis'):string
     {
@@ -399,7 +453,10 @@ class cls_redis
      */
     public function __call($method, $arguments)
     {
-        $this->_handle();
+        $this->_handle(); 
+        if (!$this->handler->isConnected()) {
+            return false;
+        }
         return call_user_func_array([$this->handler, $method], $arguments);
     }
 }

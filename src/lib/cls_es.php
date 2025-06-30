@@ -459,7 +459,7 @@ class cls_es
 
     /**
      * 查询字段
-     * @param  mix $columns 
+     * @param  mixed $columns 
      * @return $this
      */
     public function select($columns = null)
@@ -473,7 +473,7 @@ class cls_es
     /**
      * 插入文档
      * @param  string $table 查询的index
-     * @param  mix $columns  插入的字读啊安，一般不需要
+     * @param  mixed $columns  插入的字读啊安，一般不需要
      * @return $this
      */
     public function insert($table = null, ?array $columns = null)
@@ -792,7 +792,7 @@ class cls_es
     /**
      * 解析成多维数组
      * @param  string $key         keypath
-     * @param  mix    $val         默认空值
+     * @param  mixed    $val         默认空值
      * @param  string $default_dsl 默认前缀
      * @return array  返回一个多维数组
      */
