@@ -10,7 +10,6 @@
             <div class="pull-left">
                 <div class="img">
                     <a href="/"><img src="static/img/logo.svg" alt="" width="50px;"></a>
-                    <a href="/">PHPCALL</a>
                 </div>
             </div>
         </div>

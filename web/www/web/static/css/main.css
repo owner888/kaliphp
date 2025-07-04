@@ -404,6 +404,7 @@ div.dataTables_wrapper .ui-widget-header {
 #pages-wrap {
   float: right;
   text-align: right;
+  padding-left: 10px;
 }
 
 #pages-wrap select {
