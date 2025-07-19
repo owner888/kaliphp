@@ -714,12 +714,13 @@ class cls_auth
     /**
      * 设置用户缓存
      *
-     * @return bool
+     * @return array
      */
     public function get_cache($uid = null)
     {
         $uid = $uid ?? $this->uid;
-        return cache::get(static::$_cache_prefix.'-'.$uid);
+        $ret = cache::get(static::$_cache_prefix.'-'.$uid);
+        return $ret ?: [];
     }
 
     /**

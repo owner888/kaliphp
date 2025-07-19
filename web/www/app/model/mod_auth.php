@@ -615,7 +615,7 @@ class mod_auth extends cls_auth
             ->execute();
         if (!empty($ret) && !empty($ret['session_id'])) 
         {
-            session::destroy($ret['session_id']);
+            session::del($ret['session_id']);
         }
 
     }

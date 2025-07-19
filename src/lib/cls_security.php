@@ -126,7 +126,7 @@ class cls_security
         }
         else
         {
-            $str = str_replace(array('<?', '?'.'>'), array('&lt;?', '?&gt;'), $str);
+            $str = str_replace(array('<?', '?'.'>'), array('&lt;?', '?&gt;'), (string) $str);
         }
 
         $str = htmlspecialchars($str);

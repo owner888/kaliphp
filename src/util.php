@@ -1765,6 +1765,45 @@ class util
 
         return $servers[self::get_server_ip()] ?? 1;
     }
+
+    /**
+     * 转化用dot分割的key成多维数组
+     * @param  array $data
+     * @param  string $dot
+     * @return array
+     */
+    public static function format_mutiple_array(array &$data, string $dot = '.'):array
+    {
+        foreach($data as $k => $v)
+        {
+            $key_len = 0;
+            if ( strpos($k, $dot) !== false )
+            {
+                $keys    = explode($dot, $k);
+                $key_len = count($keys);
+                switch ( $key_len > 1 ) 
+                {
+                    case 2:
+                        $data[$keys[0]][$keys[1]] = $v;
+                        break;
+                    case 3:
+                        $data[$keys[0]][$keys[1]][$keys[2]] = $v;
+                        break;
+                    case 4:
+                        $data[$keys[0]][$keys[1]][$keys[2]][$keys[3]] = $v;
+                        break;
+                    case 5:
+                        $data[$keys[0]][$keys[1]][$keys[2]][$keys[3]][$keys[4]] = $v;
+                        break;
+                }
+            }
+
+            if ( $key_len > 1 ) unset($data[$k]);
+        }
+
+        return $data;
+    }
+
 }
 
 /* vim: set expandtab: */

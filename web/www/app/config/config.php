@@ -13,7 +13,6 @@ return array_merge($configs, [
         // 指定某些IP允许开启调试，数组格式为 ['ip1', 'ip2'...]
         'safe_client_ip' => [
             '127.0.0.1',
-            '101.1.18.36'
         ],
         // IP白名单
         'ip_whitelist' => [],
