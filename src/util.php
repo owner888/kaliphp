@@ -335,6 +335,12 @@ class util
      */
     public static function is_json(string $str)
     {
+        // 8.4 轻量级 JSON 校验，无解析开销
+        if (function_exists('json_validate'))
+        {
+            return json_validate($str);
+        }
+
         json_decode($str);
         return json_last_error() === JSON_ERROR_NONE;
     }
