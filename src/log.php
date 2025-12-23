@@ -21,7 +21,9 @@ defined('SYS_CONSOLE') or define('SYS_CONSOLE', false);
 
 defined('NONE')      or define('NONE',      0);     // 不记录日志
 defined('ALL')       or define('ALL',       99);    // 所有日志
-defined('DEBUG')     or define('DEBUG',     100);   // 详细的Debug信息
+defined('DEBUG')     or define('DEBUG',     100);   // 详细的 Debug 信息
+defined('TRACE')     or define('TRACE',     150);   // 跟踪信息，主要用于 apache log4j
+defined('FATAL')     or define('FATAL',     175);   // 致命错误
 defined('INFO')      or define('INFO',      200);   // 关键的事件或信息，如用户登录信息，SQL日志信息
 defined('NOTICE')    or define('NOTICE',    250);   // 普通但重要的事件信息
 defined('WARNING')   or define('WARNING',   300);   // 出现非错误的异常，示例：使用不推荐使用的API，使用不当的API
@@ -117,43 +119,43 @@ class log
         }
 
         //// determine the name of the logfile
-        //$filename = config::instance('log')->get('log_file');
-        //if (empty($filename))
-        //{
-            //$filename = date('Y-m-d').'.log';
-            ////$filename = date('Y').DS.date('m').DS.date('d').'.log';
-        //}
+        // $filename = config::instance('log')->get('log_file');
+        // if (empty($filename))
+        // {
+        //     $filename = date('Y-m-d').'.log';
+        //     //$filename = date('Y').DS.date('m').DS.date('d').'.log';
+        // }
 
-        //$fullpath = dirname($filename);
+        // $fullpath = dirname($filename);
 
-        //// make sure the log directories exist
-        //try
-        //{
-            //// make sure the full path exists
-            //if ( ! is_dir($path.$fullpath))
-            //{
-                //util::path_exists($path.$fullpath);
-            //}
+        // // make sure the log directories exist
+        // try
+        // {
+        //     // make sure the full path exists
+        //     if ( ! is_dir($path.$fullpath))
+        //     {
+        //         util::path_exists($path.$fullpath);
+        //     }
 
-            //// open the file
-            //$handle = fopen($path.$filename, 'w');
-            //@chmod($path.$filename, 0777);
-            //fclose($handle);
-        //}
-        //catch (\Exception $e)
-        //{
-            //config::instance('log')->set('log_threshold', NONE);
-            //throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
-        //}
+        //     // open the file
+        //     $handle = fopen($path.$filename, 'w');
+        //     @chmod($path.$filename, 0777);
+        //     fclose($handle);
+        // }
+        // catch (\Exception $e)
+        // {
+        //     config::instance('log')->set('log_threshold', NONE);
+        //     throw new \Exception('Unable to access the log file. Please check the permissions on '.config::instance('log')->get('log_path').'. ('.$e->getMessage().')');
+        // }
 
-        if ( config::instance('log')->get('log_type') == 'monolog' ) 
-        {
-            // create the streamhandler, and activate the handler
-            $stream = new \Monolog\Handler\StreamHandler($path.$filename, \Monolog\Logger::DEBUG);
-            $formatter = new \Monolog\Formatter\LineFormatter(config::instance('log')->get('log_output'), config::instance('log')->get('log_date_format', 'Y-m-d H:i:s'));
-            $stream->setFormatter($formatter);
-            static::$monolog->pushHandler($stream);
-        }
+        // if ( config::instance('log')->get('log_type') == 'monolog' ) 
+        // {
+        //     // create the streamhandler, and activate the handler
+        //     $stream = new \Monolog\Handler\StreamHandler($path.$filename, \Monolog\Logger::DEBUG);
+        //     $formatter = new \Monolog\Formatter\LineFormatter(config::instance('log')->get('log_output'), config::instance('log')->get('log_date_format', 'Y-m-d H:i:s'));
+        //     $stream->setFormatter($formatter);
+        //     static::$monolog->pushHandler($stream);
+        // }
     }
     /**
      * 计算内存消耗
@@ -212,7 +214,7 @@ class log
     /**
      * Logs a message with the Error Log Level
      *
-     * @param   string  $msg     The log message
+     * @param   string|array  $msg     The log message
      * @param   string  $method  The method that logged
      * @return  bool    If it was successfully logged
      */

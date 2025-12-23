@@ -25,6 +25,8 @@ class cls_auth
 {
     // 缓存前缀
     protected static $_cache_prefix = 'auth_user';
+    // cookie 前缀
+    protected static $_cookie_prefix = 'auth_cookie';
     // 验证句柄
     public static $auth_hand = 'auth_hand';
     // 登录错误次数
@@ -383,15 +385,13 @@ class cls_auth
      * 登录接口才会到这里来
      *
      * @param array $user   用户信息 
-     * @param int $remember 是否自动登陆 
-     * @param int $seclogin 是否私密登陆 
+     * @param int $remember 是否自动登陆
      * 
      * @return mixed array|false
      */
-    public function auth_user(array $user, $remember = 0, $seclogin = 0): array
+    public function auth_user(array $user, $remember = 0): array
     {
         $user['remember'] = $remember;
-        $user['seclogin'] = $seclogin;
 
         // 干掉敏感字段
         unset($user['password']);
@@ -666,9 +666,8 @@ class cls_auth
         // 数据调用是调用这个加密的数据，然后解密
         if ( $encode )
         {
-            $key = $key.'_kaliphp';
             $value = substr(md5(static::$config['cookie']['pwd'].$value), 0, 24);
-            setcookie($key, $value, $keeptime, static::$config['cookie']['path'], static::$config['cookie']['domain']);
+            setcookie(self::$_cookie_prefix.'_'.$key, $value, $keeptime, static::$config['cookie']['path'], static::$config['cookie']['domain']);
         }
     }
 
@@ -683,7 +682,7 @@ class cls_auth
         setcookie($key, '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
         if ( $encode )
         {
-            setcookie($key.'_kaliphp', '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
+            setcookie(self::$_cookie_prefix.'_'.$key, '', time()-3600, static::$config['cookie']['path'], static::$config['cookie']['domain'] ?? '');
         }
     }
 
@@ -700,10 +699,10 @@ class cls_auth
         // 加密的话先对比一下加密值是否一样，是才返回真正结果
         if ( $encode )
         {
-            if ( !isset($_COOKIE[$key.'_kaliphp']) ) { return ''; }
+            if ( !isset($_COOKIE[self::$_cookie_prefix.'_'.$key]) ) { return ''; }
 
             $epwd = substr( md5(static::$config['cookie']['pwd'].$_COOKIE[$key]), 0, 24 );
-            return ($_COOKIE[$key.'_kaliphp'] != $epwd ) ? '' : $_COOKIE[$key];
+            return ($_COOKIE[self::$_cookie_prefix.'_'.$key] != $epwd ) ? '' : $_COOKIE[$key];
         }
         else
         {
@@ -761,7 +760,7 @@ class cls_auth
     }
 
     /**
-     * 获取当前uid
+     * 获取当前 UID
      * @return string | null
      */
     public static function get_uid()
@@ -774,10 +773,10 @@ class cls_auth
      */
     public function logout()
     {
-        // 清空SESSION
+        // 清空 SESSION
         if ( false != ($sess_id = self::get_uid()) ) 
         {
-            // 如果配置了需要绑定uid,才会进行uid和token的绑定，方便通过uid操作token
+            // 如果配置了需要绑定 uid, 才会进行 uid 和 token 的绑定，方便通过 uid 操作 token
             if ( !empty(self::$config['app_name']) && !empty(static::$table_config['user_session']) ) 
             {
                 self::delete_user_session_by_type($sess_id);
@@ -786,7 +785,7 @@ class cls_auth
             $_SESSION[self::_session_uid_key()] = '';
             session_destroy();
         }
-        // 删除COOKIE中的uid
+        // 删除 COOKIE 中的 uid
         static::del_cookie('uid');
         // 删除用户缓存数据
         $this->del_cache($this->uid);
@@ -955,7 +954,7 @@ class cls_auth
      *
      *  @param $msg 具体消息（如有引号，无需自行转义）
      *
-     *  @return bool
+     *  @return void
      */
     public function save_admin_log($msg)
     {

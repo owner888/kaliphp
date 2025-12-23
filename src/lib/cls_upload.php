@@ -114,11 +114,13 @@ class cls_upload
                     list( $filename, $filelink ) = self::thumb( $upload_dir, $filename, $file_ext, $thumb_w, $thumb_h );
                 }
 
-                return array(
+                return [
                     'realname' => $realname,
+                    'filesize' => $filesize,
                     'filename' => $filename,
                     'filelink' => $filelink, 
-                );
+                    'file_ext' => $file_ext,
+                ];
             }
         }
         else 
@@ -166,11 +168,12 @@ class cls_upload
             // 把 data:image/jpeg;base64, 去掉
             $filedata = base64_decode(str_replace($result[1], '', $filedata));
 
+            $filesize = strlen($filedata);
             // 判断文件大小
             if ( self::$config['max_size'] != 0 ) 
             {
                 $max_size = self::$config['max_size'] * 1024;
-                if ( strlen($filedata) > $max_size ) 
+                if ( $filesize > $max_size ) 
                 {
                     throw new Exception(lang::get('upload_invalid_filesize'));
                 }
@@ -199,11 +202,13 @@ class cls_upload
                 list( $filename, $filelink ) = self::thumb( $upload_dir, $filename, $file_ext, $thumb_w, $thumb_h );
             }
 
-            return array(
+            return [
                 'realname' => $filename,
+                'filesize' => $filesize,
                 'filename' => $filename,
                 'filelink' => $filelink, 
-            );
+                'file_ext' => $file_ext,
+            ];
         }
     }
 
@@ -344,6 +349,7 @@ class cls_upload
                 {
                     throw new Exception('Failed to open output stream.');
                 }
+
                 for( $index = 0; $index < $chunks; $index++ ) 
                 {
                     if (!$in = @fopen("{$partpath}_{$index}.part", "rb")) 
@@ -368,7 +374,7 @@ class cls_upload
             {
                 //获取锁失败，直接返回，合并文件交给 其他进程处理
                 @fclose($outlock);
-                return;
+                return [];
             }
             //删除临时锁文件
             @unlink($realpath.'_lock');
@@ -376,8 +382,20 @@ class cls_upload
             // 删除目录
             @rmdir($target_dir);
 
+            if (!file_exists($realpath))
+            {
+                throw new Exception('Failed to open output stream.');
+            }
+
             // 保留真实名称
-            $filename = md5_file($realpath).".".$file_ext;
+            $filehash = md5_file($realpath);
+
+            if (empty($filehash))
+            {
+                throw new Exception('Failed to open output stream.');
+            }
+
+            $filename = $filehash .".". $file_ext;
             //$filename = uniqid().".".$file_ext;
             // 如果需要分隔目录上传
             if ( self::$config['dir_num'] > 0 ) 
@@ -389,18 +407,20 @@ class cls_upload
                 }
                 $filename = $dir_num.'/'.$filename;
             }
-            rename($realpath, "{$upload_dir}/{$filename}");
-            //rename('tmp/104/84405b7dae5c5a13fe76a99de3a8293d.jpg', 'image/104/84405b7dae5c5a13fe76a99de3a8293d.jpg');
 
+            $filesize = filesize($realpath);
             // 判断文件大小
             if ( self::$config['file_max_size'] != 0 ) 
             {
                 $max_size = self::$config['file_max_size'] * 1024;
-                if ( filesize("{$upload_dir}/{$filename}") > $max_size ) 
+                if ( $filesize > $max_size ) 
                 {
                     throw new Exception(lang::get('upload_invalid_filesize'));
                 }
             }
+
+            // 确保所有检查完毕再移动文件
+            rename($realpath, "{$upload_dir}/{$filename}");
 
             $filelink = self::$config['filelink'].'/'.$dir.'/'.$filename;
 
@@ -409,13 +429,15 @@ class cls_upload
                 list( $filename, $filelink ) = self::thumb( $upload_dir, $filename, $file_ext, $thumb_w, $thumb_h );
             }
 
-            return array(
+            return [
                 'realname' => $realname,
+                'filesize' => $filesize,
+                'filehash' => $filehash,
                 'filename' => $filename,
                 'filelink' => $filelink,
-                'realpath' => realpath(self::$config['filepath']),
+                // 'realpath' => realpath(self::$config['filepath']),
                 'file_ext' => $file_ext,
-            );
+            ];
         }
     }
 

@@ -43,7 +43,7 @@ trait trait_exception
         // 方法不可用直接抛异常
         if ( !is_callable($func) ) 
         {
-            static::exception("方法{$func}不可用", static::$unknow_err_status);
+            static::exception("方法 {$func} 不可用", static::$unknow_err_status);
         }
 
         try 

@@ -599,7 +599,7 @@ class db_connection
      * 单例
      * @param string $name
      * @param bool $instance
-     * @return object
+     * @return $this
      */
     public static function instance($name = null, $db_name = null, ?array $config = null, bool $force_init = false)
     {

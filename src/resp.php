@@ -22,9 +22,9 @@ use kaliphp\lib\cls_crypt;
  */
 class resp
 {
-    public static function error(int $code = -1, string $msg = 'faild')
+    public static function error(int $code = -1, string $msg = 'faild', $data = [])
     {
-        self::response($code, [], $msg);
+        self::response(code: $code, data: $data, msg: $msg);
     }
 
     public static function success(array $data = [], string $msg = 'successful')

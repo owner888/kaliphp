@@ -165,7 +165,7 @@ class req
      *
      * @param   string  $index    The index to get
      * @param   string  $default  The default value
-     * @return  string|array
+     * @return  mixed
      */
     public static function item( $index = null, $default = null, $filter_type = '' )
     {   
@@ -178,7 +178,7 @@ class req
      *
      * @param   string  $index    The index to get
      * @param   string  $default  The default value
-     * @return  string|array
+     * @return  mixed
      */
     public static function get( $index = null, $default = null, $filter_type = '' )
     {   
@@ -191,7 +191,7 @@ class req
      *
      * @param   string  $index    The index to get
      * @param   string  $default  The default value
-     * @return  string|array
+     * @return  mixed
      */
     public static function post( $index = null, $default = null, $filter_type = '' )
     {   
@@ -213,7 +213,7 @@ class req
      *
      * @param   string  $index    索引
      * @param   mixed   $default  默认值
-     * @return  string|array
+     * @return  mixed
      */
     public static function server( $index = null, $default = null )
     {
@@ -341,9 +341,6 @@ class req
 
      /**
      * 获取当前包含协议的域名
-     *
-     * exp:
-     * https://www.kaliphp.com
      */
     public static function domain()
     {
@@ -352,9 +349,6 @@ class req
 
     /**
      * 获得当前网址，不包含 Query String
-     *
-     * exp:
-     * https://www.kaliphp.com/home/
      */
     public static function base_url($uri = '')
     {
@@ -381,6 +375,7 @@ class req
 
     /**
      * 获得当前路径
+     * 
      * /index.php?ct=test&ac=demo&id=10
      */
     public static function cururl()
@@ -412,8 +407,8 @@ class req
     /**
      * 获取用户的公共IP地址
      *
-     * @param   string $default
-     * @return  array|string
+     * @param string $default
+     * @return string
      */
     public static function ip($default = '0.0.0.0')
     {
@@ -578,8 +573,8 @@ class req
     {
         $user_agent = self::user_agent();
         if ( !empty($user_agent)) 
-        {
-            $mua = [
+        {   
+            $ua_matchs = [
                 'iOS'     => '#iphone|ipad|ios#i',
                 'Android' => '#android|\s+adr\s+#i',
                 'Windows' => '#win#i',
@@ -590,7 +585,7 @@ class req
             ];
 
             $platform = 'Other';
-            foreach ($mua as $plf => $regex)
+            foreach ($ua_matchs as $plf => $regex)
             {
                 if (preg_match($regex, $user_agent))
                 {

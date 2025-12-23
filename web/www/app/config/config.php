@@ -26,9 +26,7 @@ return array_merge($configs, [
         'allow_origin' => [
             //'*'
             //'http://192.168.11.140:8080'
-        ],
-        // 伪密码登录可以查看的栏目
-        'seclogin' => 'content-index,content-add,content-edit,content-del,category-index,category-add,category-edit,category-del,member-index,member-add,member-edit,member-del,admin-editpwd,admin-mypurview'
+        ]
     ],
 
     // 访问权限设置

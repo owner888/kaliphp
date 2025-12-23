@@ -58,7 +58,7 @@ class kali
     /**
      * 权限类的实例
      *
-     * @var Object $auth  用于IDE跳转代码
+     * @var cls_auth 用于IDE跳转代码
      */
     public static cls_auth $auth;
 

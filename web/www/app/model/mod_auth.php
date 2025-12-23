@@ -209,8 +209,6 @@ class mod_auth extends cls_auth
 
             // 自动登陆
             $user['remember'] = $remember;
-            // 秘密登陆
-            $user['seclogin'] = 0;
 
             $loginsta = false;
             // 正常密码，正确生成会话信息
@@ -501,14 +499,6 @@ class mod_auth extends cls_auth
             {
                 $purviews = '';
             }
-        }
-
-        $user = $this->get_user($this->uid);
-        // 如果是伪密码登陆，只显示正常的栏目
-        if ( isset($user['seclogin']) && $user['seclogin'] )
-        {
-            $config = config::instance('config')->get('security');
-            $purviews = $config['seclogin'];
         }
 
         return $purviews;

@@ -12,6 +12,7 @@
 
 namespace kaliphp\lib;
 
+use Exception;
 use kaliphp\log;
 use kaliphp\req;
 use kaliphp\util;
@@ -228,13 +229,9 @@ class cls_security
         return true;
     }
 
-    // --------------------------------------------------------------------
-
     /**
      * CSRF Set Cookie
-     *
-     * @codeCoverageIgnore
-     * @return	CI_Security
+     * @return	bool
      */
     public static function csrf_set_cookie()
     {
@@ -242,7 +239,7 @@ class cls_security
 
         $secure_cookie = (bool) self::$cookie_config['secure'];
 
-        if ($secure_cookie && ! util::is_https())
+        if ($secure_cookie && req::protocol() != 'https')
         {
             return false;
         }
@@ -260,8 +257,6 @@ class cls_security
         return true;
     }
 
-    // --------------------------------------------------------------------
-
     /**
      * Show CSRF Error
      *
@@ -273,12 +268,10 @@ class cls_security
         cls_msgbox::error('500');
     }
 
-    // --------------------------------------------------------------------
-
     /**
      * Get CSRF Hash
      *
-     * @see		CI_Security::$_csrf_hash
+     * @see		cls_security::$_csrf_hash
      * @return 	string	CSRF hash
      */
     public static function get_csrf_hash()
@@ -286,20 +279,16 @@ class cls_security
         return self::$_csrf_hash;
     }
 
-    // --------------------------------------------------------------------
-
     /**
      * Get CSRF Token Name
      *
-     * @see		CI_Security::$_csrf_token_name
+     * @see		cls_security::$_csrf_token_name
      * @return	string	CSRF token name
      */
     public static function get_csrf_token_name()
     {
         return self::$_csrf_token_name;
     }
-
-    // --------------------------------------------------------------------
 
     private static function _csrf_set_hash()
     {
@@ -319,7 +308,7 @@ class cls_security
             self::$_csrf_hash = ($rand === false)
                 ? md5(uniqid(mt_rand(), true))
                 : bin2hex($rand);
-            //self::$_csrf_hash = md5($_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT'] . self::$_csrf_hash);
+            // self::$_csrf_hash = md5($_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT'] . self::$_csrf_hash);
         }
 
         return self::$_csrf_hash;
@@ -353,13 +342,6 @@ class cls_security
                 return FALSE;
             }
         }
-
-        // Unfortunately, none of the following PRNGs is guaranteed to exist ...
-        if (defined('MCRYPT_DEV_URANDOM') && ($output = mcrypt_create_iv($length, MCRYPT_DEV_URANDOM)) !== FALSE)
-        {
-            return $output;
-        }
-
 
         if (is_readable('/dev/urandom') && ($fp = fopen('/dev/urandom', 'rb')) !== FALSE)
         {

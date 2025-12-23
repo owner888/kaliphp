@@ -315,14 +315,6 @@ class ctl_admin
                 'realname' => req::item('realname'),
                 'email'    => req::item('email'),
             );
-
-            $info = kali::$auth->get_user($id);
-            // 如果是伪装密码登录
-            if ( $info['seclogin'] ) 
-            {
-                unset($data['password']);
-                $data['fake_password'] = $password;
-            }
             db::update('#PB#_admin')
                 ->set($data)
                 ->where('uid', $id)

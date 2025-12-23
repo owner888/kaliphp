@@ -66,7 +66,6 @@ CREATE TABLE `kali_admin` (
   `fake_password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `onetime_password` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '一次性密码',
   `remember` tinyint(1) DEFAULT '0',
-  `seclogin` tinyint(1) DEFAULT '0',
   `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '邮箱',
   `avatar` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '头像',
   `safe_ips` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '登陆IP白名单',
@@ -91,7 +90,7 @@ CREATE TABLE `kali_admin` (
 LOCK TABLES `kali_admin` WRITE;
 /*!40000 ALTER TABLE `kali_admin` DISABLE KEYS */;
 
-INSERT INTO `kali_admin` (`id`, `uid`, `utma`, `groups`, `username`, `realname`, `password`, `fake_password`, `onetime_password`, `remember`, `seclogin`, `email`, `avatar`, `safe_ips`, `date_expired`, `otp_secret`, `session_id`, `session_expire`, `is_first_login`, `otp_authcode`, `status`, `status_err`, `logintime`, `loginip`, `regtime`, `regip`)
+INSERT INTO `kali_admin` (`id`, `uid`, `utma`, `groups`, `username`, `realname`, `password`, `fake_password`, `onetime_password`, `remember`, `email`, `avatar`, `safe_ips`, `date_expired`, `otp_secret`, `session_id`, `session_expire`, `is_first_login`, `otp_authcode`, `status`, `status_err`, `logintime`, `loginip`, `regtime`, `regip`)
 VALUES
 	(1,'8453d2d6b3cf6c18','0fdca5d577d3fac9e17967f3099cdbb7','1','admin','超级管理员','$2y$10$0OrD7BK37PlFuokHaK1qoexO.JOzTSTAWXufZnyenHiYznNyzByz2','','',0,0,'','',NULL,'2088-06-06 00:00:00','','5nll78m0i0nlb7m4t4p4jbqns8',1440,0,'',1,NULL,1674202217,'127.0.0.1',1674202217,'127.0.0.1');
 

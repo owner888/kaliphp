@@ -83,16 +83,14 @@ class db
      *     $query = db::query('DELETE FROM users WHERE id = 5');
      * 
      * @param string $sql
-     * @param integer $type      db::SELECT, db::INSERT, etc
-     * @return object   SELECT 查询结果
-     * @return array    list (insert id, row count) for INSERT queries
-     * @return integer  number of affected rows for all other queries
+     * @param array $params 参数绑定数组
+     * @param boolean $close_filter
+     * @return db_connection 
      */
-    public static function query($sql, array $params = [])
+    public static function query($sql, array $params = [], bool $close_filter = false)
     {
-        return db_connection::instance()->query($sql, $params);
+        return db_connection::instance()->query($sql, $close_filter)->parameters($params);
     }
-
 
     /*
      * Returns the last query
@@ -156,7 +154,7 @@ class db
     /**
      * insert
      *
-     * @param null $table
+     * @param null|string $table
      * @param array|null $columns
      * @return db_connection
      */
@@ -168,7 +166,7 @@ class db
     /**
      * update
      *
-     * @param null $table
+     * @param null|string $table
      * @return db_connection
      */
     public static function update($table = null)
@@ -177,7 +175,7 @@ class db
     }
 
     /**
-     * @param null $table
+     * @param null|string $table
      * @return db_connection
      */
     public static function delete($table = null)
